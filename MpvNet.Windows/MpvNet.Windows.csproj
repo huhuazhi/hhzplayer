@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net9.0-windows</TargetFramework>
+		<RootNamespace>MpvNet.Windows</RootNamespace>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<PublishSingleFile>true</PublishSingleFile>
+		<AssemblyName>mpvnet</AssemblyName>
+		<UseWPF>true</UseWPF>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ApplicationIcon>mpv-icon.ico</ApplicationIcon>
+		<FileVersion>7.1.1.4</FileVersion>
+		<AssemblyVersion>7.1.1.4</AssemblyVersion>
+		<InformationalVersion>7.1.1.4</InformationalVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Misc\**" />
+		<EmbeddedResource Remove="Misc\**" />
+		<None Remove="Misc\**" />
+		<Page Remove="Misc\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="mpv-icon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\MpvNet\MpvNet.csproj" />
+		<ProjectReference Include="..\NGettext.Wpf\NGettext.Wpf.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Page Update="WPF\Views\AboutWindow.xaml">
+			<Generator>MSBuild:Compile</Generator>
+			<XamlRuntime>Wpf</XamlRuntime>
+			<SubType>Designer</SubType>
+		</Page>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" />
+		<PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="libmpv-2.dll">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="MediaInfo.dll">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+</Project>
