@@ -1318,6 +1318,7 @@ public partial class MainForm : Form
             return;
 
         BeginInvoke(() => {
+            if (Player.VideoSize.Width != 0 && Player.VideoSize.Height != 0)
             SetSize(
                 (int)(Player.VideoSize.Width * scale),
                 (int)Math.Floor(Player.VideoSize.Height * scale),
