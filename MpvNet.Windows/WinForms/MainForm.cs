@@ -800,7 +800,7 @@ public partial class MainForm : Form
             var vh = Player.GetPropertyInt("height");
             if (App.Enable3DSubtitle == true)
             {
-                Rectangle bounds = Screen.FromControl(this).Bounds;
+                Rectangle bounds = Screen.AllScreens[0].Bounds;
                 bounds.Width = bounds.Width * 2;                
                 if (FormBorderStyle != FormBorderStyle.None) FormBorderStyle = FormBorderStyle.None;
                 if (WindowState != FormWindowState.Normal) WindowState = FormWindowState.Normal;
