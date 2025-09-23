@@ -795,17 +795,28 @@ public partial class MainForm : Form
 
         if (enabled)
         {
-            if (WindowState != FormWindowState.Maximized || FormBorderStyle != FormBorderStyle.None)
+            if (App.Enable3DSubtitle == true)
             {
+                Rectangle bounds = Screen.FromControl(this).Bounds;
                 FormBorderStyle = FormBorderStyle.None;
-                WindowState = FormWindowState.Maximized;
-
-                if (_wasMaximized)
+                uint SWP_SHOWWINDOW = 0x0040;
+                IntPtr HWND_TOP = IntPtr.Zero;
+                SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width * 2, bounds.Height, SWP_SHOWWINDOW);
+            }
+            else
+            {
+                if (WindowState != FormWindowState.Maximized || FormBorderStyle != FormBorderStyle.None)
                 {
-                    Rectangle bounds = Screen.FromControl(this).Bounds;
-                    uint SWP_SHOWWINDOW = 0x0040;
-                    IntPtr HWND_TOP= IntPtr.Zero;
-                    SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width, bounds.Height, SWP_SHOWWINDOW);
+                    FormBorderStyle = FormBorderStyle.None;
+                    WindowState = FormWindowState.Maximized;
+
+                    if (_wasMaximized)
+                    {
+                        Rectangle bounds = Screen.FromControl(this).Bounds;
+                        uint SWP_SHOWWINDOW = 0x0040;
+                        IntPtr HWND_TOP = IntPtr.Zero;
+                        SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width, bounds.Height, SWP_SHOWWINDOW);
+                    }
                 }
             }
         }
