@@ -525,6 +525,7 @@ public partial class MainForm : Form
         var isChecked = (sender as WpfControls.MenuItem)?.IsChecked == true;
         Player.SetPropertyBool(CMD_sub_stereo_on, isChecked);
         App.Enable3DSubtitle = isChecked;
+        CycleFullscreen(true);
     }
 
     public WpfControls.MenuItem? FindMenuItem(string text, string text2 = "") {
@@ -799,6 +800,7 @@ public partial class MainForm : Form
             {
                 Rectangle bounds = Screen.FromControl(this).Bounds;
                 FormBorderStyle = FormBorderStyle.None;
+                WindowState = FormWindowState.Normal;
                 uint SWP_SHOWWINDOW = 0x0040;
                 IntPtr HWND_TOP = IntPtr.Zero;
                 SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width * 2, bounds.Height, SWP_SHOWWINDOW);
@@ -1558,7 +1560,7 @@ public partial class MainForm : Form
         }
 
 
-        _fullScreenUIMemuItem.IsChecked = App.IsFullScreenUI;
+        //_fullScreenUIMemuItem.IsChecked = App.IsFullScreenUI;
         _3DSubMenuItem.IsChecked = App.Enable3DSubtitle;
         BeginInvoke(() =>
         {
