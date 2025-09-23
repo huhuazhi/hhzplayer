@@ -1544,20 +1544,20 @@ public partial class MainForm : Form
         {
             _3DSubMenuItem = new WpfControls.MenuItem
             {
-                Header = "3D subtitle",
+                Header = "3D 立体模式",
                 IsCheckable = true,
             };
             _3DSubMenuItem.Click += Enable3DSubtitle_Click;
         }
-        if (_fullScreenUIMemuItem == null)
-        {
-            _fullScreenUIMemuItem = new WpfControls.MenuItem
-            {
-                Header = "Fullscreen UI",
-                IsCheckable = true,
-            };
-            _fullScreenUIMemuItem.Click += FullScreenUI_Click;
-        }
+        //if (_fullScreenUIMemuItem == null)
+        //{
+        //    _fullScreenUIMemuItem = new WpfControls.MenuItem
+        //    {
+        //        Header = "Fullscreen UI",
+        //        IsCheckable = true,
+        //    };
+        //    _fullScreenUIMemuItem.Click += FullScreenUI_Click;
+        //}
 
 
         //_fullScreenUIMemuItem.IsChecked = App.IsFullScreenUI;
