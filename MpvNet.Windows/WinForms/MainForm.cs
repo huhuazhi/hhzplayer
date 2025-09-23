@@ -796,6 +796,8 @@ public partial class MainForm : Form
 
         if (enabled)
         {
+            var vw = Player.GetPropertyInt("width");
+            var vh = Player.GetPropertyInt("height");
             if (App.Enable3DSubtitle == true)
             {
                 Rectangle bounds = Screen.FromControl(this).Bounds;
@@ -806,9 +808,21 @@ public partial class MainForm : Form
                 uint SWP_SHOWWINDOW = 0x0040;
                 IntPtr HWND_TOP = IntPtr.Zero;
                 SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width, bounds.Height, SWP_SHOWWINDOW);
+                if (vw > 0 && vh > 0)
+                {
+                    if (vw / vh <= 2.35) // half-SBS
+                    {
+                        Player.SetPropertyString("video-aspect-override", (vw * 2).ToString() + ":" + vh.ToString());
+                    }
+                    else // full-SBS
+                    {
+                        Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
+                    }
+                }
             }
             else
             {
+                Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
                 if (WindowState != FormWindowState.Maximized || FormBorderStyle != FormBorderStyle.None)
                 {
                     FormBorderStyle = FormBorderStyle.None;
@@ -1465,6 +1479,20 @@ public partial class MainForm : Form
     void Player_FileLoaded()
     {
         BeginInvoke(() => {
+            if (App.Enable3DSubtitle)
+            {
+                float w = Player.GetPropertyInt("width");
+                float h = Player.GetPropertyInt("height");
+                if (w / h <= 2.35) // half-SBS
+                {
+                    Player.SetPropertyString("video-aspect-override", (w * 2).ToString() + ":" + h.ToString());
+                }
+                else // full-SBS
+                {
+                    Player.SetPropertyString("video-aspect-override", w.ToString() + ":" + h.ToString());
+                }
+            }
+            //Player.SetPropertyString("video-aspect-override", "7680:2072");
             SetTitleInternal();
 
             int interval = (int)(Player.Duration.TotalMilliseconds / 100);

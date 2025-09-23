@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using MpvNet.ExtensionMethod;
 using MpvNet.Help;
 using MpvNet.MVVM;
+using System.Numerics;
 
 namespace MpvNet;
 
@@ -94,7 +95,7 @@ public class AppClass
         if (RememberVolume)
         {
             Player.SetPropertyInt("volume", Settings.Volume);
-            Player.SetPropertyString("mute", Settings.Mute);
+            Player.SetPropertyString("mute", Settings.Mute);            
         }
 
         if (RememberAudioDevice && Settings.AudioDevice != "")
