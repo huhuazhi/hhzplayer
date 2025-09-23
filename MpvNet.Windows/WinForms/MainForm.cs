@@ -799,8 +799,8 @@ public partial class MainForm : Form
             if (App.Enable3DSubtitle == true)
             {
                 Rectangle bounds = Screen.FromControl(this).Bounds;
-                FormBorderStyle = FormBorderStyle.None;
-                WindowState = FormWindowState.Normal;
+                if (FormBorderStyle != FormBorderStyle.None) FormBorderStyle = FormBorderStyle.None;
+                if (WindowState != FormWindowState.Normal) WindowState = FormWindowState.Normal;
                 uint SWP_SHOWWINDOW = 0x0040;
                 IntPtr HWND_TOP = IntPtr.Zero;
                 SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width * 2, bounds.Height, SWP_SHOWWINDOW);
