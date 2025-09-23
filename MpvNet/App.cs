@@ -153,7 +153,6 @@ public class AppClass
             case "remember-volume": RememberVolume = value == "yes"; return true;
             case "remember-window-position": RememberWindowPosition = value == "yes"; return true;
             case "start-size": StartSize = value; return true;
-            case StrKey_IsFullScreenUI: IsFullScreenUI = value == "yes"; return true;
             case StrKey_3DSubtitleEnable: Enable3DSubtitle = value == "yes"; return true;
 
             default:
@@ -220,12 +219,10 @@ public class AppClass
     /// <summary>
     /// 配置文件里表示是否UI全屏
     /// </summary>
-    private const string StrKey_IsFullScreenUI = "is-fullscreenUI";
     private const string StrKey_3DSubtitleEnable = "enable-3D-Subtitle";
 
     public void ApplyFullscreenUI()
     {
-        var newFullScreenUIKV = $"{StrKey_IsFullScreenUI}={(IsFullScreenUI ? "yes" : "no")}";
         var newEnable3DSubtitleKV = $"{StrKey_3DSubtitleEnable}={(Enable3DSubtitle ? "yes" : "no")}";
 
         string content = string.Empty;
@@ -233,19 +230,6 @@ public class AppClass
         if (File.Exists(ConfPath))
         {
             content = File.ReadAllText(ConfPath);
-
-            if (content.Contains($"{StrKey_IsFullScreenUI}=no"))
-            {
-                content = content.Replace($"{StrKey_IsFullScreenUI}=no", newFullScreenUIKV);
-            }
-            else if (content.Contains($"{StrKey_IsFullScreenUI}=yes"))
-            {
-                content = content.Replace($"{StrKey_IsFullScreenUI}=yes", newFullScreenUIKV);
-            }
-            else
-            {
-                content += $"{newFullScreenUIKV}\r\n";
-            }
 
             if (content.Contains($"{StrKey_3DSubtitleEnable}=no"))
             {
@@ -262,7 +246,6 @@ public class AppClass
         }
         else
         {
-            content += $"{newFullScreenUIKV}\r\n";
             content += $"{newEnable3DSubtitleKV}\r\n";
         }
 

@@ -826,7 +826,7 @@ public partial class MainForm : Form
         }
         else
         {
-            if (WindowState == FormWindowState.Maximized && FormBorderStyle == FormBorderStyle.None)
+            if (App.Enable3DSubtitle == false && WindowState == FormWindowState.Maximized && FormBorderStyle == FormBorderStyle.None)
             {
                 if (_wasMaximized)
                     WindowState = FormWindowState.Maximized;
