@@ -502,22 +502,22 @@ public partial class MainForm : Form
         {
             ContextMenu.Items.Add(_3DSubMenuItem);
         }
-        
-        if (!ContextMenu.Items.Contains(_fullScreenUIMemuItem))
-        {
-            ContextMenu.Items.Add(_fullScreenUIMemuItem);
-        }
+
+        //if (!ContextMenu.Items.Contains(_fullScreenUIMemuItem))
+        //{
+        //    ContextMenu.Items.Add(_fullScreenUIMemuItem);
+        //}
     }
 
     private void FullScreenUI_Click(object sender, System.Windows.RoutedEventArgs e)
     {
-        var isChecked = (sender as WpfControls.MenuItem)?.IsChecked == true;
-        App.IsFullScreenUI = isChecked;
+        //var isChecked = (sender as WpfControls.MenuItem)?.IsChecked == true;
+        //App.IsFullScreenUI = isChecked;
 
-        Player.SetPropertyBool("window-maximized", isChecked);
-        Player.SetPropertyBool("border", !isChecked);
+        //Player.SetPropertyBool("window-maximized", isChecked);
+        //Player.SetPropertyBool("border", !isChecked);
 
-        PropChangeWindowMaximized();
+        //PropChangeWindowMaximized();
     }
 
     private void Enable3DSubtitle_Click(object sender, System.Windows.RoutedEventArgs e)
