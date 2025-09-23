@@ -1652,7 +1652,7 @@ public partial class MainForm : Form
     {
         base.OnMouseMove(e);
 
-        if (IsCursorPosDifferent(_mouseDownLocation) &&
+        if (App.Enable3DSubtitle == false && IsCursorPosDifferent(_mouseDownLocation) &&
             WindowState == FormWindowState.Normal &&
             e.Button == MouseButtons.Left && !IsMouseInOsc() &&
             Player.GetPropertyBool("window-dragging"))
