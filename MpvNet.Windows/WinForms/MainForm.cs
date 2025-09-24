@@ -944,7 +944,7 @@ public partial class MainForm : Form
         if (enable3DSubtitle)
         {
             prebounds = this.Bounds;
-            Rectangle bounds = Screen.AllScreens[0].Bounds;
+            Rectangle bounds = Screen.PrimaryScreen.Bounds;
             bounds.Width = bounds.Width * 2;
             if (FormBorderStyle != FormBorderStyle.None) FormBorderStyle = FormBorderStyle.None;
             if (WindowState != FormWindowState.Normal) WindowState = FormWindowState.Normal;
