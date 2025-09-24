@@ -124,7 +124,7 @@ public partial class MainForm : Form
             Player.ObserveProperty("window-maximized", PropChangeWindowMaximized); // bool methods not working correctly
             Player.ObserveProperty("window-minimized", PropChangeWindowMinimized); // bool methods not working correctly
             Player.ObserveProperty("cursor-autohide", PropChangeCursorAutohide);
-            Player.ObservePropertyBool(CMD_sub_stereo_on, PropChangeSubStereoOn);
+            //Player.ObservePropertyBool(CMD_sub_stereo_on, PropChangeSubStereoOn);
 
             Player.ObservePropertyBool("border", PropChangeBorder);
             Player.ObservePropertyBool("fullscreen", PropChangeFullscreen);
@@ -604,11 +604,12 @@ public partial class MainForm : Form
 
         if (Player.GetPropertyInt("width") > 3840)
         {
-            SbsSubOffMenuItem_Click(null, e);
+            Player.SetPropertyBool(CMD_sub_stereo_on, false);
         }
         else
         {
-            SbsSubOnMemuItem_Click(null, e);
+            Player.SetPropertyBool(CMD_sub_stereo_on, true);
+            Player.SetPropertyBool("sub-stereo-duplicate", false);
         }
     }
 
@@ -1579,13 +1580,13 @@ public partial class MainForm : Form
         });
     }
 
-    private void PropChangeSubStereoOn(bool obj)
-    {
-        if (_sSbsSubOnMenuItem != null)
-        {
-            Invoke(() => _sSbsSubOnMenuItem.IsChecked = obj);
-        }
-    }
+    //private void PropChangeSubStereoOn(bool obj)
+    //{
+    //    if (_s3DModeSwitchMenuItem != null)
+    //    {
+    //        Invoke(() => _s3DModeSwitchMenuItem.IsChecked = obj);
+    //    }
+    //}
 
     void PropChangeFullscreen(bool value) => BeginInvoke(() => CycleFullscreen(value));
     #endregion
