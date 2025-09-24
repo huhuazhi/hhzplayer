@@ -6,6 +6,7 @@ using MpvNet.MVVM;
 using MpvNet.Windows.UI;
 using MpvNet.Windows.WPF;
 using MpvNet.Windows.WPF.MsgBox;
+using System.Configuration;
 using System.Drawing;
 using System.Globalization;
 using System.Numerics;
@@ -13,6 +14,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using static MpvNet.Windows.Help.WinApiHelp;
@@ -27,7 +29,7 @@ public partial class MainForm : Form
     public IntPtr MpvWindowHandle { get; set; }
     public bool WasShown { get; set; }
     public static MainForm? Instance { get; set; }
-    WpfControls.ContextMenu ContextMenu { get; } = new WpfControls.ContextMenu();
+    ContextMenu ContextMenu { get; } = new ContextMenu();
     AutoResetEvent MenuAutoResetEvent { get; } = new AutoResetEvent(false);
     Point _lastCursorPosition;
     Taskbar? _taskbar;
@@ -65,9 +67,19 @@ public partial class MainForm : Form
     const int SC_MAXIMIZE = 0xF030;
 
     /// <summary>
-    /// 新增一个右键菜单用于切换3D模式
+    /// 3D模式菜单头
     /// </summary>
-    WpfControls.MenuItem? _3DSubMenuItem;
+    MenuItem? _3DModeMenuItem;
+    MenuItem? _s3DModeSwitchMenuItem;
+    /// <summary>
+    /// 双眼字幕菜单头
+    /// </summary>
+    MenuItem? _SbsSubMemuItem;
+
+    MenuItem? _sSbsSubAutoMenuItem;
+    MenuItem? _sSbsSubOnMenuItem;
+    MenuItem? _sSbsSubOffMenuItem;
+    
     //WpfControls.MenuItem? _fullScreenUIMemuItem;
     bool _isCursorVisible = true;
     /// <summary>
@@ -78,6 +90,7 @@ public partial class MainForm : Form
     /// 用于控制是否开启3D字幕的命令（在libmpv-2.dll 线路B的源码里新增）
     /// </summary>
     const string CMD_sub_stereo_on = "sub-stereo-on";
+    //const string CMD_sub_stereo_
     /// <summary>
     /// 是否开启线路A的方法实现3D字幕的命令（在libmpv-2.dll），设置为false的花则使用线路B方法实现，默认libmpv-2.dll是使用线路A的
     /// </summary>
@@ -306,29 +319,29 @@ public partial class MainForm : Form
 
                 foreach (MediaTrack track in vidTracks)
                 {
-                    var menuItem = new WpfControls.MenuItem() { Header = track.Text.Replace("_", "__") };
+                    var menuItem = new MenuItem() { Header = track.Text.Replace("_", "__") };
                     menuItem.Click += (sender, args) => Player.CommandV("set", "vid", track.ID.ToString());
                     menuItem.IsChecked = Player.VID == track.ID.ToString();
                     trackMenuItem.Items.Add(menuItem);
                 }
 
                 if (vidTracks.Any())
-                    trackMenuItem.Items.Add(new WpfControls.Separator());
+                    trackMenuItem.Items.Add(new Separator());
 
                 foreach (MediaTrack track in audTracks)
                 {
-                    var menuItem = new WpfControls.MenuItem() { Header = track.Text.Replace("_", "__") };
+                    var menuItem = new MenuItem() { Header = track.Text.Replace("_", "__") };
                     menuItem.Click += (sender, args) => Player.CommandV("set", "aid", track.ID.ToString());
                     menuItem.IsChecked = Player.AID == track.ID.ToString();
                     trackMenuItem.Items.Add(menuItem);
                 }
 
                 if (subTracks.Any())
-                    trackMenuItem.Items.Add(new WpfControls.Separator());
+                    trackMenuItem.Items.Add(new Separator());
 
                 foreach (MediaTrack track in subTracks)
                 {
-                    var menuItem = new WpfControls.MenuItem() { Header = track.Text.Replace("_", "__") };
+                    var menuItem = new MenuItem() { Header = track.Text.Replace("_", "__") };
                     menuItem.Click += (sender, args) => Player.CommandV("set", "sid", track.ID.ToString());
                     menuItem.IsChecked = Player.SID == track.ID.ToString();
                     trackMenuItem.Items.Add(menuItem);
@@ -336,18 +349,18 @@ public partial class MainForm : Form
 
                 if (subTracks.Any())
                 {
-                    var menuItem = new WpfControls.MenuItem() { Header = "S: No subtitles" };
+                    var menuItem = new MenuItem() { Header = "S: No subtitles" };
                     menuItem.Click += (sender, args) => Player.CommandV("set", "sid", "no");
                     menuItem.IsChecked = Player.SID == "no";
                     trackMenuItem.Items.Add(menuItem);
                 }
 
                 if (ediTracks.Any())
-                    trackMenuItem.Items.Add(new WpfControls.Separator());
+                    trackMenuItem.Items.Add(new Separator());
 
                 foreach (MediaTrack track in ediTracks)
                 {
-                    var menuItem = new WpfControls.MenuItem() { Header = track.Text.Replace("_", "__") };
+                    var menuItem = new MenuItem() { Header = track.Text.Replace("_", "__") };
                     menuItem.Click += (sender, args) => Player.CommandV("set", "edition", track.ID.ToString());
                     menuItem.IsChecked = Player.Edition == track.ID;
                     trackMenuItem.Items.Add(menuItem);
@@ -363,7 +376,7 @@ public partial class MainForm : Form
 
             foreach (Chapter chapter in Player.GetChapters())
             {
-                var menuItem = new WpfControls.MenuItem
+                var menuItem = new MenuItem
                 {
                     Header = chapter.Title,
                     InputGestureText = chapter.TimeDisplay
@@ -391,8 +404,8 @@ public partial class MainForm : Form
                     menuItem.Click += (sender, args) => Player.LoadFiles(new[] { file.Path }, true, false);
             }
 
-            recentMenuItem.Items.Add(new WpfControls.Separator());
-            var clearMenuItem = new WpfControls.MenuItem() { Header = _("Clear List") };
+            recentMenuItem.Items.Add(new Separator());
+            var clearMenuItem = new MenuItem() { Header = _("Clear List") };
             clearMenuItem.Click += (sender, args) => App.Settings.RecentFiles.Clear();
             recentMenuItem.Items.Add(clearMenuItem);
         }
@@ -451,8 +464,8 @@ public partial class MainForm : Form
                 }
             }
 
-            profilesMenuItem.Items.Add(new WpfControls.Separator());
-            var showProfilesMenuItem = new WpfControls.MenuItem() { Header = _("Show Profiles") };
+            profilesMenuItem.Items.Add(new Separator());
+            var showProfilesMenuItem = new MenuItem() { Header = _("Show Profiles") };
             showProfilesMenuItem.Click += (sender, args) => Player.Command("script-message-to mpvnet show-profiles");
             profilesMenuItem.Items.Add(showProfilesMenuItem);
         }
@@ -507,15 +520,40 @@ public partial class MainForm : Form
             }
         }
 
-        if (!ContextMenu.Items.Contains(_3DSubMenuItem))
+
+        if (_3DModeMenuItem != null && !_3DModeMenuItem.Items.Contains(_s3DModeSwitchMenuItem))
         {
-            ContextMenu.Items.Add(_3DSubMenuItem);
+            _3DModeMenuItem.Items.Add(_s3DModeSwitchMenuItem);
+        }
+        
+        if (_3DModeMenuItem != null && !_3DModeMenuItem.Items.Contains(_SbsSubMemuItem))
+        {
+            _3DModeMenuItem.Items.Add(_SbsSubMemuItem);
+        }
+
+        if (_sSbsSubAutoMenuItem != null && _SbsSubMemuItem?.Items.Contains(_sSbsSubAutoMenuItem) == false)
+        {
+            _SbsSubMemuItem.Items.Add(_sSbsSubAutoMenuItem);
+        }
+        if (_sSbsSubOnMenuItem != null && _SbsSubMemuItem?.Items.Contains(_sSbsSubOnMenuItem) == false)
+        {
+            _SbsSubMemuItem.Items.Add(_sSbsSubOnMenuItem);
+        }
+        if (_sSbsSubOffMenuItem != null && _SbsSubMemuItem?.Items.Contains(_sSbsSubOffMenuItem) == false)
+        {
+            _SbsSubMemuItem.Items.Add(_sSbsSubOffMenuItem);
+        }
+
+
+        if (!ContextMenu.Items.Contains(_3DModeMenuItem))
+        {
+            ContextMenu.Items.Add(_3DModeMenuItem);
         }
 
         //if (!ContextMenu.Items.Contains(_fullScreenUIMemuItem))
         //{
         //    ContextMenu.Items.Add(_fullScreenUIMemuItem);
-        //}
+        //}        
     }
 
     //private void FullScreenUI_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -529,13 +567,13 @@ public partial class MainForm : Form
     //    //PropChangeWindowMaximized();
     //}
 
-    private void Enable3DSubtitle_Click(object sender, System.Windows.RoutedEventArgs e)
+    private void Enable3DMode_Click(object sender, System.Windows.RoutedEventArgs e)
     {
         //Size backup = ClientSize;
 
-        var isChecked = (sender as WpfControls.MenuItem)?.IsChecked == true;
-        Player.SetPropertyBool(CMD_sub_stereo_on, isChecked);
-        App.Settings.Enable3DSubtitle = isChecked;
+        var isChecked = (sender as MenuItem)?.IsChecked == true;
+        
+        App.Settings.Enable3DMode = isChecked;
 
         //if (!isChecked)
         //{
@@ -557,7 +595,41 @@ public partial class MainForm : Form
         //Debug.WriteLine($"backup={backup},NewClientSize={ClientSize}");
     }
 
-    public WpfControls.MenuItem? FindMenuItem(string text, string text2 = "") {
+
+    private void SbsSubAutoMenuItem_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        _sSbsSubAutoMenuItem.IsChecked = true;
+        _sSbsSubOnMenuItem.IsChecked = false;
+        _sSbsSubOffMenuItem.IsChecked = false;       
+
+        if (Player.GetPropertyInt("width") > 3840)
+        {
+            SbsSubOffMenuItem_Click(null, e);
+        }
+        else
+        {
+            SbsSubOnMemuItem_Click(null, e);
+        }
+    }
+
+    private void SbsSubOnMemuItem_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        _sSbsSubAutoMenuItem.IsChecked = false;
+        _sSbsSubOnMenuItem.IsChecked = true;
+        _sSbsSubOffMenuItem.IsChecked = false;
+        Player.SetPropertyBool(CMD_sub_stereo_on, true);
+        Player.SetPropertyBool("sub-stereo-duplicate", false);
+    }
+
+    private void SbsSubOffMenuItem_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        _sSbsSubAutoMenuItem.IsChecked = false;
+        _sSbsSubOnMenuItem.IsChecked = false;
+        _sSbsSubOffMenuItem.IsChecked = true;
+        Player.SetPropertyBool(CMD_sub_stereo_on, false);
+    }
+
+    public MenuItem? FindMenuItem(string text, string text2 = "") {
         var ret = FindMenuItem(text, ContextMenu.Items);
 
         if (ret == null && text2 != "")
@@ -566,18 +638,18 @@ public partial class MainForm : Form
         return ret;
     }
 
-    WpfControls.MenuItem? FindMenuItem(string text, WpfControls.ItemCollection? items)
+    MenuItem? FindMenuItem(string text, ItemCollection? items)
     {
         foreach (object item in items!)
         {
-            if (item is WpfControls.MenuItem mi)
+            if (item is MenuItem mi)
             {
                 if (mi.Header.ToString().StartsWithEx(text) && mi.Header.ToString().TrimEx() == text)
                     return mi;
 
                 if (mi.Items.Count > 0)
                 {
-                    WpfControls.MenuItem? val = FindMenuItem(text, mi.Items);
+                    MenuItem? val = FindMenuItem(text, mi.Items);
 
                     if (val != null)
                         return val;
@@ -1162,7 +1234,7 @@ public partial class MainForm : Form
                     ShowCursor();
                 break;
             case 0x203: // WM_LBUTTONDBLCLK
-                if (!App.Settings.Enable3DSubtitle)
+                if (!App.Settings.Enable3DMode)
                 {
                     Point pos = PointToClient(Cursor.Position);
                     Player.Command($"mouse {pos.X} {pos.Y} 0 double");
@@ -1509,9 +1581,9 @@ public partial class MainForm : Form
 
     private void PropChangeSubStereoOn(bool obj)
     {
-        if (_3DSubMenuItem != null)
+        if (_sSbsSubOnMenuItem != null)
         {
-            Invoke(() => _3DSubMenuItem.IsChecked = obj);
+            Invoke(() => _sSbsSubOnMenuItem.IsChecked = obj);
         }
     }
 
@@ -1536,7 +1608,7 @@ public partial class MainForm : Form
     void Player_FileLoaded()
     {
         BeginInvoke(() => {
-            if (App.Settings.Enable3DSubtitle)
+            if (App.Settings.Enable3DMode)
             {
                 float w = Player.GetPropertyInt("width");
                 float h = Player.GetPropertyInt("height");
@@ -1550,6 +1622,8 @@ public partial class MainForm : Form
                 }
             }
             //Player.SetPropertyString("video-aspect-override", "7680:2072");
+            SbsSubAutoMenuItem_Click(null, null);
+
             SetTitleInternal();
 
             int interval = (int)(Player.Duration.TotalMilliseconds / 100);
@@ -1628,14 +1702,13 @@ public partial class MainForm : Form
         _lastCycleFullscreen = Environment.TickCount;
         SetFormPosAndSize(false, true, true);
 
-        if (_3DSubMenuItem == null)
+        if (_3DModeMenuItem == null)
         {
-            _3DSubMenuItem = new WpfControls.MenuItem
+            _3DModeMenuItem = new MenuItem
             {
                 Header = "3D 立体模式",
-                IsCheckable = true,
+                IsCheckable = false,
             };
-            _3DSubMenuItem.Click += Enable3DSubtitle_Click;
         }
         //if (_fullScreenUIMemuItem == null)
         //{
@@ -1647,14 +1720,64 @@ public partial class MainForm : Form
         //    _fullScreenUIMemuItem.Click += FullScreenUI_Click;
         //}
 
+        if (_s3DModeSwitchMenuItem == null)
+        {
+            _s3DModeSwitchMenuItem = new MenuItem
+            {
+                Header = "开/关",
+                IsCheckable = true,
+            };
+            _s3DModeSwitchMenuItem.Click += Enable3DMode_Click;
+        }
+
+        if (_SbsSubMemuItem == null)
+        {
+            _SbsSubMemuItem = new MenuItem
+            {
+                Header = "双目字幕",
+                IsCheckable = false,
+            };
+        }
+
+
+        if (_sSbsSubAutoMenuItem == null)
+        {
+            _sSbsSubAutoMenuItem = new MenuItem
+            {
+                Header = "自动",
+                IsChecked = true,
+                IsCheckable = true,
+            };
+            _sSbsSubAutoMenuItem.Click += SbsSubAutoMenuItem_Click;
+        }
+
+        if (_sSbsSubOnMenuItem == null)
+        {
+            _sSbsSubOnMenuItem = new MenuItem
+            {
+                Header = "开",
+                IsCheckable = true,
+            };
+            _sSbsSubOnMenuItem.Click += SbsSubOnMemuItem_Click;
+        }
+
+        if(_sSbsSubOffMenuItem == null)
+        {
+            _sSbsSubOffMenuItem = new MenuItem
+            {
+                Header="关",
+                IsCheckable=true,
+            };
+            _sSbsSubOffMenuItem.Click += SbsSubOffMenuItem_Click;
+        }
 
         //_fullScreenUIMemuItem.IsChecked = App.IsFullScreenUI;
-        _3DSubMenuItem.IsChecked = App.Settings.Enable3DSubtitle;
+        _s3DModeSwitchMenuItem.IsChecked = App.Settings.Enable3DMode;
         BeginInvoke(() =>
         {
-            if (App.Settings.Enable3DSubtitle)
+            if (App.Settings.Enable3DMode)
             {
-                Enable3DSubtitle_Click(_3DSubMenuItem, null);
+                Enable3DMode_Click(_s3DModeSwitchMenuItem, null);
             }
             //if (App.IsFullScreenUI)
             //{
@@ -1746,7 +1869,7 @@ public partial class MainForm : Form
     {
         base.OnMouseMove(e);
 
-        if (App.Settings.Enable3DSubtitle == false && IsCursorPosDifferent(_mouseDownLocation) &&
+        if (App.Settings.Enable3DMode == false && IsCursorPosDifferent(_mouseDownLocation) &&
             WindowState == FormWindowState.Normal &&
             e.Button == MouseButtons.Left && !IsMouseInOsc() &&
             Player.GetPropertyBool("window-dragging"))
