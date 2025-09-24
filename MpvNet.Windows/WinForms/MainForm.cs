@@ -68,7 +68,7 @@ public partial class MainForm : Form
     /// 新增一个右键菜单用于切换3D模式
     /// </summary>
     WpfControls.MenuItem? _3DSubMenuItem;
-    WpfControls.MenuItem? _fullScreenUIMemuItem;
+    //WpfControls.MenuItem? _fullScreenUIMemuItem;
     bool _isCursorVisible = true;
     /// <summary>
     /// 用于控制是否开启3D字幕的命令（在libmpv-2.dll 线路B的源码里新增）
@@ -160,9 +160,9 @@ public partial class MainForm : Form
                 Point location = App.Settings.WindowLocation;
 
                 if (location.X == -1) Left = pos.X;
-                if (location.X ==  1) Left = pos.X - Width;
+                if (location.X == 1) Left = pos.X - Width;
                 if (location.Y == -1) Top = pos.Y;
-                if (location.Y ==  1) Top = pos.Y - Height;
+                if (location.Y == 1) Top = pos.Y - Height;
             }
 
             if (Player.WindowMaximized)
@@ -175,6 +175,11 @@ public partial class MainForm : Form
             {
                 SetFormPosAndSize(true);
                 WindowState = FormWindowState.Minimized;
+            }
+
+            if (App.StartSize == "always" && App.Settings.WindowSize != Size.Empty)
+            {
+                ClientSize = App.Settings.WindowSize;
             }
         }
         catch (Exception ex)
@@ -509,23 +514,23 @@ public partial class MainForm : Form
         //}
     }
 
-    private void FullScreenUI_Click(object sender, System.Windows.RoutedEventArgs e)
-    {
-        //var isChecked = (sender as WpfControls.MenuItem)?.IsChecked == true;
-        //App.IsFullScreenUI = isChecked;
+    //private void FullScreenUI_Click(object sender, System.Windows.RoutedEventArgs e)
+    //{
+    //    //var isChecked = (sender as WpfControls.MenuItem)?.IsChecked == true;
+    //    //App.IsFullScreenUI = isChecked;
 
-        //Player.SetPropertyBool("window-maximized", isChecked);
-        //Player.SetPropertyBool("border", !isChecked);
+    //    //Player.SetPropertyBool("window-maximized", isChecked);
+    //    //Player.SetPropertyBool("border", !isChecked);
 
-        //PropChangeWindowMaximized();
-    }
+    //    //PropChangeWindowMaximized();
+    //}
 
     private void Enable3DSubtitle_Click(object sender, System.Windows.RoutedEventArgs e)
     {
         var isChecked = (sender as WpfControls.MenuItem)?.IsChecked == true;
         Player.SetPropertyBool(CMD_sub_stereo_on, isChecked);
-        App.Enable3DSubtitle = isChecked;
-        CycleFullscreen(true);
+        App.Settings.Enable3DSubtitle = isChecked;
+        CycleFullscreen(/*true*/isChecked);
     }
 
     public WpfControls.MenuItem? FindMenuItem(string text, string text2 = "") {
@@ -661,7 +666,7 @@ public partial class MainForm : Form
             Player.WasInitialSizeSet = true;
         }
 
-        //SetSize(width, height, screen, checkAutofit, load);
+        SetSize(width, height, screen, checkAutofit, load);
     }
 
     void SetSize(int width, int height, Screen screen, bool checkAutofit = true, bool load = false)
@@ -798,7 +803,7 @@ public partial class MainForm : Form
         {
             var vw = Player.GetPropertyInt("width");
             var vh = Player.GetPropertyInt("height");
-            if (App.Enable3DSubtitle == true)
+            if (App.Settings.Enable3DSubtitle == true)
             {
                 Rectangle bounds = Screen.AllScreens[0].Bounds;
                 bounds.Width = bounds.Width * 2;                
@@ -840,7 +845,7 @@ public partial class MainForm : Form
         }
         else
         {
-            if (App.Enable3DSubtitle == false && WindowState == FormWindowState.Maximized && FormBorderStyle == FormBorderStyle.None)
+            if (App.Settings.Enable3DSubtitle == false && WindowState == FormWindowState.Maximized && FormBorderStyle == FormBorderStyle.None)
             {
                 if (_wasMaximized)
                     WindowState = FormWindowState.Maximized;
@@ -985,7 +990,7 @@ public partial class MainForm : Form
 
     void SaveWindowProperties()
     {
-        if (WindowState == FormWindowState.Normal && WasShown)
+        if (WindowState == FormWindowState.Normal && WasShown && !App.Settings.Enable3DSubtitle)
         {
             SavePosition();
             App.Settings.WindowSize = ClientSize;
@@ -1362,24 +1367,24 @@ public partial class MainForm : Form
         {
             Player.WindowMaximized = Player.GetPropertyBool("window-maximized");
 
-            if (_rectBackupFor3DMode is Rectangle rectangle && Player.WindowMaximized != false)
-            {
-                Debug.WriteLine($"rectBackupFor3DMode~,WindowState={WindowState},Player.WindowMaximized={Player.WindowMaximized}");
-                WindowState = FormWindowState.Normal;
-                Bounds = rectangle;
-                _rectBackupFor3DMode = null;
-                return;
-            }
+            //if (_rectBackupFor3DMode is Rectangle rectangle && Player.WindowMaximized != false)
+            //{
+            //    Debug.WriteLine($"rectBackupFor3DMode~,WindowState={WindowState},Player.WindowMaximized={Player.WindowMaximized}");
+            //    WindowState = FormWindowState.Normal;
+            //    Bounds = rectangle;
+            //    _rectBackupFor3DMode = null;
+            //    return;
+            //}
 
             if (Player.WindowMaximized && WindowState != FormWindowState.Maximized)
             {
-                if (App.Enable3DSubtitle == true)
-                {
-                    Player.WindowMaximized = true;
-                    _rectBackupFor3DMode = Bounds;
-                    DoCustomMaximize();
-                }
-                else
+                //if (App.Enable3DSubtitle == true)
+                //{
+                //    Player.WindowMaximized = true;
+                //    _rectBackupFor3DMode = Bounds;
+                //    DoCustomMaximize();
+                //}
+                //else
                 {
                     Debug.WriteLine($"FormWindowState.Maximized~");
                     WindowState = FormWindowState.Maximized;
@@ -1479,7 +1484,7 @@ public partial class MainForm : Form
     void Player_FileLoaded()
     {
         BeginInvoke(() => {
-            if (App.Enable3DSubtitle)
+            if (App.Settings.Enable3DSubtitle)
             {
                 float w = Player.GetPropertyInt("width");
                 float h = Player.GetPropertyInt("height");
@@ -1592,17 +1597,17 @@ public partial class MainForm : Form
 
 
         //_fullScreenUIMemuItem.IsChecked = App.IsFullScreenUI;
-        _3DSubMenuItem.IsChecked = App.Enable3DSubtitle;
+        _3DSubMenuItem.IsChecked = App.Settings.Enable3DSubtitle;
         BeginInvoke(() =>
         {
-            if (App.Enable3DSubtitle)
+            if (App.Settings.Enable3DSubtitle)
             {
                 Enable3DSubtitle_Click(_3DSubMenuItem, null);
             }
-            if (App.IsFullScreenUI)
-            {
-                FullScreenUI_Click(_fullScreenUIMemuItem, null);
-            }
+            //if (App.IsFullScreenUI)
+            //{
+            //    FullScreenUI_Click(_fullScreenUIMemuItem, null);
+            //}
         });
     }
 
@@ -1671,8 +1676,6 @@ public partial class MainForm : Form
             Msg.ShowError(_("Shutdown thread failed to complete within 10 seconds."));
 
         Player.Destroy();
-
-        App.ApplyFullscreenUI();
     }
 
     protected override void OnMouseDown(MouseEventArgs e)
@@ -1685,7 +1688,7 @@ public partial class MainForm : Form
     {
         base.OnMouseMove(e);
 
-        if (App.Enable3DSubtitle == false && IsCursorPosDifferent(_mouseDownLocation) &&
+        if (App.Settings.Enable3DSubtitle == false && IsCursorPosDifferent(_mouseDownLocation) &&
             WindowState == FormWindowState.Normal &&
             e.Button == MouseButtons.Left && !IsMouseInOsc() &&
             Player.GetPropertyBool("window-dragging"))

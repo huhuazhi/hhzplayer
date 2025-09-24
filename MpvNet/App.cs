@@ -38,10 +38,6 @@ public class AppClass
     public float MinimumAspectRatio { get; set; }
     public float MinimumAspectRatioAudio { get; set; }
 
-    public bool IsFullScreenUI { get; set; }
-
-    public bool Enable3DSubtitle { get; set; }
-
     readonly ExtensionLoader _extensionManager = new ExtensionLoader();
 
     AppSettings? _settings;
@@ -154,7 +150,7 @@ public class AppClass
             case "remember-volume": RememberVolume = value == "yes"; return true;
             case "remember-window-position": RememberWindowPosition = value == "yes"; return true;
             case "start-size": StartSize = value; return true;
-            case StrKey_3DSubtitleEnable: Enable3DSubtitle = value == "yes"; return true;
+            //case StrKey_3DSubtitleEnable: Enable3DSubtitle = value == "yes"; return true;
 
             default:
                 if (writeError)
@@ -217,39 +213,39 @@ public class AppClass
         Settings.InputDefaultBindingsFixApplied = true;
     }
 
-    /// <summary>
-    /// 配置文件里表示是否UI全屏
-    /// </summary>
-    private const string StrKey_3DSubtitleEnable = "enable-3D-Subtitle";
+    ///// <summary>
+    ///// 配置文件里表示是否UI全屏
+    ///// </summary>
+    //private const string StrKey_3DSubtitleEnable = "enable-3D-Subtitle";
 
-    public void ApplyFullscreenUI()
-    {
-        var newEnable3DSubtitleKV = $"{StrKey_3DSubtitleEnable}={(Enable3DSubtitle ? "yes" : "no")}";
+    //public void ApplyFullscreenUI()
+    //{
+    //    var newEnable3DSubtitleKV = $"{StrKey_3DSubtitleEnable}={(Enable3DSubtitle ? "yes" : "no")}";
 
-        string content = string.Empty;
+    //    string content = string.Empty;
 
-        if (File.Exists(ConfPath))
-        {
-            content = File.ReadAllText(ConfPath);
+    //    if (File.Exists(ConfPath))
+    //    {
+    //        content = File.ReadAllText(ConfPath);
 
-            if (content.Contains($"{StrKey_3DSubtitleEnable}=no"))
-            {
-                content = content.Replace($"{StrKey_3DSubtitleEnable}=no", newEnable3DSubtitleKV);
-            }
-            else if (content.Contains($"{StrKey_3DSubtitleEnable}=yes"))
-            {
-                content = content.Replace($"{StrKey_3DSubtitleEnable}=yes", newEnable3DSubtitleKV);
-            }
-            else
-            {
-                content += $"{newEnable3DSubtitleKV}\r\n";
-            }
-        }
-        else
-        {
-            content += $"{newEnable3DSubtitleKV}\r\n";
-        }
+    //        if (content.Contains($"{StrKey_3DSubtitleEnable}=no"))
+    //        {
+    //            content = content.Replace($"{StrKey_3DSubtitleEnable}=no", newEnable3DSubtitleKV);
+    //        }
+    //        else if (content.Contains($"{StrKey_3DSubtitleEnable}=yes"))
+    //        {
+    //            content = content.Replace($"{StrKey_3DSubtitleEnable}=yes", newEnable3DSubtitleKV);
+    //        }
+    //        else
+    //        {
+    //            content += $"{newEnable3DSubtitleKV}\r\n";
+    //        }
+    //    }
+    //    else
+    //    {
+    //        content += $"{newEnable3DSubtitleKV}\r\n";
+    //    }
 
-        File.WriteAllText(ConfPath, content);
-    }
+    //    File.WriteAllText(ConfPath, content);
+    //}
 }

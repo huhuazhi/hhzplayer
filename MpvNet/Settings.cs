@@ -21,6 +21,7 @@ public class AppSettings
     public string ConfigEditorSearch = "Video:";
     public string Mute = "no";
     public string StartupFolder = "";
+    public bool Enable3DSubtitle;
 }
 
 class SettingsManager
