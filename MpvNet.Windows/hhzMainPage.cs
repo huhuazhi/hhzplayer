@@ -20,9 +20,9 @@ namespace MpvNet.Windows
         {
             InitializeComponent();
             this.DoubleBuffered = true;     // 开启双缓冲，避免闪烁
-                                            //强制整个 UserControl 双缓冲（推荐）
+            //强制整个 UserControl 双缓冲（推荐）
             this.SetStyle(ControlStyles.AllPaintingInWmPaint |
-                              ControlStyles.UserPaint |
+                  ControlStyles.UserPaint |
                               ControlStyles.OptimizedDoubleBuffer |
                               ControlStyles.ResizeRedraw, true);
             this.UpdateStyles();
@@ -81,6 +81,7 @@ namespace MpvNet.Windows
             this.Resize += (_, __) => UpdateLogoPosition();
             UpdateLogoPosition();
         }
+
         private void UpdateLogoPosition()
         {
             int w = this.ClientSize.Width;
