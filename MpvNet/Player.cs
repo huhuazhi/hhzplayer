@@ -115,7 +115,7 @@ public class MainPlayer : MpvClient
         SetPropertyString("config-dir", ConfigFolder);
         SetPropertyString("config", "yes");
 
-        //特外
+        ////特外
         SetPropertyString("sub-stereo-duplicate", "yes");
         SetPropertyString("sub-stereo-layout", "sbs");
         SetPropertyLong("sub-stereo-offset-px", 0);
@@ -168,7 +168,8 @@ public class MainPlayer : MpvClient
         SetPropertyString("user-data/frontend/version", AppInfo.Version.ToString());
         SetPropertyString("user-data/frontend/process-path", Environment.ProcessPath!);
 
-        ObservePropertyBool("pause", value => {
+        ObservePropertyBool("pause", value =>
+        {
             Paused = value;
             Pause?.Invoke();
         });
@@ -184,7 +185,8 @@ public class MainPlayer : MpvClient
             }
         });
 
-        ObservePropertyInt("playlist-pos", value => {
+        ObservePropertyInt("playlist-pos", value =>
+        {
             PlaylistPos = value;
             PlaylistPosChanged?.Invoke(value);
 
