@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 using System.Windows.Forms;
 
 namespace MpvNet.Windows
@@ -16,20 +11,41 @@ namespace MpvNet.Windows
         private PictureBox _logoPicRight;
         private Label _hintLabelLeft;
         private Label _hintLabelRight;
+
+        private DiskList _diskListLeft;
+        private DiskList _diskListRight;
+
+        // 防止事件互相递归触发
+        private bool _syncing = false;        // 滚动/选中
+        private bool _syncingHover = false;   // 悬浮
+
+        // 蓝色框的相对位置（按你的背景测）
+        private const float FRAME_LEFT = 0.0255f;
+        private const float FRAME_TOP = 0.095f;
+        private const float FRAME_WIDTH = 0.253f;
+        private const float FRAME_HEIGHT = 0.400f;
+
+        private Bitmap bg;
+
         public HHZMainPage()
         {
             InitializeComponent();
-            this.DoubleBuffered = true;     // 开启双缓冲，避免闪烁
-            //强制整个 UserControl 双缓冲（推荐）
-            this.SetStyle(ControlStyles.AllPaintingInWmPaint |
-                  ControlStyles.UserPaint |
-                              ControlStyles.OptimizedDoubleBuffer |
-                              ControlStyles.ResizeRedraw, true);
-            this.UpdateStyles();
-            this.BackColor = Color.Black;   // 默认背景黑色
-            this.Dock = DockStyle.Fill;     // 默认填充父容器
 
-            // 左眼 LOGO
+            this.DoubleBuffered = true;
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+                          ControlStyles.UserPaint |
+                          ControlStyles.OptimizedDoubleBuffer |
+                          ControlStyles.ResizeRedraw, true);
+            this.UpdateStyles();
+            this.BackColor = Color.Black;
+            this.Dock = DockStyle.Fill;
+
+            // 背景图
+            string bgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background.jpg");
+            if (File.Exists(bgPath))
+                bg = new Bitmap(bgPath);
+
+            // 左右 LOGO/文字
             _logoPicLeft = new PictureBox
             {
                 SizeMode = PictureBoxSizeMode.Zoom,
@@ -37,10 +53,9 @@ namespace MpvNet.Windows
                 Height = 128,
                 Image = LoadMyLogo(),
                 BackColor = Color.Transparent,
-                Visible = true                
+                Visible = true
             };
 
-            // 右眼 LOGO
             _logoPicRight = new PictureBox
             {
                 SizeMode = PictureBoxSizeMode.Zoom,
@@ -48,7 +63,7 @@ namespace MpvNet.Windows
                 Height = 128,
                 Image = LoadMyLogo(),
                 BackColor = Color.Transparent,
-                Visible = false // 默认只显示一个
+                Visible = false
             };
 
             _hintLabelLeft = new Label
@@ -68,18 +83,135 @@ namespace MpvNet.Windows
                 BackColor = Color.Transparent,
                 Font = new Font("Segoe UI", 12f, FontStyle.Regular)
             };
-            string bgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background.jpg");
-            if (File.Exists(bgPath))
-            {
-                bg = new Bitmap(bgPath);
-            }
+
             this.Controls.Add(_logoPicLeft);
             this.Controls.Add(_logoPicRight);
             this.Controls.Add(_hintLabelLeft);
             this.Controls.Add(_hintLabelRight);
 
-            this.Resize += (_, __) => UpdateLogoPosition();
+            // 两个磁盘列表
+            _diskListLeft = new DiskList
+            {
+                RowHeight = 110,
+                RowSpacing = 5,
+                ShowNotReady = true
+            };
+            _diskListLeft.DiskSelected += (_, root) => Console.WriteLine("[Left] 选择磁盘：" + root);
+
+            _diskListRight = new DiskList
+            {
+                RowHeight = 110,
+                RowSpacing = 5,
+                ShowNotReady = true
+            };
+            _diskListRight.DiskSelected += (_, root) => Console.WriteLine("[Right] 选择磁盘：" + root);
+
+            this.Controls.Add(_diskListLeft);
+            this.Controls.Add(_diskListRight);
+            _diskListLeft.BringToFront();
+            _diskListRight.BringToFront();
+
+            // —— 双向同步：滚动 —— 
+            _diskListLeft.ViewportOffsetChanged += (_, e) =>
+            {
+                if (_syncing) return;
+                try { _syncing = true; _diskListRight.ScrollOffset = e.OffsetY; }
+                finally { _syncing = false; }
+            };
+            _diskListRight.ViewportOffsetChanged += (_, e) =>
+            {
+                if (_syncing) return;
+                try { _syncing = true; _diskListLeft.ScrollOffset = e.OffsetY; }
+                finally { _syncing = false; }
+            };
+
+            // —— 双向同步：选中 —— 
+            _diskListLeft.SelectionChanged += (_, e) =>
+            {
+                if (_syncing) return;
+                try { _syncing = true; _diskListRight.SelectIndex(e.Index, ensureVisible: true, raiseEvent: false); }
+                finally { _syncing = false; }
+            };
+            _diskListRight.SelectionChanged += (_, e) =>
+            {
+                if (_syncing) return;
+                try { _syncing = true; _diskListLeft.SelectIndex(e.Index, ensureVisible: true, raiseEvent: false); }
+                finally { _syncing = false; }
+            };
+
+            // —— 双向同步：悬浮（hover 高亮）——
+            _diskListLeft.HoverChanged += (_, e) =>
+            {
+                if (_syncingHover) return;
+                try { _syncingHover = true; _diskListRight.SetHotIndex(e.Index, raiseEvent: false); }
+                finally { _syncingHover = false; }
+            };
+            _diskListRight.HoverChanged += (_, e) =>
+            {
+                if (_syncingHover) return;
+                try { _syncingHover = true; _diskListLeft.SetHotIndex(e.Index, raiseEvent: false); }
+                finally { _syncingHover = false; }
+            };
+
+            // 初次布局
+            this.Resize += (_, __) =>
+            {
+                UpdateLogoPosition();
+                UpdateDiskListBounds();
+            };
             UpdateLogoPosition();
+            UpdateDiskListBounds();
+
+            _diskListLeft.Reload();
+            _diskListRight.Reload();
+
+            // 拖入
+            this.AllowDrop = true;
+            this.DragEnter += HHZMainPage_DragEnter;
+            this.DragDrop += HHZMainPage_DragDrop;
+        }
+
+        // 计算蓝色框在某个宿主矩形内的位置
+        private Rectangle CalcBlueFrame(Rectangle host)
+        {
+            int fx = host.X + (int)(host.Width * FRAME_LEFT);
+            int fy = host.Y + (int)(host.Height * FRAME_TOP);
+            int fw = (int)(host.Width * FRAME_WIDTH);
+            int fh = (int)(host.Height * FRAME_HEIGHT);
+            const int pad = 10; // 内边距
+            return new Rectangle(fx + pad, fy + pad,
+                                 Math.Max(10, fw - pad * 2),
+                                 Math.Max(10, fh - pad * 2));
+        }
+
+        // 根据模式布置一或两个列表
+        private void UpdateDiskListBounds()
+        {
+            int w = this.ClientSize.Width, h = this.ClientSize.Height;
+            if (w <= 0 || h <= 0) return;
+
+            if (App.Settings.Enable3DMode)
+            {
+                var leftHost = new Rectangle(0, 0, w / 2, h);
+                var rightHost = new Rectangle(w / 2, 0, w - w / 2, h);
+
+                _diskListLeft.Bounds = CalcBlueFrame(leftHost);
+                _diskListRight.Bounds = CalcBlueFrame(rightHost);
+
+                _diskListLeft.Visible = true;
+                _diskListRight.Visible = true;
+            }
+            else
+            {
+                var fullHost = new Rectangle(0, 0, w, h);
+                _diskListLeft.Bounds = CalcBlueFrame(fullHost);
+                _diskListLeft.Visible = true;
+
+                _diskListRight.Visible = false;
+            }
+
+            _diskListLeft.Invalidate();
+            _diskListRight.Invalidate();
         }
 
         private void UpdateLogoPosition()
@@ -88,20 +220,18 @@ namespace MpvNet.Windows
             int h = this.ClientSize.Height;
             if (w == 0 || h == 0) return;
 
-            // LOGO 大小：高度的 1/20，最小 24，最大 64
             int logoSize = Math.Max(24, Math.Min(64, h / 20));
             _logoPicLeft.Size = new Size(logoSize, logoSize);
             _logoPicRight.Size = new Size(logoSize, logoSize);
 
-            // 字体大小：高度的 1/120，最小 8
             float fontSize = Math.Max(8, h / 120f);
             var font = new Font("Segoe UI", fontSize, FontStyle.Regular);
             _hintLabelLeft.Font = font;
             _hintLabelRight.Font = font;
 
-            int margin = 10;       // 基础边距
-            int shift = 10;        // LOGO 水平错位距离（越大越立体）
-            int offsetX = 50;      // ⭐ 整体水平偏移量（你可以随时改）
+            int margin = 10;
+            int shift = 10;
+            int offsetX = 50;
 
             if (App.Settings.Enable3DMode)
             {
@@ -110,19 +240,14 @@ namespace MpvNet.Windows
 
                 int halfWidth = w / 2;
 
-                // 左屏 LOGO（整体往右偏移 offsetX，再右移一点）
                 _logoPicLeft.Location = new Point(offsetX + margin + shift, margin);
-
-                // 右屏 LOGO（整体往右偏移 offsetX，再左移一点）
                 _logoPicRight.Location = new Point(halfWidth + offsetX + margin - shift, margin);
 
-                // 左边文字
                 _hintLabelLeft.Location = new Point(
                     _logoPicLeft.Right + 5,
                     _logoPicLeft.Top + (_logoPicLeft.Height - _hintLabelLeft.Height) / 2
                 );
 
-                // 右边文字（保持和左边文字的相对关系）
                 int textOffsetX = _hintLabelLeft.Left - (offsetX + margin);
                 _hintLabelRight.Location = new Point(
                     halfWidth + offsetX + margin + textOffsetX,
@@ -131,7 +256,6 @@ namespace MpvNet.Windows
             }
             else
             {
-                // 普通模式：整体往右偏移 offsetX
                 _logoPicLeft.Visible = true;
                 _hintLabelLeft.Visible = true;
 
@@ -148,40 +272,18 @@ namespace MpvNet.Windows
 
         private Image LoadMyLogo()
         {
-            // 1) 放到可执行目录下 Assets\mylogo.png
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mylogo.png");
             if (File.Exists(path)) return new Bitmap(path);
 
-            // 2) 或者嵌入到资源 Properties.Resources.MyLogo
-            // return Properties.Resources.MyLogo;
-
-            // 兜底：一个空白图，防止空引用
             var bmp = new Bitmap(1, 1);
             using (var g = Graphics.FromImage(bmp)) g.Clear(Color.Transparent);
             return bmp;
         }
 
-        private void hhzMainPage_Paint(object sender, PaintEventArgs e)
-        {
-            //// 示例：画一个提示文本
-            //string text = "My Visualizer Control (空白占位)";
-            //using (var brush = new SolidBrush(Color.White))
-            //using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
-            //{
-            //    e.Graphics.DrawString(text, this.Font, brush, this.ClientRectangle, sf);
-            //}
-        }
-
-        Bitmap bg;
-
-        // 2) 背景绘制：按你给的代码“简单改”——去掉 base 调用 + 调整右半宽度避免1px缝
+        // 背景绘制
         protected override void OnPaintBackground(PaintEventArgs e)
         {
-            // 不调用 base，避免 Transparent 时父控件接管背景导致不刷新
-            // base.OnPaintBackground(e);
-
             var g = e.Graphics;
-            // 让缩放更顺滑
             g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
             g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
             g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
@@ -195,27 +297,22 @@ namespace MpvNet.Windows
 
             int w = this.ClientSize.Width;
             int h = this.ClientSize.Height;
-
             if (w <= 0 || h <= 0) return;
 
             if (App.Settings.Enable3DMode)
             {
-                // 左半
                 Rectangle leftRect = new Rectangle(0, 0, w / 2, h);
-                g.DrawImage(bg, leftRect);
-
-                // 右半：用 (w - w/2) 保证总宽度=整窗宽，避免 1px 缝
                 Rectangle rightRect = new Rectangle(w / 2, 0, w - w / 2, h);
+                g.DrawImage(bg, leftRect);
                 g.DrawImage(bg, rightRect);
             }
             else
             {
-                // 普通模式：整幅拉伸铺满（会随窗口缩放）
                 g.DrawImage(bg, new Rectangle(0, 0, w, h));
             }
         }
 
-        // 自定义事件：文件拖入
+        // 拖入
         public event EventHandler<string[]>? FileDropped;
         private void HHZMainPage_DragEnter(object sender, DragEventArgs e)
         {
@@ -230,7 +327,7 @@ namespace MpvNet.Windows
             if (e.Data!.GetDataPresent(DataFormats.FileDrop))
             {
                 var files = (string[])e.Data.GetData(DataFormats.FileDrop)!;
-                FileDropped?.Invoke(this, files); // 触发事件，把文件传出去
+                FileDropped?.Invoke(this, files);
             }
         }
     }

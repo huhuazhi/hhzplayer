@@ -40,7 +40,6 @@
             Size = new System.Drawing.Size(1817, 1131);
             DragDrop += HHZMainPage_DragDrop;
             DragEnter += HHZMainPage_DragEnter;
-            Paint += hhzMainPage_Paint;
             ResumeLayout(false);
         }
 
