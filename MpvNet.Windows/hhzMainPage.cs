@@ -68,7 +68,7 @@ namespace MpvNet.Windows
                 BackColor = Color.Transparent,
                 Font = new Font("Segoe UI", 12f, FontStyle.Regular)
             };
-            string bgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background.png");
+            string bgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background.jpg");
             if (File.Exists(bgPath))
             {
                 bg = new Bitmap(bgPath);

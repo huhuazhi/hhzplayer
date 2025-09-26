@@ -1812,7 +1812,7 @@ public partial class MainForm : Form
             _sSbsSubOffMenuItem.Click += SbsSubOffMenuItem_Click;
         }
 
-        App.Settings.Enable3DMode = true;
+        //App.Settings.Enable3DMode = true;
         _s3DModeSwitchMenuItem.IsChecked = App.Settings.Enable3DMode;
         BeginInvoke(() =>
         {
