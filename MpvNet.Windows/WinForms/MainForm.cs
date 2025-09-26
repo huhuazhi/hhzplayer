@@ -1046,7 +1046,10 @@ public partial class MainForm : Form
                             System.Windows.Application.Current.Dispatcher.Invoke(
                                 DispatcherPriority.Background, new Action(delegate { }));
                             if (!string.IsNullOrEmpty(tempBinding.Command))
-                                Player.Command(tempBinding.Command);                
+                            {
+                                Player.Command(tempBinding.Command);          //通过向libmpv发送“script-message-to mpvnet open-files”来触发打开播放文件           
+                                //Player.LoadFiles(new string[] { @"D:\Movies\3D\Avatar.The.Way.Of.Water.2022.2160p.3D.Half-SBS.Ai-Upscaled.HEVC.DDP7.1-90fps-Chs-Cht-Eng-HUHUAZHI.mkv" }, true, false); //通过调用LoadFiles函数来触发打开播放文件                                
+                            }
                         });
                     }
                     catch (Exception ex) {
@@ -1735,7 +1738,7 @@ public partial class MainForm : Form
         {
             _SbsSubMemuItem = new MenuItem
             {
-                Header = "双目字幕",
+                Header = "3D字幕",
                 IsCheckable = false,
             };
         }
@@ -1756,7 +1759,7 @@ public partial class MainForm : Form
         {
             _sSbsSubOnMenuItem = new MenuItem
             {
-                Header = "开",
+                Header = "开-双眼字幕",
                 IsCheckable = true,
             };
             _sSbsSubOnMenuItem.Click += SbsSubOnMemuItem_Click;
@@ -1766,7 +1769,7 @@ public partial class MainForm : Form
         {
             _sSbsSubOffMenuItem = new MenuItem
             {
-                Header="关",
+                Header="关-复制右眼",
                 IsCheckable=true,
             };
             _sSbsSubOffMenuItem.Click += SbsSubOffMenuItem_Click;
