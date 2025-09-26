@@ -599,7 +599,7 @@ public partial class MainForm : Form
 
         var isChecked = (sender as MenuItem)?.IsChecked == true;
         
-        App.Settings.Enable3DMode = isChecked;
+        App.Settings.Enable3DMode = isChecked;        
 
         //if (!isChecked)
         //{
@@ -1812,6 +1812,7 @@ public partial class MainForm : Form
             _sSbsSubOffMenuItem.Click += SbsSubOffMenuItem_Click;
         }
 
+        App.Settings.Enable3DMode = true;
         _s3DModeSwitchMenuItem.IsChecked = App.Settings.Enable3DMode;
         BeginInvoke(() =>
         {

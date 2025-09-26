@@ -20,12 +20,13 @@ namespace MpvNet.Windows
         {
             InitializeComponent();
             this.DoubleBuffered = true;     // 开启双缓冲，避免闪烁
-            //强制整个 UserControl 双缓冲（推荐）
+                                            //强制整个 UserControl 双缓冲（推荐）
             this.SetStyle(ControlStyles.AllPaintingInWmPaint |
-                  ControlStyles.UserPaint |
-                  ControlStyles.OptimizedDoubleBuffer, true);
+                              ControlStyles.UserPaint |
+                              ControlStyles.OptimizedDoubleBuffer |
+                              ControlStyles.ResizeRedraw, true);
             this.UpdateStyles();
-            this.BackColor = Color.Transparent;   // 默认背景黑色
+            this.BackColor = Color.Black;   // 默认背景黑色
             this.Dock = DockStyle.Fill;     // 默认填充父容器
 
             // 左眼 LOGO
@@ -67,7 +68,11 @@ namespace MpvNet.Windows
                 BackColor = Color.Transparent,
                 Font = new Font("Segoe UI", 12f, FontStyle.Regular)
             };
-
+            string bgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background.png");
+            if (File.Exists(bgPath))
+            {
+                bg = new Bitmap(bgPath);
+            }
             this.Controls.Add(_logoPicLeft);
             this.Controls.Add(_logoPicRight);
             this.Controls.Add(_hintLabelLeft);
@@ -165,37 +170,47 @@ namespace MpvNet.Windows
             //    e.Graphics.DrawString(text, this.Font, brush, this.ClientRectangle, sf);
             //}
         }
+
+        Bitmap bg;
+
+        // 2) 背景绘制：按你给的代码“简单改”——去掉 base 调用 + 调整右半宽度避免1px缝
         protected override void OnPaintBackground(PaintEventArgs e)
         {
-            base.OnPaintBackground(e);
+            // 不调用 base，避免 Transparent 时父控件接管背景导致不刷新
+            // base.OnPaintBackground(e);
 
-            string bgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background.png");
-            if (!File.Exists(bgPath))
+            var g = e.Graphics;
+            // 让缩放更顺滑
+            g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+            if (bg == null)
             {
-                e.Graphics.Clear(Color.Black); // 没有背景就填充黑色
+                g.Clear(Color.Black);
                 return;
             }
 
-            using (var bg = new Bitmap(bgPath))
+            int w = this.ClientSize.Width;
+            int h = this.ClientSize.Height;
+
+            if (w <= 0 || h <= 0) return;
+
+            if (App.Settings.Enable3DMode)
             {
-                int w = this.ClientSize.Width;
-                int h = this.ClientSize.Height;
+                // 左半
+                Rectangle leftRect = new Rectangle(0, 0, w / 2, h);
+                g.DrawImage(bg, leftRect);
 
-                if (App.Settings.Enable3DMode)
-                {
-                    // 左边一半
-                    Rectangle leftRect = new Rectangle(0, 0, w / 2, h);
-                    e.Graphics.DrawImage(bg, leftRect);
-
-                    // 右边一半
-                    Rectangle rightRect = new Rectangle(w / 2, 0, w / 2, h);
-                    e.Graphics.DrawImage(bg, rightRect);
-                }
-                else
-                {
-                    // 普通模式：整幅铺满
-                    e.Graphics.DrawImage(bg, new Rectangle(0, 0, w, h));
-                }
+                // 右半：用 (w - w/2) 保证总宽度=整窗宽，避免 1px 缝
+                Rectangle rightRect = new Rectangle(w / 2, 0, w - w / 2, h);
+                g.DrawImage(bg, rightRect);
+            }
+            else
+            {
+                // 普通模式：整幅拉伸铺满（会随窗口缩放）
+                g.DrawImage(bg, new Rectangle(0, 0, w, h));
             }
         }
 
