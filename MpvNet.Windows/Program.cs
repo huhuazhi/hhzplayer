@@ -99,7 +99,7 @@ static class Program
             if (ProcessCommandLineArguments())
                 Environment.GetCommandLineArgs();
             else if (App.CommandLine.Contains("--o="))
-            {
+            {                
                 App.AutoLoadFolder = false;
                 Player.Init(IntPtr.Zero, true);
                 CommandLine.ProcessCommandLineArgsPostInit();

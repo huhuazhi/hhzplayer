@@ -9,10 +9,11 @@
 		<AssemblyName>mpvnet</AssemblyName>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>true</UseWindowsForms>
-		<ApplicationIcon>mpv-icon.ico</ApplicationIcon>
 		<FileVersion>7.1.1.4</FileVersion>
 		<AssemblyVersion>7.1.1.4</AssemblyVersion>
 		<InformationalVersion>7.1.1.4</InformationalVersion>
+		<ApplicationIcon>mpv-icon.ico</ApplicationIcon>
+		<PackageIcon>hhzplayer.PNG</PackageIcon>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -45,10 +46,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Update="background.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	  <None Update="libmpv-2.dll">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="MediaInfo.dll">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="mylogo.png">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>

@@ -6,10 +6,8 @@ using MpvNet.MVVM;
 using MpvNet.Windows.UI;
 using MpvNet.Windows.WPF;
 using MpvNet.Windows.WPF.MsgBox;
-using System.Configuration;
 using System.Drawing;
 using System.Globalization;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -19,7 +17,6 @@ using System.Windows.Forms;
 using System.Windows.Threading;
 using static MpvNet.Windows.Help.WinApiHelp;
 using static MpvNet.Windows.Native.WinApi;
-using WpfControls = System.Windows.Controls;
 
 namespace MpvNet.Windows.WinForms;
 
@@ -35,7 +32,6 @@ public partial class MainForm : Form
     Taskbar? _taskbar;
     Point _mouseDownLocation;
     List<Binding>? _confBindings;
-    Rectangle? _rectBackupFor3DMode;
 
     int _lastCursorChanged;
     int _lastCycleFullscreen;
@@ -56,8 +52,8 @@ public partial class MainForm : Form
             if (string.IsNullOrEmpty(value))
                 return;
 
-            if (value.EndsWith("} - mpv"))
-                value = value.Replace("} - mpv", "} - mpv.net");
+            if (value.EndsWith("} - hhz"))
+                value = value.Replace("} - hhz", "} - hhzPlayer");
 
             _title = value;
         }
@@ -99,9 +95,27 @@ public partial class MainForm : Form
     public MainForm()
     {
         InitializeComponent();
+        //Player.SetPropertyString("osc", "no");
+        //InitializeLogoOverlay();
+        //this.DoubleBuffered = true;     // 开启双缓冲，避免闪烁
+        //this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+        //      ControlStyles.UserPaint |
+        //      ControlStyles.OptimizedDoubleBuffer, true);
+        //this.UpdateStyles();
+
+        InitializehhzOverlay();
 
         UpdateDarkMode();
+        //MessageBox.Show("OK");
+        int cmdlineArgLength = Environment.GetCommandLineArgs().Length;
+        if (cmdlineArgLength > 1)
+        {
+            InitializePlayer();
+        }
+    }
 
+    private void InitializePlayer()
+    {
         try
         {
             Instance = this;
@@ -129,7 +143,7 @@ public partial class MainForm : Form
             Player.ObservePropertyBool("border", PropChangeBorder);
             Player.ObservePropertyBool("fullscreen", PropChangeFullscreen);
             Player.ObservePropertyBool("keepaspect-window", value => Player.KeepaspectWindow = value);
-            Player.ObservePropertyBool("ontop", PropChangeOnTop);
+            //Player.ObservePropertyBool("ontop", PropChangeOnTop);
             Player.ObservePropertyBool("title-bar", PropChangeTitleBar);
 
             Player.ObservePropertyString("sid", PropChangeSid);
@@ -198,10 +212,38 @@ public partial class MainForm : Form
             {
                 ClientSize = App.Settings.WindowSize;
             }
+            bPlayerinited = true;
         }
         catch (Exception ex)
         {
             Msg.ShowException(ex);
+        }
+    }
+
+    HHZMainPage hhzMainPage = new HHZMainPage();
+
+    private void InitializehhzOverlay()
+    {
+        hhzMainPage.BringToFront();
+        hhzMainPage.FileDropped += HhzMainPage_FileDropped;
+        Controls.Add(hhzMainPage);
+        //hhzMainPage.MouseUp += (s, e) =>
+        //{
+        //    if (e.Button == MouseButtons.Right)
+        //    {
+        //        ShowCursor();
+        //        UpdateMenu();
+        //        ContextMenu.IsOpen = true;
+        //    }
+        //};
+    }
+
+    private void HhzMainPage_FileDropped(object? sender, string[] files)
+    {
+        if (files != null && files.Length > 0)
+        {
+            InitializePlayer();
+            Player.LoadFiles(files, true, false); // 你项目里的 Player 调用
         }
     }
 
@@ -548,24 +590,8 @@ public partial class MainForm : Form
         if (!ContextMenu.Items.Contains(_3DModeMenuItem))
         {
             ContextMenu.Items.Add(_3DModeMenuItem);
-        }
-
-        //if (!ContextMenu.Items.Contains(_fullScreenUIMemuItem))
-        //{
-        //    ContextMenu.Items.Add(_fullScreenUIMemuItem);
-        //}        
+        }    
     }
-
-    //private void FullScreenUI_Click(object sender, System.Windows.RoutedEventArgs e)
-    //{
-    //    //var isChecked = (sender as WpfControls.MenuItem)?.IsChecked == true;
-    //    //App.IsFullScreenUI = isChecked;
-
-    //    //Player.SetPropertyBool("window-maximized", isChecked);
-    //    //Player.SetPropertyBool("border", !isChecked);
-
-    //    //PropChangeWindowMaximized();
-    //}
 
     private void Enable3DMode_Click(object sender, System.Windows.RoutedEventArgs e)
     {
@@ -898,18 +924,16 @@ public partial class MainForm : Form
 
         if (enabled)
         {
-            {                
-                if (WindowState != FormWindowState.Maximized || FormBorderStyle != FormBorderStyle.None)
+            if (WindowState != FormWindowState.Maximized || FormBorderStyle != FormBorderStyle.None)
+            {
+                FormBorderStyle = FormBorderStyle.None;
+                WindowState = FormWindowState.Maximized;
+                if (_wasMaximized)
                 {
-                    FormBorderStyle = FormBorderStyle.None;
-                    WindowState = FormWindowState.Maximized;
-                    if (_wasMaximized)
-                    {
-                        Rectangle bounds = Screen.FromControl(this).Bounds;
-                        uint SWP_SHOWWINDOW = 0x0040;
-                        IntPtr HWND_TOP = IntPtr.Zero;
-                        SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width, bounds.Height, SWP_SHOWWINDOW);
-                    }
+                    Rectangle bounds = Screen.FromControl(this).Bounds;
+                    uint SWP_SHOWWINDOW = 0x0040;
+                    IntPtr HWND_TOP = IntPtr.Zero;
+                    SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width, bounds.Height, SWP_SHOWWINDOW);
                 }
             }
         }
@@ -936,24 +960,27 @@ public partial class MainForm : Form
     }
 
     Rectangle prebounds;
+    private bool bPlayerinited;
 
-    private void CycleFullScreenFor3D(bool enable3DSubtitle)
+    private void CycleFullScreenFor3D(bool enable3DMode)
     {
         //Player.Fullscreen = enable3DSubtitle;
-        var vw = Player.GetPropertyInt("width");
-        var vh = Player.GetPropertyInt("height");
-        if (enable3DSubtitle)
+        if (enable3DMode)
         {
+            //Player.SetPropertyString("osc", "no");            
             prebounds = this.Bounds;
             Rectangle bounds = Screen.PrimaryScreen.Bounds;
             bounds.Width = bounds.Width * 2;
             if (FormBorderStyle != FormBorderStyle.None) FormBorderStyle = FormBorderStyle.None;
             if (WindowState != FormWindowState.Normal) WindowState = FormWindowState.Normal;
+            //this.Bounds = bounds;
             uint SWP_SHOWWINDOW = 0x0040;
             IntPtr HWND_TOP = IntPtr.Zero;
             SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width, bounds.Height, SWP_SHOWWINDOW);
-            if (vw > 0 && vh > 0)
+            if (Player.Duration.TotalMicroseconds > 0)
             {
+                var vw = Player.GetPropertyInt("width");
+                var vh = Player.GetPropertyInt("height");
                 if (vw / vh <= 2.35) // half-SBS
                 {
                     Player.SetPropertyString("video-aspect-override", (vw * 2).ToString() + ":" + vh.ToString());
@@ -968,21 +995,23 @@ public partial class MainForm : Form
         }
         else
         {
-            Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
+            //Player.SetPropertyString("osc", "yes");
+            if (Player.Duration.TotalMicroseconds > 0)
+            {
+                var vw = Player.GetPropertyInt("width");
+                var vh = Player.GetPropertyInt("height");
+                Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
+            }
             WindowState = FormWindowState.Normal;            
-            this.Bounds = prebounds;
+            //this.Bounds = prebounds;
             FormBorderStyle = Player.Border ? FormBorderStyle.Sizable : FormBorderStyle.None;
-            this.TopMost = false;
-            //uint SWP_SHOWWINDOW = 0x0040;
-            //IntPtr HWND_TOP = IntPtr.Zero;
-            //SetWindowPos(Handle, HWND_TOP, prebounds.X, prebounds.Y, prebounds.Width, prebounds.Height, SWP_SHOWWINDOW);
-            //if (!Player.WasInitialSizeSet)
-            //    SetFormPosAndSize();
-        }        
-
-
-        //if (!KeepSize() /*|| forceToNornam*/ || !enable3DSubtitle)
-        //    SetFormPosAndSize(force: true);
+            //this.TopMost = false;
+            uint SWP_SHOWWINDOW = 0x0040;
+            IntPtr HWND_TOP = IntPtr.Zero;
+            SetWindowPos(Handle, HWND_TOP, prebounds.X, prebounds.Y, prebounds.Width, prebounds.Height, SWP_SHOWWINDOW);
+            if (!Player.WasInitialSizeSet)
+                SetFormPosAndSize();
+        }
     }
 
     public int GetHorizontalLocation(Screen screen)
@@ -1106,14 +1135,14 @@ public partial class MainForm : Form
         string text = Player.Expand(title);
 
         if (text == "(unavailable)" || Player.PlaylistPos == -1)
-            text = "mpv.net";
+            text = "hhzPlayer";
 
         Text = text;
     }
 
     void SaveWindowProperties()
     {
-        //if (!App.Settings.Enable3DSubtitle)
+        if (!App.Settings.Enable3DMode)
         {
             if (WindowState == FormWindowState.Normal && WasShown)
             {
@@ -1156,6 +1185,9 @@ public partial class MainForm : Form
         {
             case 0x0007: // WM_SETFOCUS
             case 0x0008: // WM_KILLFOCUS
+            //case 0x0014: // WM_ERASEBKGND
+            //    m.Result = IntPtr.Zero;
+            //    break;
             case 0x0021: // WM_MOUSEACTIVATE
             case 0x0100: // WM_KEYDOWN
             case 0x0101: // WM_KEYUP
@@ -1284,7 +1316,7 @@ public partial class MainForm : Form
                     SnapManager.OnSizeAndEnterSizeMove(this);
                 break;
             case 0x214: // WM_SIZING
-                if (/*Player.KeepaspectWindow*/false)//解除窗体的尺寸比例限制
+                if (Player.KeepaspectWindow)//解除窗体的尺寸比例限制
                 {
                     RECT rc = Marshal.PtrToStructure<RECT>(m.LParam);
                     RECT r = rc;
@@ -1446,7 +1478,7 @@ public partial class MainForm : Form
         else if ((Environment.TickCount - _lastCursorChanged > _cursorAutohide) &&
             ClientRectangle.Contains(PointToClient(MousePosition)) &&
             ActiveForm == this && !ContextMenu.IsVisible && !IsMouseInOsc())
-
+            if (Player.Duration.TotalMilliseconds>0)
             HideCursor();
     }
 
@@ -1558,7 +1590,7 @@ public partial class MainForm : Form
         Player.Border = enabled;
 
         BeginInvoke(() => {
-            if (!IsFullscreen)
+            if (!IsFullscreen && !App.Settings.Enable3DMode)
             {
                 if (Player.Border && FormBorderStyle == FormBorderStyle.None)
                     FormBorderStyle = FormBorderStyle.Sizable;
@@ -1612,6 +1644,11 @@ public partial class MainForm : Form
     void Player_FileLoaded()
     {
         BeginInvoke(() => {
+            if (Player.Duration.TotalMilliseconds > 0)
+            {
+                hhzMainPage.Visible = false;
+                Player.SetPropertyString("osc", "yes");
+            }
             if (App.Settings.Enable3DMode)
             {
                 float w = Player.GetPropertyInt("width");
@@ -1775,7 +1812,6 @@ public partial class MainForm : Form
             _sSbsSubOffMenuItem.Click += SbsSubOffMenuItem_Click;
         }
 
-        //_fullScreenUIMemuItem.IsChecked = App.IsFullScreenUI;
         _s3DModeSwitchMenuItem.IsChecked = App.Settings.Enable3DMode;
         BeginInvoke(() =>
         {
@@ -1783,10 +1819,6 @@ public partial class MainForm : Form
             {
                 Enable3DMode_Click(_s3DModeSwitchMenuItem, null);
             }
-            //if (App.IsFullScreenUI)
-            //{
-            //    FullScreenUI_Click(_fullScreenUIMemuItem, null);
-            //}
         });
     }
 
@@ -1799,7 +1831,15 @@ public partial class MainForm : Form
     protected override void OnShown(EventArgs e)
     {
         base.OnShown(e);
-
+        //if (App.Settings.Enable3DMode)
+        //{
+        //    Player.SetPropertyString("osc", "no");
+        //}
+        //else
+        //{
+        //    Player.SetPropertyString("osc", "yes");
+        //}
+        //InitializePlayer();
         if (WindowState == FormWindowState.Maximized)
             Player.SetPropertyBool("window-maximized", true);
 
@@ -1817,43 +1857,48 @@ public partial class MainForm : Form
 
     void ContextMenu_Closed(object sender, System.Windows.RoutedEventArgs e) => MenuAutoResetEvent.Set();
 
+
+
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-
-        //if (!_blockedOnSizedSaveProperty)
+        if (Player.Duration.TotalMilliseconds > 0)
         {
-            SaveWindowProperties();
-        }
-        
-        if (FormBorderStyle != FormBorderStyle.None)
-        {
-            if (WindowState == FormWindowState.Maximized)
-                _wasMaximized = true;
-            else if (WindowState == FormWindowState.Normal)
-                _wasMaximized = false;
-        }
-
-        if (WasShown)
-        {
-            if (WindowState == FormWindowState.Minimized)
-                Player.SetPropertyBool("window-minimized", true);
-            else if (WindowState == FormWindowState.Normal)
+            if (!_blockedOnSizedSaveProperty)
             {
-                Player.SetPropertyBool("window-maximized", false);
-                Player.SetPropertyBool("window-minimized", false);
+                SaveWindowProperties();
             }
-            else if (WindowState == FormWindowState.Maximized)
-                Player.SetPropertyBool("window-maximized", true);
-        }
 
-        Debug.WriteLine($"OnResize,ClientSize={ClientSize}");
+            if (FormBorderStyle != FormBorderStyle.None)
+            {
+                if (WindowState == FormWindowState.Maximized)
+                    _wasMaximized = true;
+                else if (WindowState == FormWindowState.Normal)
+                    _wasMaximized = false;
+            }
+
+            if (WasShown)
+            {
+                if (WindowState == FormWindowState.Minimized)
+                    Player.SetPropertyBool("window-minimized", true);
+                else if (WindowState == FormWindowState.Normal)
+                {
+                    Player.SetPropertyBool("window-maximized", false);
+                    Player.SetPropertyBool("window-minimized", false);
+                }
+                else if (WindowState == FormWindowState.Maximized)
+                    Player.SetPropertyBool("window-maximized", true);
+            }
+            Debug.WriteLine($"OnResize,ClientSize={ClientSize}");
+        }
+        //Player.SetPropertyString("osc", "no");
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         base.OnFormClosing(e);
-
+        if (Player == null || !bPlayerinited)
+            return;
         if (Player.IsQuitNeeded)
             Player.CommandV("quit");
 
@@ -1891,25 +1936,25 @@ public partial class MainForm : Form
         SaveWindowProperties();
     }
 
-    protected override void OnDragEnter(DragEventArgs e)
-    {
-        base.OnDragEnter(e);
+    //protected override void OnDragEnter(DragEventArgs e)
+    //{
+    //    base.OnDragEnter(e);
 
-        if (e.Data!.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.Text))
-            e.Effect = DragDropEffects.Copy;
-    }
+    //    if (e.Data!.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.Text))
+    //        e.Effect = DragDropEffects.Copy;
+    //}
 
-    protected override void OnDragDrop(DragEventArgs e)
-    {
-        base.OnDragDrop(e);
+    //protected override void OnDragDrop(DragEventArgs e)
+    //{
+    //    base.OnDragDrop(e);
 
-        bool append = ModifierKeys == Keys.Shift;
+    //    bool append = ModifierKeys == Keys.Shift;
 
-        if (e.Data!.GetDataPresent(DataFormats.FileDrop))
-            Player.LoadFiles(e.Data.GetData(DataFormats.FileDrop) as string[], true, append);
-        else if (e.Data.GetDataPresent(DataFormats.Text))
-            Player.LoadFiles(new[] { e.Data.GetData(DataFormats.Text)!.ToString()! }, true, append);
-    }
+    //    if (e.Data!.GetDataPresent(DataFormats.FileDrop))
+    //        Player.LoadFiles(e.Data.GetData(DataFormats.FileDrop) as string[], true, append);
+    //    else if (e.Data.GetDataPresent(DataFormats.Text))
+    //        Player.LoadFiles(new[] { e.Data.GetData(DataFormats.Text)!.ToString()! }, true, append);
+    //}
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
