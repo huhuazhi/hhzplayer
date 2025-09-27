@@ -334,10 +334,10 @@ namespace MpvNet.Windows
             ScrollOffset += -e.Delta; // 120/格
         }
 
-        // 1) 新增两个字段（在 FileList 成员里）
-        private Point _mouseDownPos;
-        private int _mouseDownIndex = -1;
-        private const int ClickMoveTolerance = 5; // 允许抖动像素
+// 1) 新增两个字段（在 FileList 成员里）
+private Point _mouseDownPos;
+private int _mouseDownIndex = -1;
+private const int ClickMoveTolerance = 5; // 允许抖动像素
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);

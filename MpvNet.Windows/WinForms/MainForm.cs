@@ -119,7 +119,6 @@ public partial class MainForm : Form
         try
         {
             Instance = this;
-
             Player.FileLoaded += Player_FileLoaded;
             Player.Pause += Player_Pause;
             Player.PlaylistPosChanged += Player_PlaylistPosChanged;
@@ -247,6 +246,18 @@ public partial class MainForm : Form
             //App.Settings.Enable3DMode = true;
             InitializePlayer();
             Player.LoadFiles(new[] { path }, true, false);
+            //System.Windows.Forms.Panel overlayPanel = new System.Windows.Forms.Panel
+            //{
+            //    Parent = this,
+            //    Dock = DockStyle.Fill,
+            //    BackColor = Color.Transparent,
+            //};
+            //Player.SetPropertyInt("wid", overlayPanel.Handle.ToInt32());
+            //System.Windows.Forms.Button button1 = new System.Windows.Forms.Button();
+            //button1.Bounds = new Rectangle(37, 37, 190, 105);
+            //Controls.Add(overlayPanel);
+            //Controls.Add(button1);
+            //button1.BringToFront();            
         }
     }
 
@@ -980,7 +991,7 @@ public partial class MainForm : Form
         //Player.Fullscreen = enable3DSubtitle;
         if (enable3DMode)
         {
-            //Player.SetPropertyString("osc", "no");            
+            //Player.SetPropertyString("osc", "no");
             prebounds = this.Bounds;
             Rectangle bounds = Screen.PrimaryScreen.Bounds;
             bounds.Width = bounds.Width * 2;
@@ -1278,7 +1289,6 @@ public partial class MainForm : Form
                     Point pos = PointToClient(Cursor.Position);
                     Player.Command($"mouse {pos.X} {pos.Y}");
                 }
-
                 if (IsCursorPosDifferent(_lastCursorPosition))
                     ShowCursor();
                 break;
