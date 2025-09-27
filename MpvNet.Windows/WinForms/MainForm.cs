@@ -208,7 +208,7 @@ public partial class MainForm : Form
                 WindowState = FormWindowState.Minimized;
             }
 
-            if (App.StartSize == "always" && App.Settings.WindowSize != Size.Empty)
+            if (!App.Settings.Enable3DMode && App.StartSize == "always" && App.Settings.WindowSize != Size.Empty)
             {
                 ClientSize = App.Settings.WindowSize;
             }
@@ -226,6 +226,7 @@ public partial class MainForm : Form
     {
         hhzMainPage.BringToFront();
         hhzMainPage.FileDropped += HhzMainPage_FileDropped;
+        hhzMainPage.FileOpened += HhzMainPage_FileOpened;
         Controls.Add(hhzMainPage);
         //hhzMainPage.MouseUp += (s, e) =>
         //{
@@ -238,10 +239,22 @@ public partial class MainForm : Form
         //};
     }
 
+    private void HhzMainPage_FileOpened(object? sender, string path)
+    {
+        if (path.Length > 0)
+        {
+            hhzMainPage.Visible = false;
+            //App.Settings.Enable3DMode = true;
+            InitializePlayer();
+            Player.LoadFiles(new[] { path }, true, false);
+        }
+    }
+
     private void HhzMainPage_FileDropped(object? sender, string[] files)
     {
         if (files != null && files.Length > 0)
         {
+            hhzMainPage.Visible = false;
             InitializePlayer();
             Player.LoadFiles(files, true, false); // 你项目里的 Player 调用
         }
@@ -1497,7 +1510,7 @@ public partial class MainForm : Form
             return;
 
         BeginInvoke(() => {
-            if (Player.VideoSize.Width != 0 && Player.VideoSize.Height != 0)
+            if (!App.Settings.Enable3DMode && Player.VideoSize.Width != 0 && Player.VideoSize.Height != 0)
             SetSize(
                 (int)(Player.VideoSize.Width * scale),
                 (int)Math.Floor(Player.VideoSize.Height * scale),

@@ -11,22 +11,39 @@ namespace MpvNet.Windows
     /// <summary>
     /// 透明背景自绘磁盘列表：上部圆角标题栏 + 两排文字 + 进度条 + 系统图标
     /// 不显示滚动条，按住鼠标拖动。标题栏固定并遮挡上滚内容。
-    /// 暴露滚动/选中/悬浮同步接口与事件。
+    /// 暴露滚动/选中/悬浮同步接口与事件。支持整体四角圆角（上/下半径可独立设置）。
     /// </summary>
     public sealed class DiskList : ScrollableControl
     {
         // —— 标题栏 —— 
         public bool ShowHeader { get; set; } = true;
         public string HeaderText { get; set; } = "此电脑";
+
         private int _headerHeight = 50;
         public int HeaderHeight
         {
             get => _headerHeight;
             set { _headerHeight = Math.Max(20, value); Invalidate(); ClampScroll(); }
         }
+
         public Color HeaderBackColor { get; set; } = Color.FromArgb(64, 80, 140, 255); // 半透明蓝
         public Padding HeaderPadding { get; set; } = new Padding(12, 6, 12, 6);
-        public int HeaderCornerRadius { get; set; } = 10;
+
+        /// <summary>顶部圆角半径（影响控件 Region 以及标题栏顶部的圆角视觉）</summary>
+        public int CornerRadiusTop
+        {
+            get => _cornerRadiusTop;
+            set { _cornerRadiusTop = Math.Max(0, value); UpdateRegion(); Invalidate(); }
+        }
+        private int _cornerRadiusTop = 10;
+
+        /// <summary>底部圆角半径（影响控件 Region 的左下/右下角）</summary>
+        public int CornerRadiusBottom
+        {
+            get => _cornerRadiusBottom;
+            set { _cornerRadiusBottom = Math.Max(0, value); UpdateRegion(); Invalidate(); }
+        }
+        private int _cornerRadiusBottom = 10;
 
         // —— 行高/行距 —— 
         private int _rowHeight = 68;
@@ -35,6 +52,7 @@ namespace MpvNet.Windows
             get => _rowHeight;
             set { _rowHeight = Math.Max(24, value); RecalcContent(); Invalidate(); }
         }
+
         private int _rowSpacing = 20;
         public int RowSpacing
         {
@@ -161,13 +179,18 @@ namespace MpvNet.Windows
             MouseWheel += DiskList_MouseWheel;
         }
 
-        // —— 真透明 —— 
+        // —— 真透明：把父控件在本区域的背景拷贝过来 —— 
         protected override void OnPaintBackground(PaintEventArgs e)
         {
             if (Parent == null || _paintingBack) return;
             try
             {
                 _paintingBack = true;
+
+                // 确保背景绘制遵循控件的圆角 Region（如果已设置）
+                if (this.Region != null)
+                    e.Graphics.SetClip(this.Region, CombineMode.Replace);
+
                 Rectangle rectInParent = new Rectangle(Left, Top, Width, Height);
                 var g = e.Graphics;
                 var state = g.Save();
@@ -187,13 +210,17 @@ namespace MpvNet.Windows
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
+            // 整体遵循圆角 Region（下角也会是圆的）
+            if (this.Region != null)
+                g.SetClip(this.Region, CombineMode.Replace);
+
             int viewportTop = ShowHeader ? HeaderHeight : 0;
 
-            // 标题栏（上部圆角）
+            // —— 标题栏（上部圆角） —— 
             if (ShowHeader)
             {
                 var headerRect = new Rectangle(0, 0, ClientSize.Width, HeaderHeight);
-                using (var path = CreateTopRoundedRect(headerRect, HeaderCornerRadius))
+                using (var path = CreateTopRoundedRect(headerRect, CornerRadiusTop))
                 using (var b = new SolidBrush(HeaderBackColor))
                     g.FillPath(b, path);
 
@@ -206,63 +233,91 @@ namespace MpvNet.Windows
                 g.DrawString(HeaderText, fTitle, brTitle, textRect, sf);
             }
 
-            // 仅在标题栏以下绘制列表（被遮挡效果）
+            // —— 列表内容（标题栏以下） —— 
             var clipRect = new Rectangle(0, viewportTop, ClientSize.Width, Math.Max(0, ClientSize.Height - viewportTop));
-            Region oldClip = g.Clip;
-            g.SetClip(clipRect, CombineMode.Replace);
-
-            int y = viewportTop + _scrollY;
-
-            using var f1 = MakeFont("Segoe UI Semibold", 12f, FontStyle.Regular, "Segoe UI", FontStyle.Bold);
-            using var f2 = new Font("Segoe UI", 9.5f, FontStyle.Regular);
-            using var br1 = new SolidBrush(Color.White);
-            using var br2 = new SolidBrush(Color.FromArgb(215, 220, 230));
-            using var barBg = new SolidBrush(Color.FromArgb(80, 110, 120, 140));
-            using var barFg = new SolidBrush(Color.FromArgb(200, 120, 180, 255));
-            using var hover = new SolidBrush(Color.FromArgb(22, 120, 170, 255));
-            using var sel = new SolidBrush(Color.FromArgb(40, 120, 170, 255));
-
-            int contentWidth = ClientSize.Width - 1;
-
-            for (int i = 0; i < _items.Count; i++)
+            Region oldClip = g.Clip; // 已包含 Region，另行与列表区域相交
+            using (var listClip = new Region(clipRect))
             {
-                var it = _items[i];
-                var rowRect = new Rectangle(0, y, contentWidth, RowHeight);
+                listClip.Intersect(g.Clip);
+                g.Clip = listClip;
 
-                if (rowRect.Bottom >= viewportTop && rowRect.Top <= ClientSize.Height)
+                // 深蓝半透明背景（列表区域）
+                using (var listBg = new SolidBrush(Color.FromArgb(70, 50, 50, 50))) // A 越大越不透明
+                    g.FillRectangle(listBg, clipRect);
+
+                int y = viewportTop + _scrollY;
+
+                using var f1 = MakeFont("Segoe UI Semibold", 12f, FontStyle.Regular, "Segoe UI", FontStyle.Bold);
+                using var f2 = new Font("Segoe UI", 9.5f, FontStyle.Regular);
+                using var br1 = new SolidBrush(Color.White);
+                using var br2 = new SolidBrush(Color.FromArgb(215, 220, 230));
+                using var barBg = new SolidBrush(Color.FromArgb(80, 110, 120, 140));
+                using var barFg = new SolidBrush(Color.FromArgb(200, 120, 180, 255));
+                using var hover = new SolidBrush(Color.FromArgb(22, 120, 170, 255));
+                using var sel = new SolidBrush(Color.FromArgb(40, 120, 170, 255));
+
+                int contentWidth = ClientSize.Width - 1;
+
+                for (int i = 0; i < _items.Count; i++)
                 {
-                    Rectangle overlay = rowRect;
-                    overlay.Y = Math.Max(viewportTop, overlay.Y - 2);
-                    overlay.Height = Math.Min(ClientSize.Height - overlay.Y, overlay.Height + 4);
-                    if (i == _selectedIndex) g.FillRectangle(sel, overlay);
-                    else if (i == _hotIndex) g.FillRectangle(hover, overlay);
+                    var it = _items[i];
+                    var rowRect = new Rectangle(0, y, contentWidth, RowHeight);
 
-                    int icoSize = 48;
-                    var icoRect = new Rectangle(rowRect.X + 12, rowRect.Y + (RowHeight - icoSize) / 2, icoSize, icoSize);
-                    var icon = GetDriveIcon(it.Root);
-                    if (icon != null) g.DrawIcon(icon, icoRect);
+                    if (rowRect.Bottom >= viewportTop && rowRect.Top <= ClientSize.Height)
+                    {
+                        Rectangle overlay = rowRect;
+                        overlay.Y = Math.Max(viewportTop, overlay.Y - 2);
+                        overlay.Height = Math.Min(ClientSize.Height - overlay.Y, overlay.Height + 4);
+                        if (i == _selectedIndex) g.FillRectangle(sel, overlay);
+                        else if (i == _hotIndex) g.FillRectangle(hover, overlay);
 
-                    int textX = icoRect.Right + 10;
-                    int textW = rowRect.Right - 12 - textX;
-                    var fmt = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
+                        int icoSize = 48;
+                        var icoRect = new Rectangle(rowRect.X + 12, rowRect.Y + (RowHeight - icoSize) / 2, icoSize, icoSize);
+                        var icon = GetDriveIcon(it.Root);
+                        if (icon != null) g.DrawIcon(icon, icoRect);
 
-                    float line1Top = rowRect.Y + 6;
-                    g.DrawString(it.Line1, f1, br1, new RectangleF(textX, line1Top, textW, f1.Height), fmt);
+                        int textX = icoRect.Right + 10;
+                        int textW = rowRect.Right - 12 - textX;
+                        var fmt = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
 
-                    float line2Top = line1Top + f1.Height + 2;
-                    g.DrawString(it.Line2, f2, br2, new RectangleF(textX, line2Top, textW, f2.Height), fmt);
+                        float line1Top = rowRect.Y + 6;
+                        g.DrawString(it.Line1, f1, br1, new RectangleF(textX, line1Top, textW, f1.Height), fmt);
 
-                    int barLeft = textX;
-                    int barRight = rowRect.Right - 12;
-                    int barY = rowRect.Bottom - 20;
-                    g.FillRectangle(barBg, barLeft, barY, barRight - barLeft, 2);
-                    g.FillRectangle(barFg, barLeft, barY, (int)((barRight - barLeft) * it.Usage01), 2);
+                        float line2Top = line1Top + f1.Height + 2;
+                        g.DrawString(it.Line2, f2, br2, new RectangleF(textX, line2Top, textW, f2.Height), fmt);
+
+                        int barLeft = textX;
+                        int barRight = rowRect.Right - 12;
+                        int barY = rowRect.Bottom - 20;
+                        g.FillRectangle(barBg, barLeft, barY, barRight - barLeft, 2);
+                        g.FillRectangle(barFg, barLeft, barY, (int)((barRight - barLeft) * it.Usage01), 2);
+                    }
+
+                    y += RowHeight + RowSpacing;
                 }
-
-                y += RowHeight + RowSpacing;
             }
 
             g.Clip = oldClip;
+
+            // —— 最后：整体蓝色圆角边框 —— 
+            // 1px 边框；支持高 DPI 稍微加粗
+            float borderWidth = Math.Max(1f, this.DeviceDpi / 120f);
+            using (var pen = new Pen(Color.FromArgb(180, 80, 140, 255), borderWidth)) // 半透明蓝
+            {
+                pen.Alignment = System.Drawing.Drawing2D.PenAlignment.Inset; // 让边线尽量画在内部
+                var rect = new Rectangle(0, 0, ClientSize.Width - 1, ClientSize.Height - 1);
+
+                using (var path = CreateRoundedRectPath(
+                    rect,
+                    CornerRadiusTop,   // 左上
+                    CornerRadiusTop,   // 右上
+                    CornerRadiusBottom,// 右下
+                    CornerRadiusBottom // 左下
+                ))
+                {
+                    e.Graphics.DrawPath(pen, path);
+                }
+            }
         }
 
         // —— 输入/滚动 —— 
@@ -383,8 +438,27 @@ namespace MpvNet.Windows
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
+            // 更新控件圆角区域（包括底部两个角）
+            UpdateRegion();
             ClampScroll();
             Invalidate();
+        }
+
+        private void UpdateRegion()
+        {
+            if (ClientSize.Width <= 0 || ClientSize.Height <= 0)
+            {
+                this.Region = null;
+                return;
+            }
+
+            using (var path = CreateRoundedRectPath(new Rectangle(Point.Empty, ClientSize),
+                                                    CornerRadiusTop, CornerRadiusTop,
+                                                    CornerRadiusBottom, CornerRadiusBottom))
+            {
+                // 设置 Region 使控件四角都遵循圆角，命中与绘制统一
+                this.Region = new Region(path);
+            }
         }
 
         private void ClampScroll()
@@ -472,19 +546,72 @@ namespace MpvNet.Windows
             return _iconCache[driveRoot];
         }
 
-        // —— 上部圆角路径 —— 
-        private static GraphicsPath CreateTopRoundedRect(Rectangle rect, int radius)
+        // —— 圆角路径：仅顶部圆角（用于标题栏绘制）—— 
+        private static GraphicsPath CreateTopRoundedRect(Rectangle rect, int radiusTop)
         {
             var path = new GraphicsPath();
-            if (radius <= 0) { path.AddRectangle(rect); path.CloseFigure(); return path; }
-            int r = Math.Min(radius, Math.Min(rect.Width / 2, rect.Height));
+            int r = Math.Max(0, Math.Min(radiusTop, Math.Min(rect.Width / 2, rect.Height)));
             int d = r * 2;
+
+            if (r == 0)
+            {
+                path.AddRectangle(rect);
+                path.CloseFigure();
+                return path;
+            }
+
+            // 左上角
             path.AddArc(rect.X, rect.Y, d, d, 180, 90);
+            // 上边
             path.AddLine(rect.X + r, rect.Y, rect.Right - r, rect.Y);
+            // 右上角
             path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
+            // 右边到下边直角
             path.AddLine(rect.Right, rect.Y + r, rect.Right, rect.Bottom);
             path.AddLine(rect.Right, rect.Bottom, rect.X, rect.Bottom);
             path.AddLine(rect.X, rect.Bottom, rect.X, rect.Y + r);
+            path.CloseFigure();
+            return path;
+        }
+
+        /// <summary>四角可各自设置半径的圆角路径（用于控件 Region）。</summary>
+        private static GraphicsPath CreateRoundedRectPath(Rectangle rect, int radiusTL, int radiusTR, int radiusBR, int radiusBL)
+        {
+            var path = new GraphicsPath();
+
+            int rTL = Math.Max(0, Math.Min(radiusTL, Math.Min(rect.Width / 2, rect.Height / 2)));
+            int rTR = Math.Max(0, Math.Min(radiusTR, Math.Min(rect.Width / 2, rect.Height / 2)));
+            int rBR = Math.Max(0, Math.Min(radiusBR, Math.Min(rect.Width / 2, rect.Height / 2)));
+            int rBL = Math.Max(0, Math.Min(radiusBL, Math.Min(rect.Width / 2, rect.Height / 2)));
+
+            // 起点：左上角弧
+            if (rTL > 0) path.AddArc(rect.X, rect.Y, rTL * 2, rTL * 2, 180, 90);
+            else path.AddLine(rect.X, rect.Y, rect.X, rect.Y);
+
+            // 上边
+            path.AddLine(rect.X + rTL, rect.Y, rect.Right - rTR, rect.Y);
+
+            // 右上角弧
+            if (rTR > 0) path.AddArc(rect.Right - rTR * 2, rect.Y, rTR * 2, rTR * 2, 270, 90);
+            else path.AddLine(rect.Right, rect.Y, rect.Right, rect.Y);
+
+            // 右边
+            path.AddLine(rect.Right, rect.Y + rTR, rect.Right, rect.Bottom - rBR);
+
+            // 右下角弧
+            if (rBR > 0) path.AddArc(rect.Right - rBR * 2, rect.Bottom - rBR * 2, rBR * 2, rBR * 2, 0, 90);
+            else path.AddLine(rect.Right, rect.Bottom, rect.Right, rect.Bottom);
+
+            // 下边
+            path.AddLine(rect.Right - rBR, rect.Bottom, rect.X + rBL, rect.Bottom);
+
+            // 左下角弧
+            if (rBL > 0) path.AddArc(rect.X, rect.Bottom - rBL * 2, rBL * 2, rBL * 2, 90, 90);
+            else path.AddLine(rect.X, rect.Bottom, rect.X, rect.Bottom);
+
+            // 左边
+            path.AddLine(rect.X, rect.Bottom - rBL, rect.X, rect.Y + rTL);
+
             path.CloseFigure();
             return path;
         }

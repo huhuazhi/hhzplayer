@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -15,9 +16,14 @@ namespace MpvNet.Windows
         private DiskList _diskListLeft;
         private DiskList _diskListRight;
 
+        // 两个文件列表（左右各一）
+        private FileList _fileListLeft;
+        private FileList _fileListRight;
+
         // 防止事件互相递归触发
-        private bool _syncing = false;        // 滚动/选中
-        private bool _syncingHover = false;   // 悬浮
+        private bool _syncing = false;        // 磁盘列表滚动/选中
+        private bool _syncingHover = false;   // 磁盘列表悬浮
+        private bool _fileSyncing = false;    // 文件列表目录联动
 
         // 蓝色框的相对位置（按你的背景测）
         private const float FRAME_LEFT = 0.0255f;
@@ -26,6 +32,7 @@ namespace MpvNet.Windows
         private const float FRAME_HEIGHT = 0.400f;
 
         private Bitmap bg;
+        private float _fileListBottomGapRatio = 0.04f; // FileList 底边距占父控件高度的比例（比如 4%）
 
         public HHZMainPage()
         {
@@ -41,7 +48,7 @@ namespace MpvNet.Windows
             this.Dock = DockStyle.Fill;
 
             // 背景图
-            string bgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background.jpg");
+            string bgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background1.jpg");
             if (File.Exists(bgPath))
                 bg = new Bitmap(bgPath);
 
@@ -55,7 +62,6 @@ namespace MpvNet.Windows
                 BackColor = Color.Transparent,
                 Visible = true
             };
-
             _logoPicRight = new PictureBox
             {
                 SizeMode = PictureBoxSizeMode.Zoom,
@@ -65,7 +71,6 @@ namespace MpvNet.Windows
                 BackColor = Color.Transparent,
                 Visible = false
             };
-
             _hintLabelLeft = new Label
             {
                 AutoSize = true,
@@ -74,7 +79,6 @@ namespace MpvNet.Windows
                 BackColor = Color.Transparent,
                 Font = new Font("Segoe UI", 12f, FontStyle.Regular)
             };
-
             _hintLabelRight = new Label
             {
                 AutoSize = true,
@@ -90,28 +94,13 @@ namespace MpvNet.Windows
             this.Controls.Add(_hintLabelRight);
 
             // 两个磁盘列表
-            _diskListLeft = new DiskList
-            {
-                RowHeight = 110,
-                RowSpacing = 5,
-                ShowNotReady = true
-            };
-            _diskListLeft.DiskSelected += (_, root) => Console.WriteLine("[Left] 选择磁盘：" + root);
-
-            _diskListRight = new DiskList
-            {
-                RowHeight = 110,
-                RowSpacing = 5,
-                ShowNotReady = true
-            };
-            _diskListRight.DiskSelected += (_, root) => Console.WriteLine("[Right] 选择磁盘：" + root);
+            _diskListLeft = new DiskList { RowHeight = 110, RowSpacing = 5, ShowNotReady = true };
+            _diskListRight = new DiskList { RowHeight = 110, RowSpacing = 5, ShowNotReady = true };
 
             this.Controls.Add(_diskListLeft);
             this.Controls.Add(_diskListRight);
-            _diskListLeft.BringToFront();
-            _diskListRight.BringToFront();
 
-            // —— 双向同步：滚动 —— 
+            // —— 磁盘：双向同步（滚动）—— 
             _diskListLeft.ViewportOffsetChanged += (_, e) =>
             {
                 if (_syncing) return;
@@ -125,7 +114,7 @@ namespace MpvNet.Windows
                 finally { _syncing = false; }
             };
 
-            // —— 双向同步：选中 —— 
+            // —— 磁盘：双向同步（选中）—— 
             _diskListLeft.SelectionChanged += (_, e) =>
             {
                 if (_syncing) return;
@@ -139,7 +128,7 @@ namespace MpvNet.Windows
                 finally { _syncing = false; }
             };
 
-            // —— 双向同步：悬浮（hover 高亮）——
+            // —— 磁盘：双向同步（悬浮）——
             _diskListLeft.HoverChanged += (_, e) =>
             {
                 if (_syncingHover) return;
@@ -153,14 +142,67 @@ namespace MpvNet.Windows
                 finally { _syncingHover = false; }
             };
 
+            // —— 文件列表（左右各一）——
+            _fileListLeft = new FileList();
+            _fileListRight = new FileList();
+
+            // 任何一边进入目录，都让另一边跟随（防递归）
+            _fileListLeft.DirectoryChanged += (_, path) =>
+            {
+                if (_fileSyncing) return;
+                try { _fileSyncing = true; _fileListRight.NavigateTo(path); }
+                finally { _fileSyncing = false; }
+            };
+            _fileListRight.DirectoryChanged += (_, path) =>
+            {
+                if (_fileSyncing) return;
+                try { _fileSyncing = true; _fileListLeft.NavigateTo(path); }
+                finally { _fileSyncing = false; }
+            };
+
+            // 磁盘选择 → 两边文件列表同时响应
+            _diskListLeft.DiskSelected += (_, root) =>
+            {
+                if (_fileSyncing) return;
+                try { _fileSyncing = true; _fileListLeft.NavigateTo(root); _fileListRight.NavigateTo(root); }
+                finally { _fileSyncing = false; }
+            };
+            _diskListRight.DiskSelected += (_, root) =>
+            {
+                if (_fileSyncing) return;
+                try { _fileSyncing = true; _fileListLeft.NavigateTo(root); _fileListRight.NavigateTo(root); }
+                finally { _fileSyncing = false; }
+            };
+
+            // 文件打开转发到父窗体
+            _fileListLeft.FileOpened += (_, path) => FileOpened?.Invoke(this, path);
+            _fileListRight.FileOpened += (_, path) => FileOpened?.Invoke(this, path);
+
+            // —— 文件列表：hover 联动 —— 
+            _fileListLeft.HoverChanged += (_, e) =>
+            {
+                if (_fileSyncing) return;
+                try { _fileSyncing = true; _fileListRight.SetHotIndex(e.Index, raiseEvent: false); }
+                finally { _fileSyncing = false; }
+            };
+            _fileListRight.HoverChanged += (_, e) =>
+            {
+                if (_fileSyncing) return;
+                try { _fileSyncing = true; _fileListLeft.SetHotIndex(e.Index, raiseEvent: false); }
+                finally { _fileSyncing = false; }
+            };
+
+            this.Controls.Add(_fileListLeft);
+            this.Controls.Add(_fileListRight);
+
             // 初次布局
             this.Resize += (_, __) =>
             {
                 UpdateLogoPosition();
-                UpdateDiskListBounds();
+                UpdateBoundsLayout();
             };
             UpdateLogoPosition();
-            UpdateDiskListBounds();
+            UpdateBoundsLayout();
 
             _diskListLeft.Reload();
             _diskListRight.Reload();
@@ -184,11 +226,13 @@ namespace MpvNet.Windows
                                  Math.Max(10, fh - pad * 2));
         }
 
-        // 根据模式布置一或两个列表
-        private void UpdateDiskListBounds()
+        // 根据模式布置控件
+        private void UpdateBoundsLayout()
         {
             int w = this.ClientSize.Width, h = this.ClientSize.Height;
             if (w <= 0 || h <= 0) return;
+
+            int bottomGap = (int)Math.Round(h * _fileListBottomGapRatio);
 
             if (App.Settings.Enable3DMode)
             {
@@ -198,20 +242,54 @@ namespace MpvNet.Windows
                 _diskListLeft.Bounds = CalcBlueFrame(leftHost);
                 _diskListRight.Bounds = CalcBlueFrame(rightHost);
 
+                // 左：FileList 紧贴左 DiskList 右侧
+                var leftFileRect = new Rectangle(
+                    _diskListLeft.Right + 20,
+                    _diskListLeft.Top,
+                    leftHost.Right - _diskListLeft.Right - 40,
+                    h - _diskListLeft.Top - bottomGap
+                );
+
+                // 右：FileList 紧贴右 DiskList 右侧（右半屏）
+                var rightFileRect = new Rectangle(
+                    _diskListRight.Right + 20,
+                    _diskListRight.Top,
+                    rightHost.Right - _diskListRight.Right - 40,
+                    h - _diskListRight.Top - bottomGap
+                );
+
+                _fileListLeft.Bounds = leftFileRect;
+                _fileListRight.Bounds = rightFileRect;
+
                 _diskListLeft.Visible = true;
                 _diskListRight.Visible = true;
+                _fileListLeft.Visible = true;
+                _fileListRight.Visible = true;
             }
             else
             {
                 var fullHost = new Rectangle(0, 0, w, h);
                 _diskListLeft.Bounds = CalcBlueFrame(fullHost);
-                _diskListLeft.Visible = true;
 
+                var fileRect = new Rectangle(
+                    _diskListLeft.Right + 20,
+                    _diskListLeft.Top,
+                    fullHost.Right - _diskListLeft.Right - 100,
+                    h - _diskListLeft.Top - bottomGap
+                );
+
+                _fileListLeft.Bounds = fileRect;
+
+                _diskListLeft.Visible = true;
                 _diskListRight.Visible = false;
+                _fileListLeft.Visible = true;
+                _fileListRight.Visible = false;
             }
 
             _diskListLeft.Invalidate();
             _diskListRight.Invalidate();
+            _fileListLeft.Invalidate();
+            _fileListRight.Invalidate();
         }
 
         private void UpdateLogoPosition()
@@ -229,9 +307,7 @@ namespace MpvNet.Windows
             _hintLabelLeft.Font = font;
             _hintLabelRight.Font = font;
 
-            int margin = 10;
-            int shift = 10;
-            int offsetX = 50;
+            int margin = 10, shift = 10, offsetX = 50;
 
             if (App.Settings.Enable3DMode)
             {
@@ -330,5 +406,7 @@ namespace MpvNet.Windows
                 FileDropped?.Invoke(this, files);
             }
         }
+
+        public event EventHandler<string> FileOpened;
     }
 }
