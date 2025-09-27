@@ -213,7 +213,7 @@ namespace MpvNet.Windows
 
             int bottomGap = (int)Math.Round(h * _fileListBottomGapRatio);
 
-            if (App.Settings.Enable3DMode)
+            if (b3DMode)
             {
                 var leftHost = new Rectangle(0, 0, w / 2, h);
                 var rightHost = new Rectangle(w / 2, 0, w - w / 2, h);
@@ -275,6 +275,8 @@ namespace MpvNet.Windows
             _fileListRight.Invalidate();
         }
 
+        bool b3DMode = true;
+
         private void UpdateLogoPosition()
         {
             int w = this.ClientSize.Width, h = this.ClientSize.Height;
@@ -290,7 +292,7 @@ namespace MpvNet.Windows
 
             int margin = 10, shift = 10, offsetX = 50;
 
-            if (App.Settings.Enable3DMode)
+            if (b3DMode)
             {
                 int halfWidth = w / 2;
 
@@ -335,7 +337,7 @@ namespace MpvNet.Windows
             int w = this.ClientSize.Width, h = this.ClientSize.Height;
             if (w <= 0 || h <= 0) return;
 
-            if (App.Settings.Enable3DMode)
+            if (b3DMode)
             {
                 g.DrawImage(bg, new Rectangle(0, 0, w / 2, h));
                 g.DrawImage(bg, new Rectangle(w / 2, 0, w - w / 2, h));

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using MpvNet.ExtensionMethod;
 using MpvNet.Help;
 using MpvNet.MVVM;
+using MpvNet.Native;
 using MpvNet.Windows.UI;
 using MpvNet.Windows.WPF;
 using MpvNet.Windows.WPF.MsgBox;
@@ -91,7 +92,6 @@ public partial class MainForm : Form
     /// 是否开启线路A的方法实现3D字幕的命令（在libmpv-2.dll），设置为false的花则使用线路B方法实现，默认libmpv-2.dll是使用线路A的
     /// </summary>
     const string CMD_sub_stereo_duplicate="sub-stereo-duplicate";
-
     public MainForm()
     {
         InitializeComponent();
@@ -108,115 +108,11 @@ public partial class MainForm : Form
         UpdateDarkMode();
         //MessageBox.Show("OK");
         int cmdlineArgLength = Environment.GetCommandLineArgs().Length;
-        if (cmdlineArgLength > 1)
-        {
-            InitializePlayer();
-        }
-    }
-
-    private void InitializePlayer()
-    {
-        try
-        {
-            Instance = this;
-            Player.FileLoaded += Player_FileLoaded;
-            Player.Pause += Player_Pause;
-            Player.PlaylistPosChanged += Player_PlaylistPosChanged;
-            Player.Seek += UpdateProgressBar;
-            Player.Shutdown += Player_Shutdown;
-            Player.VideoSizeChanged += Player_VideoSizeChanged;
-            Player.ClientMessage += Player_ClientMessage;
-
-            GuiCommand.Current.ScaleWindow += GuiCommand_ScaleWindow;
-            GuiCommand.Current.MoveWindow += GuiCommand_MoveWindow;
-            GuiCommand.Current.WindowScaleNet += GuiCommand_WindowScaleNet;
-            GuiCommand.Current.ShowMenu += GuiCommand_ShowMenu;
-
-            Player.Init(Handle, true);
-
-            Player.ObserveProperty("window-maximized", PropChangeWindowMaximized); // bool methods not working correctly
-            Player.ObserveProperty("window-minimized", PropChangeWindowMinimized); // bool methods not working correctly
-            Player.ObserveProperty("cursor-autohide", PropChangeCursorAutohide);
-            //Player.ObservePropertyBool(CMD_sub_stereo_on, PropChangeSubStereoOn);
-
-            Player.ObservePropertyBool("border", PropChangeBorder);
-            Player.ObservePropertyBool("fullscreen", PropChangeFullscreen);
-            Player.ObservePropertyBool("keepaspect-window", value => Player.KeepaspectWindow = value);
-            //Player.ObservePropertyBool("ontop", PropChangeOnTop);
-            Player.ObservePropertyBool("title-bar", PropChangeTitleBar);
-
-            Player.ObservePropertyString("sid", PropChangeSid);
-            Player.ObservePropertyString("aid", PropChangeAid);
-            Player.ObservePropertyString("vid", PropChangeVid);
-
-            Player.ObservePropertyString("title", PropChangeTitle);
-
-            Player.ObservePropertyInt("edition", PropChangeEdition);
-
-            Player.ObservePropertyDouble("window-scale", PropChangeWindowScale);
-
-            CommandLine.ProcessCommandLineArgsPostInit();
-            CommandLine.ProcessCommandLineFiles();
-
-            _taskbarButtonCreatedMessage = RegisterWindowMessage("TaskbarButtonCreated");
-
-            if (Player.Screen > -1)
-            {
-                int targetIndex = Player.Screen;
-                Screen[] screens = Screen.AllScreens;
-
-                if (targetIndex < 0)
-                    targetIndex = 0;
-
-                if (targetIndex > screens.Length - 1)
-                    targetIndex = screens.Length - 1;
-
-                Screen screen = screens[Array.IndexOf(screens, screens[targetIndex])];
-                Rectangle target = screen.Bounds;
-                Left = target.X + (target.Width - Width) / 2;
-                Top = target.Y + (target.Height - Height) / 2;
-            }
-
-            if (!Player.Border)
-                FormBorderStyle = FormBorderStyle.None;
-
-            Point pos = App.Settings.WindowPosition;
-
-            if ((pos.X != 0 || pos.Y != 0) && App.RememberWindowPosition)
-            {
-                Left = pos.X - Width / 2;
-                Top = pos.Y - Height / 2;
-
-                Point location = App.Settings.WindowLocation;
-
-                if (location.X == -1) Left = pos.X;
-                if (location.X == 1) Left = pos.X - Width;
-                if (location.Y == -1) Top = pos.Y;
-                if (location.Y == 1) Top = pos.Y - Height;
-            }
-
-            if (Player.WindowMaximized)
-            {
-                SetFormPosAndSize(true);
-                WindowState = FormWindowState.Maximized;
-            }
-
-            if (Player.WindowMinimized)
-            {
-                SetFormPosAndSize(true);
-                WindowState = FormWindowState.Minimized;
-            }
-
-            if (!App.Settings.Enable3DMode && App.StartSize == "always" && App.Settings.WindowSize != Size.Empty)
-            {
-                ClientSize = App.Settings.WindowSize;
-            }
-            bPlayerinited = true;
-        }
-        catch (Exception ex)
-        {
-            Msg.ShowException(ex);
-        }
+        //if (cmdlineArgLength > 1)
+        //{
+        //    InitializePlayer();
+        //}
+        Player.Init(Handle, true);
     }
 
     HHZMainPage hhzMainPage = new HHZMainPage();
@@ -227,15 +123,15 @@ public partial class MainForm : Form
         hhzMainPage.FileDropped += HhzMainPage_FileDropped;
         hhzMainPage.FileOpened += HhzMainPage_FileOpened;
         Controls.Add(hhzMainPage);
-        //hhzMainPage.MouseUp += (s, e) =>
-        //{
-        //    if (e.Button == MouseButtons.Right)
-        //    {
-        //        ShowCursor();
-        //        UpdateMenu();
-        //        ContextMenu.IsOpen = true;
-        //    }
-        //};
+        hhzMainPage.MouseUp += (s, e) =>
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                ShowCursor();
+                UpdateMenu();
+                ContextMenu.IsOpen = true;
+            }
+        };
     }
 
     private void HhzMainPage_FileOpened(object? sender, string path)
@@ -243,9 +139,10 @@ public partial class MainForm : Form
         if (path.Length > 0)
         {
             hhzMainPage.Visible = false;
-            //App.Settings.Enable3DMode = true;
-            InitializePlayer();
             Player.LoadFiles(new[] { path }, true, false);
+            //b3DMode = true;
+            //InitializePlayer();
+            //Player.LoadFiles(new[] { path }, true, false);
             //System.Windows.Forms.Panel overlayPanel = new System.Windows.Forms.Panel
             //{
             //    Parent = this,
@@ -257,7 +154,7 @@ public partial class MainForm : Form
             //button1.Bounds = new Rectangle(37, 37, 190, 105);
             //Controls.Add(overlayPanel);
             //Controls.Add(button1);
-            //button1.BringToFront();            
+            //button1.BringToFront();
         }
     }
 
@@ -266,8 +163,9 @@ public partial class MainForm : Form
         if (files != null && files.Length > 0)
         {
             hhzMainPage.Visible = false;
-            InitializePlayer();
+            //InitializePlayer();
             Player.LoadFiles(files, true, false); // 你项目里的 Player 调用
+
         }
     }
 
@@ -357,8 +255,8 @@ public partial class MainForm : Form
         Point pos = PointToClient(MousePosition);
         float top = 0;
 
-        if (!Player.Border)
-            top = ClientSize.Height * 0.1f;
+        //if (!Player.Border)
+        //    top = ClientSize.Height * 0.1f;
 
         return pos.X < ClientSize.Width * 0.1 ||
                pos.X > ClientSize.Width * 0.9 ||
@@ -623,7 +521,7 @@ public partial class MainForm : Form
 
         var isChecked = (sender as MenuItem)?.IsChecked == true;
         
-        App.Settings.Enable3DMode = isChecked;        
+        b3DMode = isChecked;        
 
         //if (!isChecked)
         //{
@@ -985,6 +883,7 @@ public partial class MainForm : Form
 
     Rectangle prebounds;
     private bool bPlayerinited;
+    private bool b3DMode;
 
     private void CycleFullScreenFor3D(bool enable3DMode)
     {
@@ -1166,7 +1065,7 @@ public partial class MainForm : Form
 
     void SaveWindowProperties()
     {
-        if (!App.Settings.Enable3DMode)
+        if (!b3DMode)
         {
             if (WindowState == FormWindowState.Normal && WasShown)
             {
@@ -1190,8 +1089,8 @@ public partial class MainForm : Form
         if (y == -1) pos.Y = Top;
         if (y ==  1) pos.Y = Top + Height;
 
-        App.Settings.WindowPosition = pos;
-        App.Settings.WindowLocation = new Point(x, y);
+        //App.Settings.WindowPosition = pos;
+        //App.Settings.WindowLocation = new Point(x, y);
     }
 
     protected override CreateParams CreateParams {
@@ -1293,7 +1192,7 @@ public partial class MainForm : Form
                     ShowCursor();
                 break;
             case 0x203: // WM_LBUTTONDBLCLK
-                if (!App.Settings.Enable3DMode)
+                if (!b3DMode)
                 {
                     Point pos = PointToClient(Cursor.Position);
                     Player.Command($"mouse {pos.X} {pos.Y} 0 double");
@@ -1310,7 +1209,7 @@ public partial class MainForm : Form
                 break;
             case 0x0112: // WM_SYSCOMMAND
                 {
-                    // with title-bar=no when the window is restored from minimizing the height is too high  
+                    //with title-bar = no when the window is restored from minimizing the height is too high
                     if (!Player.TitleBar)
                     {
                         int SC_MINIMIZE = 0xF020;
@@ -1335,8 +1234,7 @@ public partial class MainForm : Form
                 break;
             case 0x231: // WM_ENTERSIZEMOVE
             case 0x005: // WM_SIZE
-                if (Player.SnapWindow)
-                    SnapManager.OnSizeAndEnterSizeMove(this);
+                if (Player.SnapWindow) SnapManager.OnSizeAndEnterSizeMove(this);
                 break;
             case 0x214: // WM_SIZING
                 if (Player.KeepaspectWindow)//解除窗体的尺寸比例限制
@@ -1367,7 +1265,7 @@ public partial class MainForm : Form
                 }
                 return;
             case 0x84: // WM_NCHITTEST
-                // resize borderless window
+                //resize borderless window
                 if ((!Player.Border || !Player.TitleBar) && !Player.Fullscreen)
                 {
                     const int HTCLIENT = 1;
@@ -1433,8 +1331,7 @@ public partial class MainForm : Form
                 }
                 return;
             case 0x216: // WM_MOVING
-                if (Player.SnapWindow)
-                    SnapManager.OnMoving(ref m);
+                if (Player.SnapWindow) SnapManager.OnMoving(ref m);
                 break;
         }
 
@@ -1520,7 +1417,7 @@ public partial class MainForm : Form
             return;
 
         BeginInvoke(() => {
-            if (!App.Settings.Enable3DMode && Player.VideoSize.Width != 0 && Player.VideoSize.Height != 0)
+            if (!b3DMode && Player.VideoSize.Width != 0 && Player.VideoSize.Height != 0)
             SetSize(
                 (int)(Player.VideoSize.Width * scale),
                 (int)Math.Floor(Player.VideoSize.Height * scale),
@@ -1613,7 +1510,7 @@ public partial class MainForm : Form
         Player.Border = enabled;
 
         BeginInvoke(() => {
-            if (!IsFullscreen && !App.Settings.Enable3DMode)
+            if (!IsFullscreen && !b3DMode)
             {
                 if (Player.Border && FormBorderStyle == FormBorderStyle.None)
                     FormBorderStyle = FormBorderStyle.Sizable;
@@ -1672,7 +1569,7 @@ public partial class MainForm : Form
                 hhzMainPage.Visible = false;
                 Player.SetPropertyString("osc", "yes");
             }
-            if (App.Settings.Enable3DMode)
+            if (b3DMode)
             {
                 float w = Player.GetPropertyInt("width");
                 float h = Player.GetPropertyInt("height");
@@ -1764,7 +1661,7 @@ public partial class MainForm : Form
     {
         base.OnLoad(e);
         _lastCycleFullscreen = Environment.TickCount;
-        SetFormPosAndSize(false, true, true);
+        //SetFormPosAndSize(false, true, true);
 
         if (_3DModeMenuItem == null)
         {
@@ -1835,11 +1732,11 @@ public partial class MainForm : Form
             _sSbsSubOffMenuItem.Click += SbsSubOffMenuItem_Click;
         }
 
-        //App.Settings.Enable3DMode = true;
-        _s3DModeSwitchMenuItem.IsChecked = App.Settings.Enable3DMode;
+        //b3DMode = true;
+        _s3DModeSwitchMenuItem.IsChecked = b3DMode;
         BeginInvoke(() =>
         {
-            if (App.Settings.Enable3DMode)
+            if (b3DMode)
             {
                 Enable3DMode_Click(_s3DModeSwitchMenuItem, null);
             }
@@ -1855,7 +1752,7 @@ public partial class MainForm : Form
     protected override void OnShown(EventArgs e)
     {
         base.OnShown(e);
-        //if (App.Settings.Enable3DMode)
+        //if (b3DMode)
         //{
         //    Player.SetPropertyString("osc", "no");
         //}
@@ -1868,29 +1765,26 @@ public partial class MainForm : Form
             Player.SetPropertyBool("window-maximized", true);
 
         WpfApplication.Init();
-        Theme.UpdateWpfColors();
+        //Theme.UpdateWpfColors();
         MessageBoxEx.MessageForeground = Theme.Current?.GetBrush("heading");
         MessageBoxEx.MessageBackground = Theme.Current?.GetBrush("background");
         MessageBoxEx.ButtonBackground  = Theme.Current?.GetBrush("highlight");
-        InitAndBuildContextMenu();
+        //InitAndBuildContextMenu();
         Cursor.Position = new Point(Cursor.Position.X + 1, Cursor.Position.Y);
-        GlobalHotkey.RegisterGlobalHotkeys(Handle);
+        //GlobalHotkey.RegisterGlobalHotkeys(Handle);
         StrongReferenceMessenger.Default.Send(new MainWindowIsLoadedMessage());
         WasShown = true;
     }
 
     void ContextMenu_Closed(object sender, System.Windows.RoutedEventArgs e) => MenuAutoResetEvent.Set();
-
-
-
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        if (Player.Duration.TotalMilliseconds > 0)
+        //if (Player.Duration.TotalMilliseconds > 0)
         {
             if (!_blockedOnSizedSaveProperty)
             {
-                SaveWindowProperties();
+                //SaveWindowProperties();
             }
 
             if (FormBorderStyle != FormBorderStyle.None)
@@ -1901,18 +1795,18 @@ public partial class MainForm : Form
                     _wasMaximized = false;
             }
 
-            if (WasShown)
-            {
-                if (WindowState == FormWindowState.Minimized)
-                    Player.SetPropertyBool("window-minimized", true);
-                else if (WindowState == FormWindowState.Normal)
-                {
-                    Player.SetPropertyBool("window-maximized", false);
-                    Player.SetPropertyBool("window-minimized", false);
-                }
-                else if (WindowState == FormWindowState.Maximized)
-                    Player.SetPropertyBool("window-maximized", true);
-            }
+            //if (WasShown)
+            //{
+            //    if (WindowState == FormWindowState.Minimized)
+            //        Player.SetPropertyBool("window-minimized", true);
+            //    else if (WindowState == FormWindowState.Normal)
+            //    {
+            //        Player.SetPropertyBool("window-maximized", false);
+            //        Player.SetPropertyBool("window-minimized", false);
+            //    }
+            //    else if (WindowState == FormWindowState.Maximized)
+            //        Player.SetPropertyBool("window-maximized", true);
+            //}
             Debug.WriteLine($"OnResize,ClientSize={ClientSize}");
         }
         //Player.SetPropertyString("osc", "no");
@@ -1942,7 +1836,7 @@ public partial class MainForm : Form
     {
         base.OnMouseMove(e);
 
-        if (App.Settings.Enable3DMode == false && IsCursorPosDifferent(_mouseDownLocation) &&
+        if (b3DMode == false && IsCursorPosDifferent(_mouseDownLocation) &&
             WindowState == FormWindowState.Normal &&
             e.Button == MouseButtons.Left && !IsMouseInOsc() &&
             Player.GetPropertyBool("window-dragging"))
@@ -1957,7 +1851,7 @@ public partial class MainForm : Form
     protected override void OnMove(EventArgs e)
     {
         base.OnMove(e);
-        SaveWindowProperties();
+        //SaveWindowProperties();
     }
 
     //protected override void OnDragEnter(DragEventArgs e)

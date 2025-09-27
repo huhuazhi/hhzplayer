@@ -51,7 +51,7 @@ partial class MainForm
         AutoScaleDimensions = new System.Drawing.SizeF(192F, 192F);
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
         BackColor = System.Drawing.Color.Black;
-        ClientSize = new System.Drawing.Size(1243, 720);
+        ClientSize = new System.Drawing.Size(2533, 1478);
         Font = new System.Drawing.Font("Segoe UI", 9F);
         Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
         Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
