@@ -45,10 +45,6 @@ partial class MainForm
         CursorTimer.Interval = 500;
         CursorTimer.Tick += CursorTimer_Tick;
         // 
-        // ProgressTimer
-        // 
-        ProgressTimer.Tick += ProgressTimer_Tick;
-        // 
         // btn3D
         // 
         btn3D.BackColor = System.Drawing.Color.Transparent;
@@ -99,6 +95,7 @@ partial class MainForm
         Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
         Name = "MainForm";
         StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+        FormClosing += MainForm_FormClosing;
         ((System.ComponentModel.ISupportInitialize)btnBack).EndInit();
         ResumeLayout(false);
     }

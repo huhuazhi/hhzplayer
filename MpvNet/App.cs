@@ -212,40 +212,4 @@ public class AppClass
 
         Settings.InputDefaultBindingsFixApplied = true;
     }
-
-    ///// <summary>
-    ///// 配置文件里表示是否UI全屏
-    ///// </summary>
-    //private const string StrKey_3DSubtitleEnable = "enable-3D-Subtitle";
-
-    //public void ApplyFullscreenUI()
-    //{
-    //    var newEnable3DSubtitleKV = $"{StrKey_3DSubtitleEnable}={(Enable3DSubtitle ? "yes" : "no")}";
-
-    //    string content = string.Empty;
-
-    //    if (File.Exists(ConfPath))
-    //    {
-    //        content = File.ReadAllText(ConfPath);
-
-    //        if (content.Contains($"{StrKey_3DSubtitleEnable}=no"))
-    //        {
-    //            content = content.Replace($"{StrKey_3DSubtitleEnable}=no", newEnable3DSubtitleKV);
-    //        }
-    //        else if (content.Contains($"{StrKey_3DSubtitleEnable}=yes"))
-    //        {
-    //            content = content.Replace($"{StrKey_3DSubtitleEnable}=yes", newEnable3DSubtitleKV);
-    //        }
-    //        else
-    //        {
-    //            content += $"{newEnable3DSubtitleKV}\r\n";
-    //        }
-    //    }
-    //    else
-    //    {
-    //        content += $"{newEnable3DSubtitleKV}\r\n";
-    //    }
-
-    //    File.WriteAllText(ConfPath, content);
-    //}
 }

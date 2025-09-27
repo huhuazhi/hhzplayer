@@ -22,6 +22,11 @@ public class AppSettings
     public string Mute = "no";
     public string StartupFolder = "";
     public bool Enable3DMode;
+
+    public void Save()
+    {
+        SettingsManager.Save(this);
+    }
 }
 
 class SettingsManager

@@ -81,10 +81,6 @@ public partial class MainForm : Form
     //WpfControls.MenuItem? _fullScreenUIMemuItem;
     bool _isCursorVisible = true;
     /// <summary>
-    /// 当窗体尺寸的改变是由于启动3D模式而强制设置双屏幕宽度时阻挡“窗体参数保存到xml文件”
-    /// </summary>
-    bool _blockedOnSizedSaveProperty;
-    /// <summary>
     /// 用于控制是否开启3D字幕的命令（在libmpv-2.dll 线路B的源码里新增）
     /// </summary>
     const string CMD_sub_stereo_on = "sub-stereo-on";
@@ -131,14 +127,15 @@ public partial class MainForm : Form
         Controls.Add(overlayPanel);
         //Controls.Add(btnBack);
         btn3D.BringToFront();
-
+        //App.Settings.Enable3DMode = true;
+        CycleFullScreenFor3D(App.Settings.Enable3DMode);
         overlayPanel.MouseMove += (s, e) =>
         {
             if (IsCursorPosDifferent(_lastCursorPosition))
                 ShowCursor();
             if (e.Button == MouseButtons.Right)
             {
-                UpdateMenu();
+                //UpdateMenu();
             }
         };
         Player.FileLoaded += Player_FileLoaded;
@@ -700,10 +697,6 @@ public partial class MainForm : Form
 
         //CycleFullscreen(isChecked/*, !isChecked*/);
         CycleFullScreenFor3D(App.Settings.Enable3DMode);
-        if (!App.Settings.Enable3DMode)
-        {
-            _blockedOnSizedSaveProperty = false;
-        }
 
         //if (!isChecked)
         //{
@@ -1100,9 +1093,12 @@ public partial class MainForm : Form
             //this.Bounds = prebounds;
             FormBorderStyle = Player.Border ? FormBorderStyle.Sizable : FormBorderStyle.None;
             //this.TopMost = false;
-            uint SWP_SHOWWINDOW = 0x0040;
-            IntPtr HWND_TOP = IntPtr.Zero;
-            SetWindowPos(Handle, HWND_TOP, prebounds.X, prebounds.Y, prebounds.Width, prebounds.Height, SWP_SHOWWINDOW);
+            //uint SWP_SHOWWINDOW = 0x0040;
+            //IntPtr HWND_TOP = IntPtr.Zero;
+            //SetWindowPos(Handle, HWND_TOP, prebounds.X, prebounds.Y, prebounds.Width, prebounds.Height, SWP_SHOWWINDOW);
+
+            //Debug.Print(App.Settings.WindowLocation.ToString());            
+
             if (!Player.WasInitialSizeSet)
                 SetFormPosAndSize();
         }
@@ -1530,41 +1526,41 @@ public partial class MainForm : Form
     //        base.WndProc(ref m);
     //}
 
-    private void DoCustomMaximize()
-    {
-        // 获取当前屏幕的大小
-        Rectangle screen = Screen.FromControl(this).Bounds;
+    //private void DoCustomMaximize()
+    //{
+    //    // 获取当前屏幕的大小
+    //    Rectangle screen = Screen.FromControl(this).Bounds;
 
-        // 宽度扩大 2 倍，高度保持屏幕高度
-        int newWidth = screen.Width * 2;
-        int newHeight = screen.Height;
+    //    // 宽度扩大 2 倍，高度保持屏幕高度
+    //    int newWidth = screen.Width * 2;
+    //    int newHeight = screen.Height;
 
-        // 位置从左上角开始
-        //this.WindowState = FormWindowState.Normal; // 先确保不是系统最大化
-        this.Bounds = new Rectangle(screen.X, screen.Y, newWidth, newHeight);
+    //    // 位置从左上角开始
+    //    //this.WindowState = FormWindowState.Normal; // 先确保不是系统最大化
+    //    this.Bounds = new Rectangle(screen.X, screen.Y, newWidth, newHeight);
 
-        Debug.WriteLine($"DoCustomMaximize");
-    }
+    //    Debug.WriteLine($"DoCustomMaximize");
+    //}
 
     protected override void OnActivated(EventArgs e)
     {
         base.OnActivated(e);
 
-        if (_maxSizeSet)
-        {
-            TaskHelp.Run(() =>
-            {
-                Thread.Sleep(200);
-                BeginInvoke(() =>
-                {
-                    if (!IsDisposed && !Disposing)
-                    {
-                        MaximumSize = new Size(int.MaxValue, int.MaxValue);
-                        _maxSizeSet = false;
-                    }
-                });
-            });
-        }
+        //if (_maxSizeSet)
+        //{
+        //    TaskHelp.Run(() =>
+        //    {
+        //        Thread.Sleep(200);
+        //        BeginInvoke(() =>
+        //        {
+        //            if (!IsDisposed && !Disposing)
+        //            {
+        //                MaximumSize = new Size(int.MaxValue, int.MaxValue);
+        //                _maxSizeSet = false;
+        //            }
+        //        });
+        //    });
+        //}
     }
 
     void CursorTimer_Tick(object sender, EventArgs e)
@@ -1581,13 +1577,13 @@ public partial class MainForm : Form
                 HideCursor();
     }
 
-    void ProgressTimer_Tick(object sender, EventArgs e) => UpdateProgressBar();
+    //void ProgressTimer_Tick(object sender, EventArgs e) => UpdateProgressBar();
 
-    void UpdateProgressBar()
-    {
-        if (Player.TaskbarProgress && _taskbar != null)
-            _taskbar.SetValue(Player.GetPropertyDouble("time-pos", false), Player.Duration.TotalSeconds);
-    }
+    //void UpdateProgressBar()
+    //{
+    //    if (Player.TaskbarProgress && _taskbar != null)
+    //        _taskbar.SetValue(Player.GetPropertyDouble("time-pos", false), Player.Duration.TotalSeconds);
+    //}
 
     void PropChangeWindowScale(double scale)
     {
@@ -1774,7 +1770,7 @@ public partial class MainForm : Form
                     interval = 1000;
 
                 ProgressTimer.Interval = interval;
-                UpdateProgressBar();
+                //UpdateProgressBar();
             }
         });
 
@@ -1956,9 +1952,9 @@ public partial class MainForm : Form
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        if (Player.Duration.TotalMilliseconds > 0)
+        //if (Player.Duration.TotalMilliseconds > 0)
         {
-            if (!_blockedOnSizedSaveProperty)
+            if (!App.Settings.Enable3DMode)
             {
                 SaveWindowProperties();
             }
@@ -2029,26 +2025,6 @@ public partial class MainForm : Form
         base.OnMove(e);
         SaveWindowProperties();
     }
-
-    //protected override void OnDragEnter(DragEventArgs e)
-    //{
-    //    base.OnDragEnter(e);
-
-    //    if (e.Data!.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.Text))
-    //        e.Effect = DragDropEffects.Copy;
-    //}
-
-    //protected override void OnDragDrop(DragEventArgs e)
-    //{
-    //    base.OnDragDrop(e);
-
-    //    bool append = ModifierKeys == Keys.Shift;
-
-    //    if (e.Data!.GetDataPresent(DataFormats.FileDrop))
-    //        Player.LoadFiles(e.Data.GetData(DataFormats.FileDrop) as string[], true, append);
-    //    else if (e.Data.GetDataPresent(DataFormats.Text))
-    //        Player.LoadFiles(new[] { e.Data.GetData(DataFormats.Text)!.ToString()! }, true, append);
-    //}
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
@@ -2179,5 +2155,10 @@ public partial class MainForm : Form
         //double duration = Player.GetPropertyDouble("duration");
         double target = percent * Player.Duration.TotalSeconds;
         Player.SetPropertyDouble("time-pos", target);
+    }
+
+    private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+    {
+        App.Settings.Save();
     }
 }
