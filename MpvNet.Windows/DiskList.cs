@@ -320,6 +320,9 @@ namespace MpvNet.Windows
             }
         }
 
+        private Point _mouseDownPos;
+        private int _mouseDownIndex = -1;
+        private const int ClickMoveTolerance = 5;
         // —— 输入/滚动 —— 
         private void DiskList_MouseDown(object? sender, MouseEventArgs e)
         {
@@ -332,12 +335,8 @@ namespace MpvNet.Windows
 
             if (ShowHeader && e.Y < HeaderHeight) return;
 
-            int idx = HitTest(e.Location);
-            if (idx >= 0 && idx < _items.Count)
-            {
-                SetSelectedIndex(idx, ensureVisible: false, raiseEvent: true);
-                DiskSelected?.Invoke(this, _items[idx].Root);
-            }
+            _mouseDownPos = e.Location;
+            _mouseDownIndex = HitTest(e.Location);
         }
 
         private void DiskList_MouseMove(object? sender, MouseEventArgs e)
@@ -368,9 +367,29 @@ namespace MpvNet.Windows
         private void DiskList_MouseUp(object? sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left) return;
+
             _dragging = false;
             Capture = false;
+
+            if (_mouseDownIndex >= 0)
+            {
+                int upIndex = HitTest(e.Location);
+
+                bool isClick =
+                    upIndex == _mouseDownIndex &&
+                    Math.Abs(e.X - _mouseDownPos.X) <= ClickMoveTolerance &&
+                    Math.Abs(e.Y - _mouseDownPos.Y) <= ClickMoveTolerance;
+
+                if (isClick)
+                {
+                    SetSelectedIndex(upIndex, ensureVisible: false, raiseEvent: true);
+                    DiskSelected?.Invoke(this, _items[upIndex].Root);
+                }
+            }
+
+            _mouseDownIndex = -1;
         }
+
 
         private void DiskList_MouseWheel(object? sender, MouseEventArgs e)
         {
