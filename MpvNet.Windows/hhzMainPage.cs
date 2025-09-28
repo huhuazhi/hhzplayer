@@ -36,7 +36,7 @@ namespace MpvNet.Windows
         private const float FRAME_HEIGHT = 0.400f;
 
         private Bitmap bg;
-        private float _fileListBottomGapRatio = 0.04f;
+        private float _fileListBottomGapRatio = 0.07f;
 
         public HHZMainPage()
         {
@@ -215,23 +215,23 @@ namespace MpvNet.Windows
 
             if (App.Settings.Enable3DMode)
             {
-                var leftHost = new Rectangle(0, 0, w / 2, h);
-                var rightHost = new Rectangle(w / 2, 0, w - w / 2, h);
+                var leftHost = new Rectangle(0/*5*/, 0, w / 2, h);
+                var rightHost = new Rectangle(w / 2/* - 5*/, 0, w - w / 2, h);
 
                 _diskListLeft.Bounds = CalcBlueFrame(leftHost);
                 _diskListRight.Bounds = CalcBlueFrame(rightHost);
 
                 var leftFileRect = new Rectangle(
-                    _diskListLeft.Right + 20,
+                    _diskListLeft.Right + 20/* + 5*/,
                     _diskListLeft.Top,
-                    leftHost.Right - _diskListLeft.Right - 40,
+                    leftHost.Right - _diskListLeft.Right - bottomGap,
                     h - _diskListLeft.Top - bottomGap
                 );
 
                 var rightFileRect = new Rectangle(
-                    _diskListRight.Right + 20,
+                    _diskListRight.Right + 20/* - 5*/,
                     _diskListRight.Top,
-                    rightHost.Right - _diskListRight.Right - 40,
+                    rightHost.Right - _diskListRight.Right - bottomGap,
                     h - _diskListRight.Top - bottomGap
                 );
 

@@ -15,10 +15,12 @@ using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Threading;
+using static HandyControl.Tools.Interop.InteropValues;
 using static MpvNet.Windows.Help.WinApiHelp;
 using static MpvNet.Windows.Native.WinApi;
 using static System.Net.Mime.MediaTypeNames;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolBar;
 
 namespace MpvNet.Windows.WinForms;
 
@@ -44,22 +46,7 @@ public partial class MainForm : Form
     bool _wasMaximized;
     bool _maxSizeSet;
 
-    string? _title;
-
-    public string? Title
-    {
-        get => _title;
-        set
-        {
-            if (string.IsNullOrEmpty(value))
-                return;
-
-            if (value.EndsWith("} - hhz"))
-                value = value.Replace("} - hhz", "} - hhzPlayer");
-
-            _title = value;
-        }
-    }
+    //Cursor trancur = CreateTransparentCursor();
 
     const int WM_SYSCOMMAND = 0x0112;
     const int SC_MAXIMIZE = 0xF030;
@@ -79,7 +66,6 @@ public partial class MainForm : Form
     MenuItem? _sSbsSubOffMenuItem;
 
     //WpfControls.MenuItem? _fullScreenUIMemuItem;
-    bool _isCursorVisible = true;
     /// <summary>
     /// 用于控制是否开启3D字幕的命令（在libmpv-2.dll 线路B的源码里新增）
     /// </summary>
@@ -89,6 +75,9 @@ public partial class MainForm : Form
     /// 是否开启线路A的方法实现3D字幕的命令（在libmpv-2.dll），设置为false的花则使用线路B方法实现，默认libmpv-2.dll是使用线路A的
     /// </summary>
     const string CMD_sub_stereo_duplicate = "sub-stereo-duplicate";
+
+    int btnLeft = 40;    
+    int progressBarLeftWidth = 1981;
 
     public MainForm()
     {
@@ -101,48 +90,38 @@ public partial class MainForm : Form
               ControlStyles.OptimizedDoubleBuffer, true);
         this.UpdateStyles();
 
-        InitializehhzOverlay();
-
         UpdateDarkMode();
-        //MessageBox.Show("OK");
-        int cmdlineArgLength = Environment.GetCommandLineArgs().Length;
-        //if (cmdlineArgLength > 1)
-        //{
-        //    Player.Init(Handle, true);
-        //}
-        overlayPanel = new System.Windows.Forms.Panel
-        {
-            Parent = this,
-            Dock = DockStyle.Fill,
-            BackColor = Color.Transparent,
-        };
-        Player.Init(Handle, true);
+        InitializehhzOverlay();
         InitPlayerEvents();
-        Player.SetPropertyInt("wid", overlayPanel.Handle.ToInt32());
-        overlayPanel.Visible = false;
-
-        //button1 = new System.Windows.Forms.Button();        
-        //button1.Bounds = new Rectangle(37, 37, 190, 105);
-        //button1.Visible = false;
-        Controls.Add(overlayPanel);
-        //Controls.Add(btnBack);
-        btn3D.BringToFront();
-        //App.Settings.Enable3DMode = true;
-        CycleFullScreenFor3D(App.Settings.Enable3DMode);
-        overlayPanel.MouseMove += (s, e) =>
+        progressBarLeftWidth = progressBarLeft.Width;
+        int cmdlineArgLength = Environment.GetCommandLineArgs().Length;
+        if (cmdlineArgLength > 1)
         {
-            if (IsCursorPosDifferent(_lastCursorPosition))
-                ShowCursor();
-            if (e.Button == MouseButtons.Right)
+            // 如果有命令行参数，直接初始化播放器并加载文件
+            hhzMainPage.Visible = false;
+            overlayPanel.Visible = true;
+            //ShowCursor();
+            //App.Settings.Enable3DMode = true;
+            //InitializePlayer();
+            //Player.Init(Handle, true);
+            List<string> files = [];
+
+            foreach (string arg in Environment.GetCommandLineArgs().Skip(1))
             {
-                //UpdateMenu();
+                if (!arg.StartsWith("--") && (arg == "-" || arg.Contains("://") ||
+                    arg.Contains(":\\") || arg.StartsWith("\\\\") || arg.StartsWith('.') ||
+                    File.Exists(arg)))
+                {
+                    files.Add(arg);
+                }
             }
-        };
-        Player.FileLoaded += Player_FileLoaded;
-        Text = "hhzPlayer";
+            Player.LoadFiles([.. files], true, false);
+        }
     }
+
     private void InitPlayerEvents()
     {
+        Player.FileLoaded += Player_FileLoaded;
         // 订阅播放进度
         Player.ObservePropertyDouble("time-pos", (double value) =>
         {
@@ -152,7 +131,11 @@ public partial class MainForm : Form
                 this.Invoke((MethodInvoker)(() =>
                 {
                     //Debug.Print($"进度: {value:F1} 秒");
-                    if (value <= progressBar.Maximum) progressBar.Value = (int)value;
+                    SetProgressBarMax(Player.Duration.TotalSeconds);
+                    if (value <= progressBarLeft.Maximum)
+                    {
+                        SetProgressBarValue(value);
+                    }
                 }));
             }
         });
@@ -263,13 +246,40 @@ public partial class MainForm : Form
     //}
 
     HHZMainPage hhzMainPage = new HHZMainPage();
-
     private void InitializehhzOverlay()
     {
         hhzMainPage.BringToFront();
         hhzMainPage.FileDropped += HhzMainPage_FileDropped;
         hhzMainPage.FileOpened += HhzMainPage_FileOpened;
         Controls.Add(hhzMainPage);
+        overlayPanel = new System.Windows.Forms.Panel
+        {
+            Parent = this,
+            Dock = DockStyle.Fill,
+            BackColor = Color.Black,
+        };
+        overlayPanel.Visible = false;
+
+        overlayPanel.MouseMove += OverlayPanel_MouseMove;
+        overlayPanel.MouseDoubleClick += OverlayPanel_MouseDoubleClick;
+
+        Controls.Add(overlayPanel);
+
+        Text = "hhzPlayer";
+
+        Player.Init(overlayPanel.Handle, true);
+        //Player.SetPropertyInt("wid", overlayPanel.Handle.ToInt32());
+
+        //App.Settings.Enable3DMode = true;
+        CycleFullScreenFor3D(App.Settings.Enable3DMode);
+
+        btn3DLeft.Click += btn3D_Click;
+        btn3DRight.Click += btn3D_Click;
+        btnBackLeft.Click += btnBack_Click;
+        btnBackRight.Click += btnBack_Click;
+        progressBarLeft.MouseClick += ProgressBar_MouseClick;
+        progressBarRight.MouseClick += ProgressBar_MouseClick;
+
         //hhzMainPage.MouseUp += (s, e) =>
         //{
         //    if (e.Button == MouseButtons.Right)
@@ -280,14 +290,82 @@ public partial class MainForm : Form
         //    }
         //};
     }
+    private System.Drawing.Image LoadMyLogo()
+    {
+        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mylogo.png");
+        if (File.Exists(path)) return new Bitmap(path);
+        var bmp = new Bitmap(1, 1);
+        using (var g = Graphics.FromImage(bmp)) g.Clear(Color.Transparent);
+        return bmp;
+    }
 
+    private void ProgressBar_MouseClick(object? sender, MouseEventArgs e)
+    {
+        // 根据点击位置计算百分比
+        double percent = (double)e.X / progressBarLeft.Width;
+        //int value = (int)(percent * (progressBar.Maximum - progressBar.Minimum));
+        //progressBar.Value = Math.Max(progressBar.Minimum, Math.Min(value, progressBar.Maximum));
+
+        // 跳转到对应时间
+        //double duration = Player.GetPropertyDouble("duration");
+        double target = percent * Player.Duration.TotalSeconds;
+        Player.SetPropertyDouble("time-pos", target);
+    }
+
+    private void btn3D_Click(object? sender, EventArgs e)
+    {
+        App.Settings.Enable3DMode = !App.Settings.Enable3DMode;
+        CycleFullScreenFor3D(App.Settings.Enable3DMode);
+        //Enable3DMode_Click(sender, null);
+    }
+
+    private void btnBack_Click(object? sender, EventArgs e)
+    {
+        Player.Command("stop");
+        hhzMainPage.Visible = true;
+        overlayPanel.Visible = false;        
+        HideVideoUI();
+    }
+
+    private void OverlayPanel_MouseDoubleClick(object? sender, MouseEventArgs e)
+    {
+        if (!App.Settings.Enable3DMode)
+        {
+            if (this.WindowState == FormWindowState.Maximized)
+            {
+                this.FormBorderStyle = FormBorderStyle.Sizable;
+                this.WindowState = FormWindowState.Normal;
+            }
+            else
+            {
+                this.FormBorderStyle = FormBorderStyle.None;
+                this.WindowState = FormWindowState.Maximized;
+            }
+        }
+    }
+
+    private void OverlayPanel_MouseMove(object? sender, MouseEventArgs e)
+    {
+        //if (IsCursorPosDifferent(_lastCursorPosition))
+        if (_lastCursorPosition != MousePosition)
+        {
+            Debug.Print($"{DateTime.Now.ToString()}-MouseMoveShowCursor");
+            ShowCursor();
+            _lastCursorChanged = Environment.TickCount;
+            _lastCursorPosition = MousePosition;
+        }
+        if (e.Button == MouseButtons.Right)
+        {
+            //UpdateMenu();
+        }
+    }
     private void HhzMainPage_FileOpened(object? sender, string path)
     {
         if (path.Length > 0)
         {
             hhzMainPage.Visible = false;
             overlayPanel.Visible = true;
-            ShowCursor();
+            //ShowCursor();
             //App.Settings.Enable3DMode = true;
             //InitializePlayer();
             //Player.Init(Handle, true);
@@ -338,26 +416,26 @@ public partial class MainForm : Form
             DwmSetWindowAttribute(Handle, 20, new[] { Theme.DarkMode ? 1 : 0 }, 4);  // DWMWA_USE_IMMERSIVE_DARK_MODE = 20
     }
 
-    void GuiCommand_ScaleWindow(float scale)
-    {
-        BeginInvoke(() =>
-        {
-            int w, h;
+    //void GuiCommand_ScaleWindow(float scale)
+    //{
+    //    BeginInvoke(() =>
+    //    {
+    //        int w, h;
 
-            if (KeepSize())
-            {
-                w = (int)(ClientSize.Width * scale);
-                h = (int)(ClientSize.Height * scale);
-            }
-            else
-            {
-                w = (int)(ClientSize.Width * scale);
-                h = (int)Math.Floor(w * Player.VideoSize.Height / (double)Player.VideoSize.Width);
-            }
+    //        if (KeepSize())
+    //        {
+    //            w = (int)(ClientSize.Width * scale);
+    //            h = (int)(ClientSize.Height * scale);
+    //        }
+    //        else
+    //        {
+    //            w = (int)(ClientSize.Width * scale);
+    //            h = (int)Math.Floor(w * Player.VideoSize.Height / (double)Player.VideoSize.Width);
+    //        }
 
-            SetSize(w, h, Screen.FromControl(this), false);
-        });
-    }
+    //        SetSize(w, h, Screen.FromControl(this), false);
+    //    });
+    //}
 
     void GuiCommand_MoveWindow(string direction)
     {
@@ -388,17 +466,17 @@ public partial class MainForm : Form
         });
     }
 
-    void GuiCommand_WindowScaleNet(float scale)
-    {
-        BeginInvoke(() =>
-        {
-            SetSize(
-                (int)(Player.VideoSize.Width * scale),
-                (int)Math.Floor(Player.VideoSize.Height * scale),
-                Screen.FromControl(this), false);
-            Player.Command($"show-text \"window-scale {scale.ToString(CultureInfo.InvariantCulture)}\"");
-        });
-    }
+    //void GuiCommand_WindowScaleNet(float scale)
+    //{
+    //    BeginInvoke(() =>
+    //    {
+    //        SetSize(
+    //            (int)(Player.VideoSize.Width * scale),
+    //            (int)Math.Floor(Player.VideoSize.Height * scale),
+    //            Screen.FromControl(this), false);
+    //        Player.Command($"show-text \"window-scale {scale.ToString(CultureInfo.InvariantCulture)}\"");
+    //    });
+    //}
 
     void GuiCommand_ShowMenu()
     {
@@ -682,31 +760,6 @@ public partial class MainForm : Form
         }
     }
 
-    private void Enable3DMode_Click(object sender, EventArgs e)
-    {
-        //Size backup = ClientSize;
-
-        //var isChecked = (sender as MenuItem)?.IsChecked == true;
-
-        App.Settings.Enable3DMode = !App.Settings.Enable3DMode;
-
-        //if (!isChecked)
-        //{
-        //    _blockedOnSizedSaveProperty = true;
-        //}
-
-        //CycleFullscreen(isChecked/*, !isChecked*/);
-        CycleFullScreenFor3D(App.Settings.Enable3DMode);
-
-        //if (!isChecked)
-        //{
-        //    ClientSize = backup;
-        //}
-
-        //Debug.WriteLine($"backup={backup},NewClientSize={ClientSize}");
-    }
-
-
     private void SbsSubAutoMenuItem_Click(object sender, System.Windows.RoutedEventArgs e)
     {
         //_sSbsSubAutoMenuItem.IsChecked = true;
@@ -773,214 +826,214 @@ public partial class MainForm : Form
         return null;
     }
 
-    void SetFormPosAndSize(bool force = false, bool checkAutofit = true, bool load = false)
-    {
-        Debug.WriteLine($"force={force}, App.AutoFitImage={App.AutofitImage},Player.Autofit={Player.Autofit},Player.VideoSize={Player.VideoSize}");
-        if (!force)
-        {
-            if (WindowState != FormWindowState.Normal)
-                return;
+    //void SetFormPosAndSize(bool force = false, bool checkAutofit = true, bool load = false)
+    //{
+    //    Debug.WriteLine($"force={force}, App.AutoFitImage={App.AutofitImage},Player.Autofit={Player.Autofit},Player.VideoSize={Player.VideoSize}");
+    //    if (!force)
+    //    {
+    //        if (WindowState != FormWindowState.Normal)
+    //            return;
 
-            if (Player.Fullscreen)
-            {
-                CycleFullscreen(true);
-                return;
-            }
-        }
+    //        if (Player.Fullscreen)
+    //        {
+    //            CycleFullscreen(true);
+    //            return;
+    //        }
+    //    }
 
-        Screen screen = Screen.FromControl(this);
-        Rectangle workingArea = GetWorkingArea(Handle, screen.WorkingArea);
-        int autoFitHeight = Convert.ToInt32(workingArea.Height * Player.Autofit);
+    //    Screen screen = Screen.FromControl(this);
+    //    Rectangle workingArea = GetWorkingArea(Handle, screen.WorkingArea);
+    //    int autoFitHeight = Convert.ToInt32(workingArea.Height * Player.Autofit);
 
-        if (App.AutofitAudio > 1)
-            App.AutofitAudio = 1;
+    //    if (App.AutofitAudio > 1)
+    //        App.AutofitAudio = 1;
 
-        if (App.AutofitImage > 1)
-            App.AutofitImage = 1;
+    //    if (App.AutofitImage > 1)
+    //        App.AutofitImage = 1;
 
-        bool isAudio = FileTypes.IsAudio(Player.Path.Ext());
+    //    bool isAudio = FileTypes.IsAudio(Player.Path.Ext());
 
-        if (isAudio)
-            autoFitHeight = Convert.ToInt32(workingArea.Height * App.AutofitAudio);
+    //    if (isAudio)
+    //        autoFitHeight = Convert.ToInt32(workingArea.Height * App.AutofitAudio);
 
-        if (FileTypes.IsImage(Player.Path.Ext()))
-            autoFitHeight = Convert.ToInt32(workingArea.Height * App.AutofitImage);
+    //    if (FileTypes.IsImage(Player.Path.Ext()))
+    //        autoFitHeight = Convert.ToInt32(workingArea.Height * App.AutofitImage);
 
-        if (Player.VideoSize.Height == 0 || Player.VideoSize.Width == 0)
-            Player.VideoSize = new Size((int)(autoFitHeight * (16 / 9f)), autoFitHeight);
+    //    if (Player.VideoSize.Height == 0 || Player.VideoSize.Width == 0)
+    //        Player.VideoSize = new Size((int)(autoFitHeight * (16 / 9f)), autoFitHeight);
 
-        float minAspectRatio = isAudio ? App.MinimumAspectRatioAudio : App.MinimumAspectRatio;
+    //    float minAspectRatio = isAudio ? App.MinimumAspectRatioAudio : App.MinimumAspectRatio;
 
-        if (minAspectRatio != 0 && Player.VideoSize.Width / (float)Player.VideoSize.Height < minAspectRatio)
-            Player.VideoSize = new Size((int)(autoFitHeight * minAspectRatio), autoFitHeight);
+    //    if (minAspectRatio != 0 && Player.VideoSize.Width / (float)Player.VideoSize.Height < minAspectRatio)
+    //        Player.VideoSize = new Size((int)(autoFitHeight * minAspectRatio), autoFitHeight);
 
-        Size videoSize = Player.VideoSize;
+    //    Size videoSize = Player.VideoSize;
 
-        int height = videoSize.Height;
-        int width = videoSize.Width;
+    //    int height = videoSize.Height;
+    //    int width = videoSize.Width;
 
-        if (App.StartSize == "previous")
-            App.StartSize = "height-session";
+    //    if (App.StartSize == "previous")
+    //        App.StartSize = "height-session";
 
-        Debug.WriteLine($"CLientSize={ClientSize},App.Settings.WindowSize={App.Settings.WindowSize}");
+    //    Debug.WriteLine($"CLientSize={ClientSize},App.Settings.WindowSize={App.Settings.WindowSize}");
 
-        if (Player.WasInitialSizeSet)
-        {
-            if (KeepSize())
-            {
-                width = ClientSize.Width;
-                height = ClientSize.Height;
-            }
-            else if (App.StartSize == "height-always" || App.StartSize == "height-session")
-            {
-                height = ClientSize.Height;
-                width = (int)Math.Ceiling(height * videoSize.Width / (double)videoSize.Height);
-            }
-            else if (App.StartSize == "width-always" || App.StartSize == "width-session")
-            {
-                width = ClientSize.Width;
-                height = (int)Math.Floor(width * videoSize.Height / (double)videoSize.Width);
-            }
-        }
-        else
-        {
-            Size windowSize = App.Settings.WindowSize;
+    //    if (Player.WasInitialSizeSet)
+    //    {
+    //        if (KeepSize())
+    //        {
+    //            width = ClientSize.Width;
+    //            height = ClientSize.Height;
+    //        }
+    //        else if (App.StartSize == "height-always" || App.StartSize == "height-session")
+    //        {
+    //            height = ClientSize.Height;
+    //            width = (int)Math.Ceiling(height * videoSize.Width / (double)videoSize.Height);
+    //        }
+    //        else if (App.StartSize == "width-always" || App.StartSize == "width-session")
+    //        {
+    //            width = ClientSize.Width;
+    //            height = (int)Math.Floor(width * videoSize.Height / (double)videoSize.Width);
+    //        }
+    //    }
+    //    else
+    //    {
+    //        Size windowSize = App.Settings.WindowSize;
 
-            if (App.StartSize == "height-always" && windowSize.Height != 0)
-            {
-                height = windowSize.Height;
-                width = (int)Math.Ceiling(height * videoSize.Width / (double)videoSize.Height);
-            }
-            else if (App.StartSize == "height-session" || App.StartSize == "session")
-            {
-                height = autoFitHeight;
-                width = (int)Math.Ceiling(height * videoSize.Width / (double)videoSize.Height);
-            }
-            else if (App.StartSize == "width-always" && windowSize.Height != 0)
-            {
-                width = windowSize.Width;
-                height = (int)Math.Floor(width * videoSize.Height / (double)videoSize.Width);
-            }
-            else if (App.StartSize == "width-session")
-            {
-                width = autoFitHeight / 9 * 16;
-                height = (int)Math.Floor(width * videoSize.Height / (double)videoSize.Width);
-            }
-            else if (App.StartSize == "always" && windowSize.Height != 0)
-            {
-                height = windowSize.Height;
-                width = windowSize.Width;
-            }
+    //        if (App.StartSize == "height-always" && windowSize.Height != 0)
+    //        {
+    //            height = windowSize.Height;
+    //            width = (int)Math.Ceiling(height * videoSize.Width / (double)videoSize.Height);
+    //        }
+    //        else if (App.StartSize == "height-session" || App.StartSize == "session")
+    //        {
+    //            height = autoFitHeight;
+    //            width = (int)Math.Ceiling(height * videoSize.Width / (double)videoSize.Height);
+    //        }
+    //        else if (App.StartSize == "width-always" && windowSize.Height != 0)
+    //        {
+    //            width = windowSize.Width;
+    //            height = (int)Math.Floor(width * videoSize.Height / (double)videoSize.Width);
+    //        }
+    //        else if (App.StartSize == "width-session")
+    //        {
+    //            width = autoFitHeight / 9 * 16;
+    //            height = (int)Math.Floor(width * videoSize.Height / (double)videoSize.Width);
+    //        }
+    //        else if (App.StartSize == "always" && windowSize.Height != 0)
+    //        {
+    //            height = windowSize.Height;
+    //            width = windowSize.Width;
+    //        }
 
-            Player.WasInitialSizeSet = true;
-        }
+    //        Player.WasInitialSizeSet = true;
+    //    }
 
-        SetSize(width, height, screen, checkAutofit, load);
-    }
+    //    SetSize(width, height, screen, checkAutofit, load);
+    //}
 
-    void SetSize(int width, int height, Screen screen, bool checkAutofit = true, bool load = false)
-    {
-        Rectangle workingArea = GetWorkingArea(Handle, screen.WorkingArea);
+    //void SetSize(int width, int height, Screen screen, bool checkAutofit = true, bool load = false)
+    //{
+    //    Rectangle workingArea = GetWorkingArea(Handle, screen.WorkingArea);
 
-        int maxHeight = workingArea.Height - (Height - ClientSize.Height) - 2;
-        int maxWidth = workingArea.Width - (Width - ClientSize.Width);
+    //    int maxHeight = workingArea.Height - (Height - ClientSize.Height) - 2;
+    //    int maxWidth = workingArea.Width - (Width - ClientSize.Width);
 
-        int startWidth = width;
-        int startHeight = height;
+    //    int startWidth = width;
+    //    int startHeight = height;
 
-        if (checkAutofit)
-        {
-            if (height < maxHeight * Player.AutofitSmaller)
-            {
-                height = (int)(maxHeight * Player.AutofitSmaller);
-                width = (int)Math.Ceiling(height * startWidth / (double)startHeight);
-            }
+    //    if (checkAutofit)
+    //    {
+    //        if (height < maxHeight * Player.AutofitSmaller)
+    //        {
+    //            height = (int)(maxHeight * Player.AutofitSmaller);
+    //            width = (int)Math.Ceiling(height * startWidth / (double)startHeight);
+    //        }
 
-            if (height > maxHeight * Player.AutofitLarger)
-            {
-                height = (int)(maxHeight * Player.AutofitLarger);
-                width = (int)Math.Ceiling(height * startWidth / (double)startHeight);
-            }
-        }
+    //        if (height > maxHeight * Player.AutofitLarger)
+    //        {
+    //            height = (int)(maxHeight * Player.AutofitLarger);
+    //            width = (int)Math.Ceiling(height * startWidth / (double)startHeight);
+    //        }
+    //    }
 
-        if (width > maxWidth)
-        {
-            width = maxWidth;
-            height = (int)Math.Floor(width * startHeight / (double)startWidth);
-        }
+    //    if (width > maxWidth)
+    //    {
+    //        width = maxWidth;
+    //        height = (int)Math.Floor(width * startHeight / (double)startWidth);
+    //    }
 
-        if (height > maxHeight)
-        {
-            height = maxHeight;
-            width = (int)Math.Ceiling(height * startWidth / (double)startHeight);
-        }
+    //    if (height > maxHeight)
+    //    {
+    //        height = maxHeight;
+    //        width = (int)Math.Ceiling(height * startWidth / (double)startHeight);
+    //    }
 
-        if (height < maxHeight * 0.1)
-        {
-            height = (int)(maxHeight * 0.1);
-            width = (int)Math.Ceiling(height * startWidth / (double)startHeight);
-        }
+    //    if (height < maxHeight * 0.1)
+    //    {
+    //        height = (int)(maxHeight * 0.1);
+    //        width = (int)Math.Ceiling(height * startWidth / (double)startHeight);
+    //    }
 
-        Point middlePos = new Point(Left + Width / 2, Top + Height / 2);
-        var rect = new RECT(new Rectangle(screen.Bounds.X, screen.Bounds.Y, width, height));
+    //    Point middlePos = new Point(Left + Width / 2, Top + Height / 2);
+    //    var rect = new RECT(new Rectangle(screen.Bounds.X, screen.Bounds.Y, width, height));
 
-        AddWindowBorders(Handle, ref rect, GetDpi(Handle), !Player.TitleBar);
+    //    AddWindowBorders(Handle, ref rect, GetDpi(Handle), !Player.TitleBar);
 
-        width = rect.Width;
-        height = rect.Height;
+    //    width = rect.Width;
+    //    height = rect.Height;
 
-        int left = Convert.ToInt32(middlePos.X - width / 2.0);
-        int top = Convert.ToInt32(middlePos.Y - height / 2.0);
+    //    int left = Convert.ToInt32(middlePos.X - width / 2.0);
+    //    int top = Convert.ToInt32(middlePos.Y - height / 2.0);
 
-        if (!Player.TitleBar)
-            top -= Convert.ToInt32(GetTitleBarHeight(Handle, GetDpi(Handle)) / 2.0);
+    //    if (!Player.TitleBar)
+    //        top -= Convert.ToInt32(GetTitleBarHeight(Handle, GetDpi(Handle)) / 2.0);
 
-        Rectangle currentRect = new Rectangle(Left, Top, Width, Height);
+    //    Rectangle currentRect = new Rectangle(Left, Top, Width, Height);
 
-        if (GetHorizontalLocation(screen) == -1) left = Left;
-        if (GetHorizontalLocation(screen) == 1) left = currentRect.Right - width;
+    //    if (GetHorizontalLocation(screen) == -1) left = Left;
+    //    if (GetHorizontalLocation(screen) == 1) left = currentRect.Right - width;
 
-        if (GetVerticalLocation(screen) == -1) top = Top;
-        if (GetVerticalLocation(screen) == 1) top = currentRect.Bottom - height;
+    //    if (GetVerticalLocation(screen) == -1) top = Top;
+    //    if (GetVerticalLocation(screen) == 1) top = currentRect.Bottom - height;
 
-        Screen[] screens = Screen.AllScreens;
+    //    Screen[] screens = Screen.AllScreens;
 
-        int minLeft = screens.Select(val => GetWorkingArea(Handle, val.WorkingArea).X).Min();
-        int maxRight = screens.Select(val => GetWorkingArea(Handle, val.WorkingArea).Right).Max();
-        int minTop = screens.Select(val => GetWorkingArea(Handle, val.WorkingArea).Y).Min();
-        int maxBottom = screens.Select(val => GetWorkingArea(Handle, val.WorkingArea).Bottom).Max();
+    //    int minLeft = screens.Select(val => GetWorkingArea(Handle, val.WorkingArea).X).Min();
+    //    int maxRight = screens.Select(val => GetWorkingArea(Handle, val.WorkingArea).Right).Max();
+    //    int minTop = screens.Select(val => GetWorkingArea(Handle, val.WorkingArea).Y).Min();
+    //    int maxBottom = screens.Select(val => GetWorkingArea(Handle, val.WorkingArea).Bottom).Max();
 
-        if (load)
-        {
-            string geometryString = Player.GetPropertyString("geometry");
+    //    if (load)
+    //    {
+    //        string geometryString = Player.GetPropertyString("geometry");
 
-            if (!string.IsNullOrEmpty(geometryString))
-            {
-                var pos = ParseGeometry(geometryString, width, height);
+    //        if (!string.IsNullOrEmpty(geometryString))
+    //        {
+    //            var pos = ParseGeometry(geometryString, width, height);
 
-                if (pos.X != int.MaxValue)
-                    left = pos.X;
+    //            if (pos.X != int.MaxValue)
+    //                left = pos.X;
 
-                if (pos.Y != int.MaxValue)
-                    top = pos.Y;
-            }
-        }
+    //            if (pos.Y != int.MaxValue)
+    //                top = pos.Y;
+    //        }
+    //    }
 
-        if (left < minLeft)
-            left = minLeft;
+    //    if (left < minLeft)
+    //        left = minLeft;
 
-        if (left + width > maxRight)
-            left = maxRight - width;
+    //    if (left + width > maxRight)
+    //        left = maxRight - width;
 
-        if (top < minTop)
-            top = minTop;
+    //    if (top < minTop)
+    //        top = minTop;
 
-        if (top + height > maxBottom)
-            top = maxBottom - height;
+    //    if (top + height > maxBottom)
+    //        top = maxBottom - height;
 
-        uint SWP_NOACTIVATE = 0x0010;
-        SetWindowPos(Handle, IntPtr.Zero, left, top, width, height, SWP_NOACTIVATE);
-    }
+    //    uint SWP_NOACTIVATE = 0x0010;
+    //    SetWindowPos(Handle, IntPtr.Zero, left, top, width, height, SWP_NOACTIVATE);
+    //}
 
     Point ParseGeometry(string input, int width, int height)
     {
@@ -1003,47 +1056,47 @@ public partial class MainForm : Form
         return new Point(x, y);
     }
 
-    private void CycleFullscreen(bool enabled/*, bool forceToNornam = false*/)
-    {
-        _lastCycleFullscreen = Environment.TickCount;
-        Player.Fullscreen = enabled;
+    //private void CycleFullscreen(bool enabled/*, bool forceToNornam = false*/)
+    //{
+    //    _lastCycleFullscreen = Environment.TickCount;
+    //    Player.Fullscreen = enabled;
 
-        if (enabled)
-        {
-            if (WindowState != FormWindowState.Maximized || FormBorderStyle != FormBorderStyle.None)
-            {
-                FormBorderStyle = FormBorderStyle.None;
-                WindowState = FormWindowState.Maximized;
-                if (_wasMaximized)
-                {
-                    Rectangle bounds = Screen.FromControl(this).Bounds;
-                    uint SWP_SHOWWINDOW = 0x0040;
-                    IntPtr HWND_TOP = IntPtr.Zero;
-                    SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width, bounds.Height, SWP_SHOWWINDOW);
-                }
-            }
-        }
-        else
-        {
-            if ((WindowState == FormWindowState.Maximized && FormBorderStyle == FormBorderStyle.None) /*|| forceToNornam*/)
-            {
-                if (_wasMaximized)
-                    WindowState = FormWindowState.Maximized;
-                else
-                {
-                    WindowState = FormWindowState.Normal;
+    //    if (enabled)
+    //    {
+    //        if (WindowState != FormWindowState.Maximized || FormBorderStyle != FormBorderStyle.None)
+    //        {
+    //            FormBorderStyle = FormBorderStyle.None;
+    //            WindowState = FormWindowState.Maximized;
+    //            if (_wasMaximized)
+    //            {
+    //                Rectangle bounds = Screen.FromControl(this).Bounds;
+    //                uint SWP_SHOWWINDOW = 0x0040;
+    //                IntPtr HWND_TOP = IntPtr.Zero;
+    //                SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width, bounds.Height, SWP_SHOWWINDOW);
+    //            }
+    //        }
+    //    }
+    //    else
+    //    {
+    //        if ((WindowState == FormWindowState.Maximized && FormBorderStyle == FormBorderStyle.None) /*|| forceToNornam*/)
+    //        {
+    //            if (_wasMaximized)
+    //                WindowState = FormWindowState.Maximized;
+    //            else
+    //            {
+    //                WindowState = FormWindowState.Normal;
 
-                    if (!Player.WasInitialSizeSet)
-                        SetFormPosAndSize();
-                }
+    //                if (!Player.WasInitialSizeSet)
+    //                    SetFormPosAndSize();
+    //            }
 
-                FormBorderStyle = Player.Border ? FormBorderStyle.Sizable : FormBorderStyle.None;
+    //            FormBorderStyle = Player.Border ? FormBorderStyle.Sizable : FormBorderStyle.None;
 
-                if (!KeepSize() /*|| forceToNornam*/)
-                    SetFormPosAndSize();
-            }
-        }
-    }
+    //            if (!KeepSize() /*|| forceToNornam*/)
+    //                SetFormPosAndSize();
+    //        }
+    //    }
+    //}
 
     Rectangle prebounds;
     private bool bPlayerinited;
@@ -1054,16 +1107,14 @@ public partial class MainForm : Form
         //Player.Fullscreen = enable3DSubtitle;
         if (enable3DMode)
         {
-            //Player.SetPropertyString("osc", "no");
-            prebounds = this.Bounds;
             Rectangle bounds = Screen.PrimaryScreen.Bounds;
             bounds.Width = bounds.Width * 2;
             if (FormBorderStyle != FormBorderStyle.None) FormBorderStyle = FormBorderStyle.None;
             if (WindowState != FormWindowState.Normal) WindowState = FormWindowState.Normal;
-            //this.Bounds = bounds;
-            uint SWP_SHOWWINDOW = 0x0040;
-            IntPtr HWND_TOP = IntPtr.Zero;
-            SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width, bounds.Height, SWP_SHOWWINDOW);
+            this.Bounds = bounds;
+            //uint SWP_SHOWWINDOW = 0x0040;
+            //IntPtr HWND_TOP = IntPtr.Zero;
+            //SetWindowPos(Handle, HWND_TOP, bounds.X, bounds.Y, bounds.Width, bounds.Height, SWP_SHOWWINDOW);
             if (Player.Duration.TotalMicroseconds > 0)
             {
                 var vw = Player.GetPropertyInt("width");
@@ -1077,30 +1128,29 @@ public partial class MainForm : Form
                     Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
                 }
             }
-
-            App.Settings.WindowSize = prebounds.Size;
+            btnBackRight.Left = Screen.PrimaryScreen.Bounds.Width + btnBackLeft.Left;
+            btn3DSubtitleModeRight.Left = Screen.PrimaryScreen.Bounds.Width + btn3DSubtitleModeLeft.Left;
+            btn3DRight.Left = Screen.PrimaryScreen.Bounds.Width + btn3DLeft.Left;
+            progressBarRight.Left = Screen.PrimaryScreen.Bounds.Width + progressBarLeft.Left;
+            progressBarLeft.Width = (int)(0.8397 * Width / 2);
+            progressBarRight.Width = progressBarLeft.Width;
         }
         else
         {
-            //Player.SetPropertyString("osc", "yes");
             if (Player.Duration.TotalMicroseconds > 0)
             {
                 var vw = Player.GetPropertyInt("width");
                 var vh = Player.GetPropertyInt("height");
                 Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
             }
+
+            Bounds = new Rectangle(App.Settings.WindowLocation.X, App.Settings.WindowLocation.Y,
+                                   App.Settings.WindowSize.Width, App.Settings.WindowSize.Height);
             WindowState = FormWindowState.Normal;
-            //this.Bounds = prebounds;
-            FormBorderStyle = Player.Border ? FormBorderStyle.Sizable : FormBorderStyle.None;
-            //this.TopMost = false;
-            //uint SWP_SHOWWINDOW = 0x0040;
-            //IntPtr HWND_TOP = IntPtr.Zero;
-            //SetWindowPos(Handle, HWND_TOP, prebounds.X, prebounds.Y, prebounds.Width, prebounds.Height, SWP_SHOWWINDOW);
+            FormBorderStyle = FormBorderStyle.Sizable;
 
-            //Debug.Print(App.Settings.WindowLocation.ToString());            
-
-            if (!Player.WasInitialSizeSet)
-                SetFormPosAndSize();
+            progressBarLeft.Width = (int)(0.8397 * Width);
+            progressBarRight.Width = progressBarLeftWidth;
         }
     }
 
@@ -1138,54 +1188,54 @@ public partial class MainForm : Form
         return 0;
     }
 
-    public void InitAndBuildContextMenu()
-    {
-        ContextMenu.Closed += ContextMenu_Closed;
-        ContextMenu.UseLayoutRounding = true;
+    //public void InitAndBuildContextMenu()
+    //{
+    //    ContextMenu.Closed += ContextMenu_Closed;
+    //    ContextMenu.UseLayoutRounding = true;
 
-        var (menuBindings, confBindings) = App.InputConf.GetBindings();
-        _confBindings = confBindings;
-        var activeBindings = InputHelp.GetActiveBindings(menuBindings);
+    //    var (menuBindings, confBindings) = App.InputConf.GetBindings();
+    //    _confBindings = confBindings;
+    //    var activeBindings = InputHelp.GetActiveBindings(menuBindings);
 
-        foreach (Binding binding in menuBindings)
-        {
-            Binding tempBinding = binding;
+    //    foreach (Binding binding in menuBindings)
+    //    {
+    //        Binding tempBinding = binding;
 
-            if (!binding.IsMenu)
-                continue;
+    //        if (!binding.IsMenu)
+    //            continue;
 
-            var menuItem = MenuHelp.Add(ContextMenu.Items, tempBinding.Comment);
+    //        var menuItem = MenuHelp.Add(ContextMenu.Items, tempBinding.Comment);
 
-            if (menuItem != null)
-            {
-                menuItem.Click += (sender, args) =>
-                {
-                    try
-                    {
-                        TaskHelp.Run(() =>
-                        {
-                            MenuAutoResetEvent.WaitOne();
-                            System.Windows.Application.Current.Dispatcher.Invoke(
-                                DispatcherPriority.Background, new Action(delegate { }));
-                            if (!string.IsNullOrEmpty(tempBinding.Command))
-                            {
-                                Player.Command(tempBinding.Command);          //通过向libmpv发送“script-message-to mpvnet open-files”来触发打开播放文件           
-                                //Player.LoadFiles(new string[] { @"D:\Movies\3D\Avatar.The.Way.Of.Water.2022.2160p.3D.Half-SBS.Ai-Upscaled.HEVC.DDP7.1-90fps-Chs-Cht-Eng-HUHUAZHI.mkv" }, true, false); //通过调用LoadFiles函数来触发打开播放文件                                
-                            }
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        Msg.ShowException(ex);
-                    }
-                };
+    //        if (menuItem != null)
+    //        {
+    //            menuItem.Click += (sender, args) =>
+    //            {
+    //                try
+    //                {
+    //                    TaskHelp.Run(() =>
+    //                    {
+    //                        MenuAutoResetEvent.WaitOne();
+    //                        System.Windows.Application.Current.Dispatcher.Invoke(
+    //                            DispatcherPriority.Background, new Action(delegate { }));
+    //                        if (!string.IsNullOrEmpty(tempBinding.Command))
+    //                        {
+    //                            Player.Command(tempBinding.Command);          //通过向libmpv发送“script-message-to mpvnet open-files”来触发打开播放文件           
+    //                            //Player.LoadFiles(new string[] { @"D:\Movies\3D\Avatar.The.Way.Of.Water.2022.2160p.3D.Half-SBS.Ai-Upscaled.HEVC.DDP7.1-90fps-Chs-Cht-Eng-HUHUAZHI.mkv" }, true, false); //通过调用LoadFiles函数来触发打开播放文件                                
+    //                        }
+    //                    });
+    //                }
+    //                catch (Exception ex)
+    //                {
+    //                    Msg.ShowException(ex);
+    //                }
+    //            };
 
-                menuItem.InputGestureText = InputHelp.GetBindingsForCommand(activeBindings, tempBinding.Command);
-            }
-        }
+    //            menuItem.InputGestureText = InputHelp.GetBindingsForCommand(activeBindings, tempBinding.Command);
+    //        }
+    //    }
 
-        _contextMenuIsReady = true;
-    }
+    //    _contextMenuIsReady = true;
+    //}
 
     /// <summary>
     /// 生成右眼偏移字幕
@@ -1221,8 +1271,6 @@ public partial class MainForm : Form
 
     void SetTitleInternal()
     {
-        string? title = Title;
-
         if (Player.Path.Length > 0)
         {
             Text = $"hhzPlayer - {Player.Path.Replace("\\\\", "\\")}";
@@ -1239,28 +1287,26 @@ public partial class MainForm : Form
         {
             if (WindowState == FormWindowState.Normal && WasShown)
             {
-                SavePosition();
-                App.Settings.WindowSize = ClientSize;
-                Debug.WriteLine($"App.WindowSize UpdateTo {App.Settings.WindowSize}");
+                progressBarLeftWidth = progressBarLeft.Width;
+                App.Settings.WindowPosition = new Point(Left, Top);
+                App.Settings.WindowLocation = new Point(Left, Top);
+                App.Settings.WindowSize = new Size(Width, Height);
             }
         }
     }
 
     void SavePosition()
     {
-        Point pos = new Point(Left + Width / 2, Top + Height / 2);
-        Screen screen = Screen.FromControl(this);
+        //Point pos = new Point(Left + Width / 2, Top + Height / 2);
+        //Screen screen = Screen.FromControl(this);
 
-        int x = GetHorizontalLocation(screen);
-        int y = GetVerticalLocation(screen);
+        //int x = GetHorizontalLocation(screen);
+        //int y = GetVerticalLocation(screen);
 
-        if (x == -1) pos.X = Left;
-        if (x == 1) pos.X = Left + Width;
-        if (y == -1) pos.Y = Top;
-        if (y == 1) pos.Y = Top + Height;
-
-        App.Settings.WindowPosition = pos;
-        App.Settings.WindowLocation = new Point(x, y);
+        //if (x == -1) pos.X = Left;
+        //if (x == 1) pos.X = Left + Width;
+        //if (y == -1) pos.Y = Top;
+        //if (y == 1) pos.Y = Top + Height;
     }
 
     protected override CreateParams CreateParams
@@ -1565,16 +1611,21 @@ public partial class MainForm : Form
 
     void CursorTimer_Tick(object sender, EventArgs e)
     {
-        if (IsCursorPosDifferent(_lastCursorPosition))
+        Debug.Print($"{DateTime.Now.ToString()}-CursorPositionDiff: {_lastCursorPosition != MousePosition}");
+        //Debug.Print($"CursorTimer:{Environment.TickCount - _lastCursorChanged > _cursorAutohide} ActiveForm:{ActiveForm == this} Duration:{Player.Duration.TotalMilliseconds > 0}");
+
+        if (_lastCursorPosition != MousePosition /*IsCursorPosDifferent(_lastCursorPosition)*/)
         {
             _lastCursorPosition = MousePosition;
             _lastCursorChanged = Environment.TickCount;
         }
         else if ((Environment.TickCount - _lastCursorChanged > _cursorAutohide) &&
-            ClientRectangle.Contains(PointToClient(MousePosition)) &&
-            ActiveForm == this && !ContextMenu.IsVisible && !IsMouseInOsc())
-            if (Player.Duration.TotalMilliseconds > 0)
-                HideCursor();
+            /*ClientRectangle.Contains(PointToClient(MousePosition)) &&*/
+            ActiveForm == this /*&& !ContextMenu.IsVisible && !IsMouseInOsc()*/ && Player.Duration.TotalMilliseconds > 0)
+        {
+            HideCursor();
+            Debug.Print($"{DateTime.Now.ToString()}-HideCursor");
+        }
     }
 
     //void ProgressTimer_Tick(object sender, EventArgs e) => UpdateProgressBar();
@@ -1585,30 +1636,30 @@ public partial class MainForm : Form
     //        _taskbar.SetValue(Player.GetPropertyDouble("time-pos", false), Player.Duration.TotalSeconds);
     //}
 
-    void PropChangeWindowScale(double scale)
-    {
-        if (!WasShown)
-            return;
+    //void PropChangeWindowScale(double scale)
+    //{
+    //    if (!WasShown)
+    //        return;
 
-        BeginInvoke(() =>
-        {
-            if (!App.Settings.Enable3DMode && Player.VideoSize.Width != 0 && Player.VideoSize.Height != 0)
-                SetSize(
-                    (int)(Player.VideoSize.Width * scale),
-                    (int)Math.Floor(Player.VideoSize.Height * scale),
-                    Screen.FromControl(this), false);
-        });
-    }
+    //    BeginInvoke(() =>
+    //    {
+    //        if (!App.Settings.Enable3DMode && Player.VideoSize.Width != 0 && Player.VideoSize.Height != 0)
+    //            SetSize(
+    //                (int)(Player.VideoSize.Width * scale),
+    //                (int)Math.Floor(Player.VideoSize.Height * scale),
+    //                Screen.FromControl(this), false);
+    //    });
+    //}
 
-    void PropChangeOnTop(bool value) => BeginInvoke(() => TopMost = value);
+    //void PropChangeOnTop(bool value) => BeginInvoke(() => TopMost = value);
 
-    void PropChangeAid(string value) => Player.AID = value;
+    //void PropChangeAid(string value) => Player.AID = value;
 
-    void PropChangeSid(string value) => Player.SID = value;
+    //void PropChangeSid(string value) => Player.SID = value;
 
-    void PropChangeVid(string value) => Player.VID = value;
+    //void PropChangeVid(string value) => Player.VID = value;
 
-    void PropChangeTitle(string value) { Title = value; SetTitle(); }
+    //void PropChangeTitle(string value) { Title = value; SetTitle(); }
 
     void PropChangeEdition(int value) => Player.Edition = value;
 
@@ -1669,49 +1720,49 @@ public partial class MainForm : Form
         });
     }
 
-    void PropChangeCursorAutohide()
-    {
-        string strValue = Player.GetPropertyString("cursor-autohide");
+    //void PropChangeCursorAutohide()
+    //{
+    //    string strValue = Player.GetPropertyString("cursor-autohide");
 
-        if (strValue == "no")
-            _cursorAutohide = 0;
-        else if (strValue == "always")
-            _cursorAutohide = -1;
-        else if (int.TryParse(strValue, out var intValue))
-            _cursorAutohide = intValue;
-    }
+    //    if (strValue == "no")
+    //        _cursorAutohide = 0;
+    //    else if (strValue == "always")
+    //        _cursorAutohide = -1;
+    //    else if (int.TryParse(strValue, out var intValue))
+    //        _cursorAutohide = intValue;
+    //}
 
-    void PropChangeBorder(bool enabled)
-    {
-        Player.Border = enabled;
+    //void PropChangeBorder(bool enabled)
+    //{
+    //    Player.Border = enabled;
 
-        BeginInvoke(() =>
-        {
-            if (!IsFullscreen && !App.Settings.Enable3DMode)
-            {
-                if (Player.Border && FormBorderStyle == FormBorderStyle.None)
-                    FormBorderStyle = FormBorderStyle.Sizable;
+    //    BeginInvoke(() =>
+    //    {
+    //        if (!IsFullscreen && !App.Settings.Enable3DMode)
+    //        {
+    //            if (Player.Border && FormBorderStyle == FormBorderStyle.None)
+    //                FormBorderStyle = FormBorderStyle.Sizable;
 
-                if (!Player.Border && FormBorderStyle == FormBorderStyle.Sizable)
-                    FormBorderStyle = FormBorderStyle.None;
-            }
-        });
-    }
+    //            if (!Player.Border && FormBorderStyle == FormBorderStyle.Sizable)
+    //                FormBorderStyle = FormBorderStyle.None;
+    //        }
+    //    });
+    //}
 
-    void PropChangeTitleBar(bool enabled)
-    {
-        if (enabled == Player.TitleBar)
-            return;
+    //void PropChangeTitleBar(bool enabled)
+    //{
+    //    if (enabled == Player.TitleBar)
+    //        return;
 
-        Player.TitleBar = enabled;
+    //    Player.TitleBar = enabled;
 
-        BeginInvoke(() =>
-        {
-            SetSize(ClientSize.Width, ClientSize.Height, Screen.FromControl(this), false);
-            Height += 1;
-            Height -= 1;
-        });
-    }
+    //    BeginInvoke(() =>
+    //    {
+    //        SetSize(ClientSize.Width, ClientSize.Height, Screen.FromControl(this), false);
+    //        Height += 1;
+    //        Height -= 1;
+    //    });
+    //}
 
     //private void PropChangeSubStereoOn(bool obj)
     //{
@@ -1721,19 +1772,30 @@ public partial class MainForm : Form
     //    }
     //}
 
-    void PropChangeFullscreen(bool value) => BeginInvoke(() => CycleFullscreen(value));
-    void Player_ClientMessage(string[] args)
-    {
-        if (Command.Current.Commands.ContainsKey(args[0]))
-            Command.Current.Commands[args[0]].Invoke(new ArraySegment<string>(args, 1, args.Length - 1));
-        else if (GuiCommand.Current.Commands.ContainsKey(args[0]))
-            BeginInvoke(() => GuiCommand.Current.Commands[args[0]].Invoke(new ArraySegment<string>(args, 1, args.Length - 1)));
-    }
+    //void PropChangeFullscreen(bool value) => BeginInvoke(() => CycleFullscreen(value));
+    //void Player_ClientMessage(string[] args)
+    //{
+    //    if (Command.Current.Commands.ContainsKey(args[0]))
+    //        Command.Current.Commands[args[0]].Invoke(new ArraySegment<string>(args, 1, args.Length - 1));
+    //    else if (GuiCommand.Current.Commands.ContainsKey(args[0]))
+    //        BeginInvoke(() => GuiCommand.Current.Commands[args[0]].Invoke(new ArraySegment<string>(args, 1, args.Length - 1)));
+    //}
 
-    void Player_PlaylistPosChanged(int pos)
+    //void Player_PlaylistPosChanged(int pos)
+    //{
+    //    if (pos == -1)
+    //        SetTitle();
+    //}
+
+    void SetProgressBarMax(double Maximum)
     {
-        if (pos == -1)
-            SetTitle();
+        progressBarLeft.Maximum = (int)Maximum;
+        progressBarRight.Maximum = (int)Maximum;
+    }
+    void SetProgressBarValue(double value)
+    {
+        progressBarLeft.Value = (int)value;
+        progressBarRight.Value = (int)value;
     }
 
     void Player_FileLoaded()
@@ -1743,7 +1805,7 @@ public partial class MainForm : Form
             if (Player.Duration.TotalMilliseconds > 0)
             {
                 hhzMainPage.Visible = false;
-                progressBar.Maximum = (int)Player.Duration.TotalSeconds;
+                SetProgressBarMax(Player.Duration.TotalSeconds);
                 if (App.Settings.Enable3DMode)
                 {
                     float w = Player.GetPropertyInt("width");
@@ -1770,6 +1832,12 @@ public partial class MainForm : Form
                     interval = 1000;
 
                 ProgressTimer.Interval = interval;
+                
+                btnBackRight.Visible = true;
+                btn3DSubtitleModeRight.Visible = true;
+                btn3DRight.Visible = true;
+                progressBarRight.Visible = true;
+                progressBarRight.Visible = true;
                 //UpdateProgressBar();
             }
         });
@@ -1822,104 +1890,104 @@ public partial class MainForm : Form
             _taskbar.SetState(Player.Paused ? TaskbarStates.Paused : TaskbarStates.Normal);
     }
 
-    void Player_Shutdown() => BeginInvoke(Close);
+    //void Player_Shutdown() => BeginInvoke(Close);
 
-    void Player_VideoSizeChanged(Size value) => BeginInvoke(() =>
-    {
-        if (!KeepSize())
-            SetFormPosAndSize();
-    });
-    protected override void OnLoad(EventArgs e)
-    {
-        base.OnLoad(e);
-        _lastCycleFullscreen = Environment.TickCount;
-        //SetFormPosAndSize(false, true, true);
+    //void Player_VideoSizeChanged(Size value) => BeginInvoke(() =>
+    //{
+    //    if (!KeepSize())
+    //        SetFormPosAndSize();
+    //});
+    //protected override void OnLoad(EventArgs e)
+    //{
+    //    base.OnLoad(e);
+    //    _lastCycleFullscreen = Environment.TickCount;
+    //    //SetFormPosAndSize(false, true, true);
 
-        if (_3DModeMenuItem == null)
-        {
-            _3DModeMenuItem = new MenuItem
-            {
-                Header = "3D 立体模式",
-                IsCheckable = false,
-            };
-        }
-        //if (_fullScreenUIMemuItem == null)
-        //{
-        //    _fullScreenUIMemuItem = new WpfControls.MenuItem
-        //    {
-        //        Header = "Fullscreen UI",
-        //        IsCheckable = true,
-        //    };
-        //    _fullScreenUIMemuItem.Click += FullScreenUI_Click;
-        //}
+    //    if (_3DModeMenuItem == null)
+    //    {
+    //        _3DModeMenuItem = new MenuItem
+    //        {
+    //            Header = "3D 立体模式",
+    //            IsCheckable = false,
+    //        };
+    //    }
+    //if (_fullScreenUIMemuItem == null)
+    //{
+    //    _fullScreenUIMemuItem = new WpfControls.MenuItem
+    //    {
+    //        Header = "Fullscreen UI",
+    //        IsCheckable = true,
+    //    };
+    //    _fullScreenUIMemuItem.Click += FullScreenUI_Click;
+    //}
 
-        //if (_s3DModeSwitchMenuItem == null)
-        //{
-        //    _s3DModeSwitchMenuItem = new MenuItem
-        //    {
-        //        Header = "开/关",
-        //        IsCheckable = true,
-        //    };
-        //    _s3DModeSwitchMenuItem.Click += Enable3DMode_Click;
-        //}
+    //if (_s3DModeSwitchMenuItem == null)
+    //{
+    //    _s3DModeSwitchMenuItem = new MenuItem
+    //    {
+    //        Header = "开/关",
+    //        IsCheckable = true,
+    //    };
+    //    _s3DModeSwitchMenuItem.Click += Enable3DMode_Click;
+    //}
 
-        //if (_SbsSubMemuItem == null)
-        //{
-        //    _SbsSubMemuItem = new MenuItem
-        //    {
-        //        Header = "3D字幕",
-        //        IsCheckable = false,
-        //    };
-        //}
+    //if (_SbsSubMemuItem == null)
+    //{
+    //    _SbsSubMemuItem = new MenuItem
+    //    {
+    //        Header = "3D字幕",
+    //        IsCheckable = false,
+    //    };
+    //}
 
 
-        if (_sSbsSubAutoMenuItem == null)
-        {
-            _sSbsSubAutoMenuItem = new MenuItem
-            {
-                Header = "自动",
-                IsChecked = true,
-                IsCheckable = true,
-            };
-            _sSbsSubAutoMenuItem.Click += SbsSubAutoMenuItem_Click;
-        }
+    //if (_sSbsSubAutoMenuItem == null)
+    //{
+    //    _sSbsSubAutoMenuItem = new MenuItem
+    //    {
+    //        Header = "自动",
+    //        IsChecked = true,
+    //        IsCheckable = true,
+    //    };
+    //    _sSbsSubAutoMenuItem.Click += SbsSubAutoMenuItem_Click;
+    //}
 
-        //if (_sSbsSubOnMenuItem == null)
-        //{
-        //    _sSbsSubOnMenuItem = new MenuItem
-        //    {
-        //        Header = "开-双眼字幕",
-        //        IsCheckable = true,
-        //    };
-        //    _sSbsSubOnMenuItem.Click += SbsSubOnMemuItem_Click;
-        //}
+    //if (_sSbsSubOnMenuItem == null)
+    //{
+    //    _sSbsSubOnMenuItem = new MenuItem
+    //    {
+    //        Header = "开-双眼字幕",
+    //        IsCheckable = true,
+    //    };
+    //    _sSbsSubOnMenuItem.Click += SbsSubOnMemuItem_Click;
+    //}
 
-        //if (_sSbsSubOffMenuItem == null)
-        //{
-        //    _sSbsSubOffMenuItem = new MenuItem
-        //    {
-        //        Header = "关-复制右眼",
-        //        IsCheckable = true,
-        //    };
-        //    _sSbsSubOffMenuItem.Click += SbsSubOffMenuItem_Click;
-        //}
+    //if (_sSbsSubOffMenuItem == null)
+    //{
+    //    _sSbsSubOffMenuItem = new MenuItem
+    //    {
+    //        Header = "关-复制右眼",
+    //        IsCheckable = true,
+    //    };
+    //    _sSbsSubOffMenuItem.Click += SbsSubOffMenuItem_Click;
+    //}
 
-        //App.Settings.Enable3DMode = true;
-        //_s3DModeSwitchMenuItem.IsChecked = App.Settings.Enable3DMode;
-        //BeginInvoke(() =>
-        //{
-        //    if (App.Settings.Enable3DMode)
-        //    {
-        //        Enable3DMode_Click(_s3DModeSwitchMenuItem, null);
-        //    }
-        //});
-    }
+    //App.Settings.Enable3DMode = true;
+    //_s3DModeSwitchMenuItem.IsChecked = App.Settings.Enable3DMode;
+    //BeginInvoke(() =>
+    //{
+    //    if (App.Settings.Enable3DMode)
+    //    {
+    //        Enable3DMode_Click(_s3DModeSwitchMenuItem, null);
+    //    }
+    //});
+    //}
 
-    protected override void OnLostFocus(EventArgs e)
-    {
-        base.OnLostFocus(e);
-        ShowCursor();
-    }
+    //protected override void OnLostFocus(EventArgs e)
+    //{
+    //    base.OnLostFocus(e);
+    //    ShowCursor();
+    //}
 
     protected override void OnShown(EventArgs e)
     {
@@ -1941,14 +2009,14 @@ public partial class MainForm : Form
         MessageBoxEx.MessageForeground = Theme.Current?.GetBrush("heading");
         MessageBoxEx.MessageBackground = Theme.Current?.GetBrush("background");
         MessageBoxEx.ButtonBackground = Theme.Current?.GetBrush("highlight");
-        InitAndBuildContextMenu();
+        //InitAndBuildContextMenu();
         Cursor.Position = new Point(Cursor.Position.X + 1, Cursor.Position.Y);
         GlobalHotkey.RegisterGlobalHotkeys(Handle);
         StrongReferenceMessenger.Default.Send(new MainWindowIsLoadedMessage());
         WasShown = true;
     }
 
-    void ContextMenu_Closed(object sender, System.Windows.RoutedEventArgs e) => MenuAutoResetEvent.Set();
+    //void ContextMenu_Closed(object sender, System.Windows.RoutedEventArgs e) => MenuAutoResetEvent.Set();
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
@@ -1957,29 +2025,32 @@ public partial class MainForm : Form
             if (!App.Settings.Enable3DMode)
             {
                 SaveWindowProperties();
+                //App.Settings.WindowPosition = Location;
+                //App.Settings.WindowLocation = Location;
+                //App.Settings.WindowSize = Size;
             }
 
-            if (FormBorderStyle != FormBorderStyle.None)
-            {
-                if (WindowState == FormWindowState.Maximized)
-                    _wasMaximized = true;
-                else if (WindowState == FormWindowState.Normal)
-                    _wasMaximized = false;
-            }
+            //if (FormBorderStyle != FormBorderStyle.None)
+            //{
+            //    if (WindowState == FormWindowState.Maximized)
+            //        _wasMaximized = true;
+            //    else if (WindowState == FormWindowState.Normal)
+            //        _wasMaximized = false;
+            //}
 
-            if (WasShown)
-            {
-                if (WindowState == FormWindowState.Minimized)
-                    Player.SetPropertyBool("window-minimized", true);
-                else if (WindowState == FormWindowState.Normal)
-                {
-                    Player.SetPropertyBool("window-maximized", false);
-                    Player.SetPropertyBool("window-minimized", false);
-                }
-                else if (WindowState == FormWindowState.Maximized)
-                    Player.SetPropertyBool("window-maximized", true);
-            }
-            Debug.WriteLine($"OnResize,ClientSize={ClientSize}");
+            //if (WasShown)
+            //{
+            //    if (WindowState == FormWindowState.Minimized)
+            //        Player.SetPropertyBool("window-minimized", true);
+            //    else if (WindowState == FormWindowState.Normal)
+            //    {
+            //        Player.SetPropertyBool("window-maximized", false);
+            //        Player.SetPropertyBool("window-minimized", false);
+            //    }
+            //    else if (WindowState == FormWindowState.Maximized)
+            //        Player.SetPropertyBool("window-maximized", true);
+            //}
+            //Debug.WriteLine($"OnResize,ClientSize={ClientSize}");
         }
         //Player.SetPropertyString("osc", "no");
     }
@@ -2004,21 +2075,21 @@ public partial class MainForm : Form
         _mouseDownLocation = PointToScreen(e.Location);
     }
 
-    protected override void OnMouseMove(MouseEventArgs e)
-    {
-        base.OnMouseMove(e);
+    //protected override void OnMouseMove(MouseEventArgs e)
+    //{
+    //    base.OnMouseMove(e);
 
-        if (App.Settings.Enable3DMode == false && IsCursorPosDifferent(_mouseDownLocation) &&
-            WindowState == FormWindowState.Normal &&
-            e.Button == MouseButtons.Left && !IsMouseInOsc() &&
-            Player.GetPropertyBool("window-dragging"))
-        {
-            var HTCAPTION = new IntPtr(2);
-            var WM_NCLBUTTONDOWN = 0xA1;
-            ReleaseCapture();
-            PostMessage(Handle, WM_NCLBUTTONDOWN, HTCAPTION, IntPtr.Zero);
-        }
-    }
+    //    if (App.Settings.Enable3DMode == false && IsCursorPosDifferent(_mouseDownLocation) &&
+    //        WindowState == FormWindowState.Normal &&
+    //        e.Button == MouseButtons.Left && !IsMouseInOsc() &&
+    //        Player.GetPropertyBool("window-dragging"))
+    //    {
+    //        var HTCAPTION = new IntPtr(2);
+    //        var WM_NCLBUTTONDOWN = 0xA1;
+    //        ReleaseCapture();
+    //        PostMessage(Handle, WM_NCLBUTTONDOWN, HTCAPTION, IntPtr.Zero);
+    //    }
+    //}
 
     protected override void OnMove(EventArgs e)
     {
@@ -2035,27 +2106,69 @@ public partial class MainForm : Form
         base.OnKeyDown(e);
     }
 
-    void ShowCursor()
+    void ShowVideoUI()
     {
-        if (!_isCursorVisible && _cursorAutohide != -1)
-        {
-            btn3D.Visible = true;
-            btnBack.Visible = true;
-            progressBar.Visible = true;
-            Cursor.Show();
-            _isCursorVisible = true;
-        }
+        btnBackLeft.Visible = true;
+        btn3DSubtitleModeLeft.Visible = true;
+        btn3DLeft.Visible = true;        
+        progressBarLeft.Visible = true;
+
+        btnBackRight.Visible = true;
+        btn3DSubtitleModeRight.Visible = true;
+        btn3DRight.Visible = true;
+        progressBarRight.Visible = true;
+
+        btnBackLeft.BringToFront();
+        btn3DSubtitleModeLeft.BringToFront();
+        btn3DLeft.BringToFront();
+        progressBarLeft.BringToFront();
+
+        btnBackRight.BringToFront();
+        btn3DSubtitleModeRight.BringToFront();
+        btn3DRight.BringToFront();        
+        progressBarRight.BringToFront();
     }
 
+    void ShowCursor()
+    {
+        ShowVideoUI();
+        overlayPanel.Cursor = Cursors.Default;
+        Cursor.Show();
+    }
+
+    void HideVideoUI()
+    {
+        btnBackLeft.Visible = false;
+        btn3DSubtitleModeLeft.Visible = false;
+        btn3DLeft.Visible = false;
+        progressBarLeft.Visible = false;
+
+        btnBackRight.Visible = false;
+        btn3DSubtitleModeRight.Visible = false;
+        btn3DRight.Visible = false;
+        progressBarRight.Visible = false;
+        
+        
+        
+    }
     void HideCursor()
     {
-        if (_isCursorVisible && _cursorAutohide != 0)
+        HideVideoUI();
+        Cursor.Hide();
+        overlayPanel.Cursor = CreateTransparentCursor();
+        //overlayPanel.Cursor = trancur;
+    }
+
+    private Cursor CreateTransparentCursor()
+    {
+        // 创建 1x1 的透明位图
+        using (Bitmap bmp = new Bitmap(1, 1))
         {
-            Cursor.Hide();
-            _isCursorVisible = false;
-            btn3D.Visible = false;
-            btnBack.Visible = false;
-            progressBar.Visible = false;
+            // 设置透明
+            bmp.MakeTransparent();
+
+            // 创建光标
+            return new Cursor(bmp.GetHicon());
         }
     }
 
@@ -2132,33 +2245,64 @@ public partial class MainForm : Form
 
     }
 
-    private void btn3D_Click(object sender, EventArgs e)
-    {
-        Enable3DMode_Click(sender, null);
-    }
-
-    private void btnBack_Click(object sender, EventArgs e)
-    {
-        Player.Command("stop");
-        overlayPanel.Visible = false;
-        hhzMainPage.Visible = true;
-    }
-
-    private void progressBar_MouseDown(object sender, MouseEventArgs e)
-    {
-        // 根据点击位置计算百分比
-        double percent = (double)e.X / progressBar.Width;
-        //int value = (int)(percent * (progressBar.Maximum - progressBar.Minimum));
-        //progressBar.Value = Math.Max(progressBar.Minimum, Math.Min(value, progressBar.Maximum));
-
-        // 跳转到对应时间
-        //double duration = Player.GetPropertyDouble("duration");
-        double target = percent * Player.Duration.TotalSeconds;
-        Player.SetPropertyDouble("time-pos", target);
-    }
-
     private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
     {
+        //SaveWindowProperties();
         App.Settings.Save();
+    }
+
+    public static class v3DSubtitleMode
+    {
+        public static void Auto(System.Windows.Forms.Button Lbutton, System.Windows.Forms.Button Rbutton)
+        {
+            if (Player.GetPropertyInt("width") > 3840)
+            {
+                Player.SetPropertyBool(CMD_sub_stereo_on, false);
+            }
+            else
+            {
+                Player.SetPropertyBool(CMD_sub_stereo_on, true);
+                Player.SetPropertyBool("sub-stereo-duplicate", false);
+            }
+            Lbutton.Text = "3D字幕模式:自动";
+            Rbutton.Text = "3D字幕模式:自动";
+        }
+
+        public static void On(System.Windows.Forms.Button Lbutton, System.Windows.Forms.Button Rbutton)
+        {
+            Player.SetPropertyBool(CMD_sub_stereo_on, true);
+            Player.SetPropertyBool("sub-stereo-duplicate", false);
+            Lbutton.Text = "3D字幕模式:双屏";
+            Rbutton.Text = "3D字幕模式:双屏";
+        }
+
+        public static void Off(System.Windows.Forms.Button Lbutton, System.Windows.Forms.Button Rbutton)
+        {
+            Player.SetPropertyBool(CMD_sub_stereo_on, false);
+            Lbutton.Text = "3D字幕模式:单屏";
+            Rbutton.Text = "3D字幕模式:单屏";
+        }
+    }
+
+    int isub = 0;
+    private void btnSubtitle_Click(object sender, EventArgs e)
+    {
+        switch (isub)
+        {
+            case 0: //Auto模式转下一个
+                v3DSubtitleMode.On(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
+                isub = 1; //开
+                break;
+            case 1:
+                v3DSubtitleMode.Off(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
+                isub = 2;
+                break;
+            case 2:
+                v3DSubtitleMode.Auto(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
+                isub = 0;
+                break;
+            default:
+                break;
+        }        
     }
 }

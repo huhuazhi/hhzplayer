@@ -96,22 +96,22 @@ public class MainPlayer : MpvClient
 
         if (formHandle != IntPtr.Zero)
         {
-            SetPropertyString("force-window", "yes");
+            //SetPropertyString("force-window", "yes");
             SetPropertyLong("wid", formHandle.ToInt64());
         }
 
-        SetPropertyInt("osd-duration", 2000);
+        //SetPropertyInt("osd-duration", 2000);
 
-        SetPropertyBool("input-default-bindings", true);
-        SetPropertyBool("input-builtin-bindings", false);
-        SetPropertyBool("input-media-keys", true);
+        //SetPropertyBool("input-default-bindings", true);
+        //SetPropertyBool("input-builtin-bindings", false);
+        //SetPropertyBool("input-media-keys", true);
 
         SetPropertyString("autocreate-playlist", "filter");
-        SetPropertyString("media-controls", "yes");
+        //SetPropertyString("media-controls", "yes");
         SetPropertyString("idle", "yes");
         SetPropertyString("screenshot-directory", "~~desktop/");
-        SetPropertyString("osd-playing-msg", "${media-title}");
-        SetPropertyString("osc", "yes");
+        //SetPropertyString("osd-playing-msg", "${media-title}");
+        SetPropertyString("osc", "no");
         SetPropertyString("config-dir", ConfigFolder);
         SetPropertyString("config", "yes");
 
@@ -119,7 +119,6 @@ public class MainPlayer : MpvClient
         SetPropertyString("sub-stereo-duplicate", "yes");
         SetPropertyString("sub-stereo-layout", "sbs");
         SetPropertyLong("sub-stereo-offset-px", 0);
-
 
         UsedInputConfContent = App.InputConf.GetContent();
 
@@ -140,7 +139,7 @@ public class MainPlayer : MpvClient
                 SetPropertyString("input-conf", @"memory://" + content);
         }
 
-        Environment.SetEnvironmentVariable("MPVNET_VERSION", AppInfo.Version.ToString());  // deprecated
+        //Environment.SetEnvironmentVariable("MPVNET_VERSION", AppInfo.Version.ToString());  // deprecated
 
         mpv_error err = mpv_initialize(MainHandle);
 

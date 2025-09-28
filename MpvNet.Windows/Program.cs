@@ -75,16 +75,17 @@ static class Program
                     {
                         if (proc.MainWindowHandle != IntPtr.Zero)
                         {
-                            WinApi.AllowSetForegroundWindow(proc.Id);
-                            var data = new WinApi.CopyDataStruct();
-                            data.lpData = string.Join("\n", args2.ToArray());
-                            data.cbData = data.lpData.Length * 2 + 1;
-                            WinApi.SendMessage(proc.MainWindowHandle, 0x004A /*WM_COPYDATA*/, IntPtr.Zero, ref data);
-                            mutex.Dispose();
+                            //WinApi.AllowSetForegroundWindow(proc.Id);
+                            //var data = new WinApi.CopyDataStruct();
+                            //data.lpData = string.Join("\n", args2.ToArray());
+                            //data.cbData = data.lpData.Length * 2 + 1;
+                            //WinApi.SendMessage(proc.MainWindowHandle, 0x004A /*WM_COPYDATA*/, IntPtr.Zero, ref data);
+                            //mutex.Dispose();
 
-                            if (App.IsTerminalAttached)
-                                WinApi.FreeConsole();
-
+                            //if (App.IsTerminalAttached)
+                            //    WinApi.FreeConsole();
+                            //Application.Exit();
+                            Application.Run(new WinForms.MainForm());                            
                             return;
                         }
                     }
