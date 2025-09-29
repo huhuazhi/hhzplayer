@@ -8,8 +8,10 @@ using MpvNet.Windows.WPF;
 using MpvNet.Windows.WPF.MsgBox;
 using System.Drawing;
 using System.Globalization;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Controls;
@@ -31,54 +33,17 @@ public partial class MainForm : Form
     public IntPtr MpvWindowHandle { get; set; }
     public bool WasShown { get; set; }
     public static MainForm? Instance { get; set; }
-    ContextMenu ContextMenu { get; } = new ContextMenu();
-    AutoResetEvent MenuAutoResetEvent { get; } = new AutoResetEvent(false);
+
     Point _lastCursorPosition;
-    Taskbar? _taskbar;
-    Point _mouseDownLocation;
-    List<Binding>? _confBindings;
 
     int _lastCursorChanged;
-    int _lastCycleFullscreen;
-    int _taskbarButtonCreatedMessage;
     int _cursorAutohide = 1000;
-
-    bool _contextMenuIsReady;
-    bool _wasMaximized;
-    bool _maxSizeSet;
-
-    //Cursor trancur = CreateTransparentCursor();
-
-    const int WM_SYSCOMMAND = 0x0112;
-    const int SC_MAXIMIZE = 0xF030;
-
-    /// <summary>
-    /// 3D模式菜单头
-    /// </summary>
-    MenuItem? _3DModeMenuItem;
-    MenuItem? _s3DModeSwitchMenuItem;
-    /// <summary>
-    /// 双眼字幕菜单头
-    /// </summary>
-    MenuItem? _SbsSubMemuItem;
-
-    MenuItem? _sSbsSubAutoMenuItem;
-    MenuItem? _sSbsSubOnMenuItem;
-    MenuItem? _sSbsSubOffMenuItem;
 
     //WpfControls.MenuItem? _fullScreenUIMemuItem;
     /// <summary>
     /// 用于控制是否开启3D字幕的命令（在libmpv-2.dll 线路B的源码里新增）
     /// </summary>
     const string CMD_sub_stereo_on = "sub-stereo-on";
-    //const string CMD_sub_stereo_
-    /// <summary>
-    /// 是否开启线路A的方法实现3D字幕的命令（在libmpv-2.dll），设置为false的花则使用线路B方法实现，默认libmpv-2.dll是使用线路A的
-    /// </summary>
-    const string CMD_sub_stereo_duplicate = "sub-stereo-duplicate";
-
-    int btnLeft = 40;
-    int progressBarLeftWidth = 1981;
 
     public MainForm()
     {
@@ -94,7 +59,7 @@ public partial class MainForm : Form
         UpdateDarkMode();
         InitializehhzOverlay();
         InitPlayerEvents();
-        progressBarLeftWidth = progressBarLeft.Width;
+
         int cmdlineArgLength = Environment.GetCommandLineArgs().Length;
         if (cmdlineArgLength > 1)
         {
@@ -256,17 +221,18 @@ public partial class MainForm : Form
     }
     private void BtnSubtitleTrack_Click(object? sender, EventArgs e)
     {
-
+        _subMenuLeft?.Show(btnSubtitleTrackLeft, new Point(MousePosition.X - btnSubtitleTrackLeft.Left, MousePosition.Y - btnSubtitleTrackLeft.Top));
     }
 
     private void BtnAudioTrack_Click(object? sender, EventArgs e)
-    {
-        
+    {        
+        _audioMenuLeft?.Show(btnAudioTrackLeft, new Point(MousePosition.X - btnAudioTrackLeft.Left, MousePosition.Y - btnAudioTrackLeft.Top));
     }
 
     private void BtnVideoTrack_Click(object? sender, EventArgs e)
     {
-
+        _videoMenuLeft?.Show(btnVideoTrackLeft, new Point(MousePosition.X - btnVideoTrackLeft.Left, MousePosition.Y - btnVideoTrackLeft.Top));
+        //_videoMenuRight?.Show(btnVideoTrackRight, new Point(MousePosition.X - btnVideoTrackRight.Left, MousePosition.Y - btnVideoTrackRight.Top));
     }
 
     private void ProgressBar_MouseClick(object? sender, MouseEventArgs e)
@@ -540,7 +506,6 @@ public partial class MainForm : Form
         {
             if (WindowState != FormWindowState.Minimized && WasShown && !_isReturn2D)
             {
-                progressBarLeftWidth = progressBarLeft.Width;
                 if (WindowState != FormWindowState.Maximized)
                 {
                     App.Settings.WindowPosition = new Point(Left, Top);
@@ -592,12 +557,292 @@ public partial class MainForm : Form
         progressBarRight.Value = (int)value;
     }
 
+    // 三个菜单字段
+    private ContextMenuStrip _videoMenuLeft;
+    private ContextMenuStrip _audioMenuLeft;
+    private ContextMenuStrip _subMenuLeft;
+    private ContextMenuStrip _videoMenuRight;
+    private ContextMenuStrip _audioMenuRight;
+    private ContextMenuStrip _subMenuRight;
+
+    /// <summary>
+    /// 一次性刷新并构建：视频 / 音频 / 字幕 三个菜单（详细信息版）
+    /// </summary>
+    private void BuildAllTrackMenus()
+    {
+        _videoMenuLeft = new ContextMenuStrip();
+        _audioMenuLeft = new ContextMenuStrip();
+        _subMenuLeft = new ContextMenuStrip();
+        _videoMenuRight = new ContextMenuStrip();
+        _audioMenuRight = new ContextMenuStrip();
+        _subMenuRight = new ContextMenuStrip();
+
+        string json = Player.GetPropertyString("track-list");
+        if (string.IsNullOrEmpty(json)) return;
+
+        // 读取当前选择，用于“无”选项的打勾
+        string curVid = Player.GetPropertyString("vid");
+        string curAid = Player.GetPropertyString("aid");
+        string curSid = Player.GetPropertyString("sid");
+
+        using var doc = JsonDocument.Parse(json);
+        foreach (var track in doc.RootElement.EnumerateArray())
+        {
+            string type = track.GetProperty("type").GetString();
+            int id = track.GetProperty("id").GetInt32();
+            bool selected = track.TryGetProperty("selected", out var s) && s.GetBoolean();
+
+            string lang = track.TryGetProperty("lang", out var l) ? l.GetString() : null;
+            string codec = track.TryGetProperty("codec", out var c) ? c.GetString() : null;
+            string profile = track.TryGetProperty("codec-profile", out var p) ? p.GetString() : null;
+            bool isDefault = track.TryGetProperty("default", out var d) && d.GetBoolean();
+
+            string label;
+
+            string title = track.TryGetProperty("title", out var t) ? t.GetString() : null;
+            string langDisplay = MapLang(lang, title);
+
+            if (type == "video")
+            {
+                string w = track.TryGetProperty("demux-w", out var ww) ? ww.GetRawText() : "?";
+                string h = track.TryGetProperty("demux-h", out var hh) ? hh.GetRawText() : "?";
+                string fps = track.TryGetProperty("demux-fps", out var f) ? TryFormatDouble(f, "0.##") : "?";
+                long bps = ReadBitrateBps(track);
+                string br = FormatBitrate(bps, preferMbForVideo: true);
+
+                string codecPart = string.IsNullOrEmpty(profile) ? codec : $"{codec}, {profile}";
+                label = $"视频: {codecPart}, {w}x{h}, {br}, {fps} FPS";
+            }
+            else if (type == "audio")
+            {
+                string ch = track.TryGetProperty("demux-channel-count", out var cc) ? $"{cc.GetInt32()} ch" : "?";
+                string rate = track.TryGetProperty("demux-samplerate", out var sr) ? $"{sr.GetInt32() / 1000.0:0.0} kHz" : "?";
+                long bps = ReadBitrateBps(track);
+                string br = FormatBitrate(bps, preferMbForVideo: false);
+
+                label = $"音频: {langDisplay}, {codec}, {br}, {ch}, {rate}";
+                if (isDefault) label += ", Default";
+            }
+            else // sub
+            {
+                label = $"字幕: {langDisplay}, {codec}";
+                if (isDefault) label += ", Default";
+            }
+            Debug.Print(track.GetRawText());
+            var iteml = new ToolStripMenuItem(label)
+            {
+                Tag = id,
+                Checked = selected,
+                CheckOnClick = false
+            };
+            var itemr = new ToolStripMenuItem(label)
+            {
+                Tag = id,
+                Checked = selected,
+                CheckOnClick = false
+            };
+
+            iteml.Click += (_, __) =>
+            {
+                switch (type)
+                {
+                    case "video": Player.SetPropertyString("vid", id.ToString()); break;
+                    case "audio": Player.SetPropertyString("aid", id.ToString()); break;
+                    case "sub": Player.SetPropertyString("sid", id.ToString()); break;
+                }
+                BuildAllTrackMenus(); // 刷新勾选状态
+            };
+            itemr.Click += (_, __) =>
+            {
+                switch (type)
+                {
+                    case "video": Player.SetPropertyString("vid", id.ToString()); break;
+                    case "audio": Player.SetPropertyString("aid", id.ToString()); break;
+                    case "sub": Player.SetPropertyString("sid", id.ToString()); break;
+                }
+                BuildAllTrackMenus(); // 刷新勾选状态
+            };
+
+            switch (type)
+            {
+                case "video": _videoMenuLeft.Items.Add(iteml); _videoMenuRight.Items.Add(itemr); break;
+                case "audio": _audioMenuLeft.Items.Add(iteml); _audioMenuRight.Items.Add(itemr); break;
+                case "sub": _subMenuLeft.Items.Add(iteml); _subMenuRight.Items.Add(itemr); break;
+            }
+        }
+
+        // --- “无”选项（要根据 vid/aid/sid == "no" 来勾选） ---
+        _videoMenuLeft.Items.Add(new ToolStripSeparator());
+        _videoMenuRight.Items.Add(new ToolStripSeparator());
+        var noVidl = new ToolStripMenuItem("视频: 无视频")
+        {
+            Checked = curVid == "no",
+            CheckOnClick = false
+        };
+        var noVidr = new ToolStripMenuItem("视频: 无视频")
+        {
+            Checked = curVid == "no",
+            CheckOnClick = false
+        };
+        noVidl.Click += (_, __) => { Player.SetPropertyString("vid", "no"); BuildAllTrackMenus(); };
+        _videoMenuLeft.Items.Add(noVidl);
+        noVidr.Click += (_, __) => { Player.SetPropertyString("vid", "no"); BuildAllTrackMenus(); };
+        _videoMenuRight.Items.Add(noVidr);
+
+        _audioMenuLeft.Items.Add(new ToolStripSeparator());
+        _audioMenuRight.Items.Add(new ToolStripSeparator());
+        var noAidl = new ToolStripMenuItem("音频: 无音频")
+        {
+            Checked = curAid == "no",
+            CheckOnClick = false
+        };
+        var noAidr = new ToolStripMenuItem("音频: 无音频")
+        {
+            Checked = curAid == "no",
+            CheckOnClick = false
+        };
+        noAidl.Click += (_, __) => { Player.SetPropertyString("aid", "no"); BuildAllTrackMenus(); };
+        noAidr.Click += (_, __) => { Player.SetPropertyString("aid", "no"); BuildAllTrackMenus(); };
+        _audioMenuLeft.Items.Add(noAidl);
+        _audioMenuRight.Items.Add(noAidr);
+
+        _subMenuLeft.Items.Add(new ToolStripSeparator());
+        _subMenuRight.Items.Add(new ToolStripSeparator());
+        var noSubl = new ToolStripMenuItem("字幕: 无字幕")
+        {
+            Checked = curSid == "no",
+            CheckOnClick = false
+        };
+        var noSubr = new ToolStripMenuItem("字幕: 无字幕")
+        {
+            Checked = curSid == "no",
+            CheckOnClick = false
+        };
+        noSubl.Click += (_, __) => { Player.SetPropertyString("sid", "no"); BuildAllTrackMenus(); };
+        noSubr.Click += (_, __) => { Player.SetPropertyString("sid", "no"); BuildAllTrackMenus(); };
+        _subMenuLeft.Items.Add(noSubl);
+        _subMenuRight.Items.Add(noSubr);
+    }
+
+    // ======== 帮助函数 ========
+
+    // 读取码率（bps）。优先 demux-bitrate（number），退回 metadata.BPS（string，单位 bps）
+    private static long ReadBitrateBps(JsonElement track)
+    {
+        // 1) demux-bitrate（有些封装会提供）
+        if (track.TryGetProperty("demux-bitrate", out var db) && db.ValueKind == JsonValueKind.Number)
+        {
+            if (db.TryGetInt64(out long v) && v > 0) return v;
+            if (db.TryGetDouble(out double dv) && dv > 0) return (long)dv;
+        }
+
+        // 2) metadata.BPS（字符串，单位 bps）
+        if (track.TryGetProperty("metadata", out var meta) && meta.ValueKind == JsonValueKind.Object)
+        {
+            if (meta.TryGetProperty("BPS", out var bpsProp) && bpsProp.ValueKind == JsonValueKind.String)
+            {
+                var s = bpsProp.GetString();
+                if (long.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out long bps) && bps > 0)
+                    return bps;
+            }
+        }
+
+        return 0;
+    }
+
+    // 将 bps 格式化成 "33.6 Mb/s" 或 "4,134 kb/s"
+    private static string FormatBitrate(long bps, bool preferMbForVideo)
+    {
+        if (bps <= 0) return "?";
+
+        if (preferMbForVideo)
+        {
+            // 视频：Mb/s，保留 1 位小数
+            double mbs = bps / 1_000_000.0;
+            return $"{mbs:0.0} Mb/s";
+        }
+        else
+        {
+            // 音频：kb/s，千分位空格
+            int kbps = (int)Math.Round(bps / 1000.0);
+            string grouped = string.Format(CultureInfo.InvariantCulture, "{0:N0}", kbps);
+            return $"{grouped} kb/s";
+        }
+    }
+
+    // 读取 double 的文本并格式化
+    private static string TryFormatDouble(JsonElement numElem, string fmt)
+    {
+        if (numElem.ValueKind == JsonValueKind.Number)
+        {
+            if (numElem.TryGetDouble(out double v))
+                return v.ToString(fmt, CultureInfo.InvariantCulture);
+        }
+        return "?";
+    }
+    // ======== 语言/标题映射 ========
+    private static string MapLang(string lang, string title)
+    {
+        string src = !string.IsNullOrEmpty(title) ? title : lang;
+        if (string.IsNullOrEmpty(src)) return "未知";
+
+        // 全部转大写，方便匹配
+        src = src.ToUpperInvariant();
+
+        // 如果是复合的（比如 CHS/ENG、chi+jpn），拆分处理
+        var parts = src.Split(new[] { '/', '+', '-', ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+        List<string> mapped = new();
+        foreach (var p in parts)
+        {
+            switch (p.Trim())
+            {
+                // ====== 中文 ======
+                case "CHS": mapped.Add("中文(简体)"); break;
+                case "CHT": mapped.Add("中文(繁體)"); break;
+                case "CHI": mapped.Add("中文"); break;
+
+                // ====== 英语 ======
+                case "ENG": mapped.Add("英文"); break;
+                case "EN": mapped.Add("英文"); break;
+
+                // ====== 日语 / 韩语 ======
+                case "JPN": mapped.Add("日文"); break;
+                case "JP": mapped.Add("日文"); break;
+                case "KOR": mapped.Add("韩文"); break;
+                case "KO": mapped.Add("韩文"); break;
+
+                // ====== 欧洲常见语言 ======
+                case "FRA": case "FR": mapped.Add("法文"); break;
+                case "DEU": case "GER": case "DE": mapped.Add("德文"); break;
+                case "SPA": case "ES": mapped.Add("西班牙文"); break;
+                case "ITA": case "IT": mapped.Add("意大利文"); break;
+                case "POR": case "PT": mapped.Add("葡萄牙文"); break;
+                case "RUS": case "RU": mapped.Add("俄文"); break;
+                case "HUN": mapped.Add("匈牙利文"); break;
+                case "TUR": mapped.Add("土耳其文"); break;
+                case "ARA": mapped.Add("阿拉伯文"); break;
+                case "THA": mapped.Add("泰文"); break;
+                case "VIE": mapped.Add("越南文"); break;
+                case "IND": case "ID": mapped.Add("印尼文"); break;
+
+                // ====== 默认 ======
+                default: mapped.Add(p); break;
+            }
+        }
+
+        return string.Join("/", mapped);
+    }
+
+
     void Player_FileLoaded()
     {
         BeginInvoke(() =>
         {
             if (Player.Duration.TotalMilliseconds > 0)
             {
+                BuildAllTrackMenus();
+
                 hhzMainPage.Visible = false;
                 SetProgressBarMax(Player.Duration.TotalSeconds);
                 if (App.Settings.Enable3DMode)
@@ -730,7 +975,6 @@ public partial class MainForm : Form
     protected override void OnMouseDown(MouseEventArgs e)
     {
         base.OnMouseDown(e);
-        _mouseDownLocation = PointToScreen(e.Location);
     }
 
     //protected override void OnMouseMove(MouseEventArgs e)
@@ -879,6 +1123,8 @@ public partial class MainForm : Form
     }
     void HideCursor()
     {
+        if (_videoMenuLeft.Visible || _audioMenuLeft.Visible || _subMenuLeft.Visible)
+            return;
         HideVideoUI();
         Cursor.Hide();
         overlayPanel.Cursor = CreateTransparentCursor();

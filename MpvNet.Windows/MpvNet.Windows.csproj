@@ -6,7 +6,7 @@
 		<RootNamespace>MpvNet.Windows</RootNamespace>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<PublishSingleFile>true</PublishSingleFile>
-		<AssemblyName>mpvnet</AssemblyName>
+		<AssemblyName>hhzplayer</AssemblyName>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>true</UseWindowsForms>
 		<FileVersion>7.1.1.4</FileVersion>
