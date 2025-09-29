@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -23,7 +22,7 @@ namespace MpvNet.Windows
         // 图标尺寸
         private int _iconSize = 32;
 
-        // ⭐关键修改：全局（静态）图标缓存，按扩展名缓存，所有 FileList 共用，避免重复打 Shell
+        // ⭐ 图标缓存（全局）
         private static readonly object s_iconLock = new();
         private static readonly Dictionary<string, Bitmap> s_iconByExt = new(StringComparer.OrdinalIgnoreCase);
         private static Bitmap s_folderIcon;
@@ -37,14 +36,15 @@ namespace MpvNet.Windows
 
         // 字体
         private readonly Font _headerFont = new("Segoe UI", 10, FontStyle.Bold);
-        private readonly Font _itemFont   = new("Segoe UI", 10, FontStyle.Regular);
+        private readonly Font _itemFont = new("Segoe UI", 10, FontStyle.Regular);
+        private readonly Font _pathFont = new("Segoe UI", 10, FontStyle.Regular);
 
-        // 颜色 & 画刷/笔（复用）
-        private readonly Color _bgColor       = Color.FromArgb(70, 20, 40, 70);
-        private readonly Color _altRowColor   = Color.FromArgb(40, 50, 50, 80);
-        private readonly Color _hoverColor    = Color.FromArgb(80, 0, 120, 215);
+        // 颜色
+        private readonly Color _bgColor = Color.FromArgb(70, 20, 40, 70);
+        private readonly Color _altRowColor = Color.FromArgb(40, 50, 50, 80);
+        private readonly Color _hoverColor = Color.FromArgb(80, 0, 120, 215);
         private readonly Color _selectedColor = Color.FromArgb(120, 0, 120, 215);
-        private readonly Color _headerBg      = Color.FromArgb(100, 0, 122, 204);
+        private readonly Color _headerBg = Color.FromArgb(100, 0, 122, 204);
 
         private readonly SolidBrush _bgBrush;
         private readonly SolidBrush _altRowBrush;
@@ -52,6 +52,10 @@ namespace MpvNet.Windows
         private readonly SolidBrush _selectedBrush;
         private readonly SolidBrush _headerBrush;
         private readonly Pen _borderPen;
+
+        // ⭐ 路径栏（面包屑）
+        private List<(string Segment, string FullPath, Rectangle Bounds)> _pathSegments = new();
+        private int _pathBarHeight = 50;
 
         // 事件
         public event EventHandler<string> FileOpened;
@@ -70,14 +74,13 @@ namespace MpvNet.Windows
                      ControlStyles.Selectable, true);
             UpdateStyles();
 
-            _bgBrush       = new SolidBrush(_bgColor);
-            _altRowBrush   = new SolidBrush(_altRowColor);
-            _hoverBrush    = new SolidBrush(_hoverColor);
+            _bgBrush = new SolidBrush(_bgColor);
+            _altRowBrush = new SolidBrush(_altRowColor);
+            _hoverBrush = new SolidBrush(_hoverColor);
             _selectedBrush = new SolidBrush(_selectedColor);
-            _headerBrush   = new SolidBrush(_headerBg);
-            _borderPen     = new Pen(Color.FromArgb(150, 0, 120, 215), 2);
+            _headerBrush = new SolidBrush(_headerBg);
+            _borderPen = new Pen(Color.FromArgb(150, 0, 120, 215), 2);
 
-            // ⭐关键修改：初始化全局缓存的“文件夹”与“默认文件”图标（仅一次）
             EnsureGlobalIcons();
 
             TabStop = true;
@@ -94,7 +97,12 @@ namespace MpvNet.Windows
         public int IconSize
         {
             get => _iconSize;
-            set { _iconSize = Math.Max(16, Math.Min(64, value)); if (_rowHeight < _iconSize + 8) _rowHeight = _iconSize + 8; Invalidate(); }
+            set
+            {
+                _iconSize = Math.Max(16, Math.Min(64, value));
+                if (_rowHeight < _iconSize + 8) _rowHeight = _iconSize + 8;
+                Invalidate();
+            }
         }
 
         public float[] ColumnWidths
@@ -118,17 +126,16 @@ namespace MpvNet.Windows
             }
         }
 
-        // ===================== 导航 & 预取缓存 =====================
+        // ===================== 导航 =====================
         public void NavigateTo(string path)
         {
             if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return;
 
-            // ⭐关键修改：在装载条目之前，先“预热”本目录用到的所有扩展名图标
             PrewarmIconsForDirectory(path);
-
             LoadFilesCore(path);
             CurrentPath = path;
             _scrollOffsetY = 0;
+            BuildPathSegments(path);
             DirectoryChanged?.Invoke(this, CurrentPath);
             Invalidate();
         }
@@ -137,28 +144,21 @@ namespace MpvNet.Windows
 
         private void PrewarmIconsForDirectory(string path)
         {
-            // 收集所有会用到的扩展名（文件夹统一用一个 icon，不需要循环拿）
             var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
             try
             {
                 foreach (var f in Directory.EnumerateFiles(path))
                 {
                     string ext = Path.GetExtension(f);
-                    if (string.IsNullOrEmpty(ext)) ext = "."; // 统一当作“无扩展名”
+                    if (string.IsNullOrEmpty(ext)) ext = ".";
                     set.Add(ext);
                 }
             }
-            catch { /* 忽略访问异常等 */ }
+            catch { /* 忽略 */ }
 
-            // ⭐关键修改：一次性确保缓存里有这些扩展名的图标
-            foreach (var ext in set)
-            {
-                EnsureIconCached(ext);
-            }
+            foreach (var ext in set) EnsureIconCached(ext);
         }
 
-        // ===================== 数据构建 =====================
         private void LoadFilesCore(string path)
         {
             _items.Clear();
@@ -176,7 +176,6 @@ namespace MpvNet.Windows
                     Size = -1,
                     Type = "上一级目录",
                     Modified = DateTime.Now,
-                    // ⭐关键修改：直接引用全局缓存
                     Icon = s_folderIcon
                 });
             }
@@ -195,7 +194,7 @@ namespace MpvNet.Windows
                         Size = -1,
                         Type = "文件夹",
                         Modified = di.LastWriteTime,
-                        Icon = s_folderIcon // ⭐关键修改：统一用一个
+                        Icon = s_folderIcon
                     });
                 }
             }
@@ -209,54 +208,56 @@ namespace MpvNet.Windows
                     var fi = new FileInfo(file);
                     string ext = fi.Extension;
                     if (string.IsNullOrEmpty(ext)) ext = ".";
-
-                    // ⭐关键修改：从全局缓存拿（此时基本已被 Prewarm 缓好），不再调用 Shell
                     var icon = GetIconFromCache(ext) ?? s_defaultFileIcon;
 
                     _items.Add(new FileItem
                     {
-                        Name     = fi.Name,
+                        Name = fi.Name,
                         FullPath = file,
-                        IsDir    = false,
-                        Size     = fi.Length,
-                        Type     = string.IsNullOrEmpty(fi.Extension) ? "文件" : fi.Extension.ToUpperInvariant(),
+                        IsDir = false,
+                        Size = fi.Length,
+                        Type = string.IsNullOrEmpty(fi.Extension) ? "文件" : fi.Extension.ToUpperInvariant(),
                         Modified = fi.LastWriteTime,
-                        Icon     = icon
+                        Icon = icon
                     });
                 }
             }
             catch { /* 忽略 */ }
         }
 
-        // ===================== 绘制（虚拟化 + TextRenderer） =====================
+        // ===================== 绘制 =====================
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
             var g = e.Graphics;
-            //g.InterpolationMode = InterpolationMode.NearestNeighbor;
 
             // 背景
             g.FillRectangle(_bgBrush, ClientRectangle);
 
-            int headerH = _rowHeight;
+            int y = 0;
+
+            // ⭐ 路径栏（面包屑）
+            DrawPathBar(g, ref y);
 
             // 表头
-            g.FillRectangle(_headerBrush, new Rectangle(0, 0, Width, headerH));
+            int headerH = _rowHeight;
+            g.FillRectangle(_headerBrush, new Rectangle(0, y, Width, headerH));
             int colX = 0;
             for (int i = 0; i < _columns.Length; i++)
             {
                 int cw = (int)(Width * _colWidths[i]);
                 TextRenderer.DrawText(g, _columns[i], _headerFont,
-                    new Rectangle(colX + 8, 0, cw - 16, headerH),
+                    new Rectangle(colX + 8, y, cw - 16, headerH),
                     Color.White,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
                 colX += cw;
             }
+            y += headerH;
 
             // 可见行裁剪
-            int viewportH = Math.Max(0, Height - headerH);
+            int viewportH = Math.Max(0, Height - y);
             int first = Math.Max(0, _scrollOffsetY / _rowHeight);
-            int last  = Math.Min(_items.Count - 1, (_scrollOffsetY + viewportH) / _rowHeight);
+            int last = Math.Min(_items.Count - 1, (_scrollOffsetY + viewportH) / _rowHeight);
 
             int colW0 = (int)(Width * _colWidths[0]);
             int colW1 = (int)(Width * _colWidths[1]);
@@ -266,7 +267,7 @@ namespace MpvNet.Windows
             for (int i = first; i <= last; i++)
             {
                 var item = _items[i];
-                int drawY = headerH + i * _rowHeight - _scrollOffsetY;
+                int drawY = y + i * _rowHeight - _scrollOffsetY;
                 var rowRect = new Rectangle(0, drawY, Width, _rowHeight);
 
                 if ((i & 1) == 1) g.FillRectangle(_altRowBrush, rowRect);
@@ -278,7 +279,6 @@ namespace MpvNet.Windows
                 // 图标 + 名称
                 if (item.Icon != null)
                 {
-                    // ⭐关键修改：缓存里就是 32×32，不需要高质量缩放，直接画
                     int iconX = x0 + 8;
                     int iconY = drawY + (_rowHeight - _iconSize) / 2;
                     g.DrawImage(item.Icon, new Rectangle(iconX, iconY, _iconSize, _iconSize));
@@ -318,11 +318,80 @@ namespace MpvNet.Windows
             g.DrawRectangle(_borderPen, 1, 1, Width - 2, Height - 2);
         }
 
+        private void DrawPathBar(Graphics g, ref int y)
+        {
+            _pathSegments.Clear();
+            if (string.IsNullOrEmpty(CurrentPath))
+            {
+                y += _pathBarHeight;
+                return;
+            }
+
+            // 分割路径并绘制：分隔符显示为 ">"
+            var parts = CurrentPath.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
+
+            bool isUnc = CurrentPath.StartsWith(@"\\");
+            bool hasDrive = parts.Length > 0 && parts[0].EndsWith(":");
+
+            int x = 8;
+            for (int i = 0; i < parts.Length; i++)
+            {
+                string segLabel = parts[i];
+                string fullPath;
+
+                if (isUnc)
+                {
+                    // UNC: \\server\share\dir\subdir
+                    // 将点击“server”与“share”都指向 \\server\share 根，之后逐级追加
+                    string root = @"\\" + parts[0] + (parts.Length >= 2 ? "\\" + parts[1] : "");
+                    if (i <= 1)
+                        fullPath = root;
+                    else
+                        fullPath = root + "\\" + string.Join("\\", parts, 2, i - 1 + 1);
+                }
+                else if (hasDrive)
+                {
+                    // 本地盘: C:\Users\Name\Videos
+                    string root = parts[0] + "\\";
+                    if (i == 0)
+                        fullPath = root;
+                    else
+                        fullPath = root + string.Join("\\", parts, 1, i);
+                }
+                else
+                {
+                    // 其它情况（相对路径等）
+                    fullPath = string.Join("\\", parts, 0, i + 1);
+                }
+
+                Size textSize = TextRenderer.MeasureText(segLabel, _pathFont);
+                var rect = new Rectangle(x, y + 5, textSize.Width, _pathBarHeight - 10);
+
+                TextRenderer.DrawText(g, segLabel, _pathFont, rect, Color.LightBlue,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+
+                _pathSegments.Add((segLabel, fullPath, rect));
+
+                x += rect.Width + 10;
+                if (i < parts.Length - 1)
+                {
+                    TextRenderer.DrawText(g, ">", _itemFont,
+                        new Rectangle(x, y, 20, _pathBarHeight),
+                        Color.White,
+                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
+                    x += 40;
+                }
+            }
+
+            y += _pathBarHeight;
+        }
+
         // ===================== 交互 =====================
         private int HitTestIndex(int mouseY)
         {
-            int headerH = _rowHeight;
-            int contentY = mouseY - headerH + _scrollOffsetY;
+            // 内容区域从路径栏 + 表头之后开始
+            int headerTop = _pathBarHeight + _rowHeight;
+            int contentY = mouseY - headerTop + _scrollOffsetY;
             if (contentY < 0) return -1;
             int idx = contentY / _rowHeight;
             return (idx >= 0 && idx < _items.Count) ? idx : -1;
@@ -334,20 +403,31 @@ namespace MpvNet.Windows
             ScrollOffset += -e.Delta; // 120/格
         }
 
-// 1) 新增两个字段（在 FileList 成员里）
-private Point _mouseDownPos;
-private int _mouseDownIndex = -1;
-private const int ClickMoveTolerance = 5; // 允许抖动像素
+        private Point _mouseDownPos;
+        private int _mouseDownIndex = -1;
+        private const int ClickMoveTolerance = 5; // 允许抖动像素
+
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+
+            // 先命中路径栏
+            foreach (var seg in _pathSegments)
+            {
+                if (seg.Bounds.Contains(e.Location))
+                {
+                    NavigateTo(seg.FullPath);
+                    return;
+                }
+            }
+
             if (e.Button == MouseButtons.Left)
             {
-                _dragging = true;              // 如果你有拖拽滚动，这行保留
-                _lastMouseY = e.Y;             // 如果你有拖拽滚动，这行保留
+                _dragging = true;
+                _lastMouseY = e.Y;
 
                 _mouseDownPos = e.Location;
-                _mouseDownIndex = HitTestIndex(e.Y);   // 你已有的命中测试函数
+                _mouseDownIndex = HitTestIndex(e.Y);
                 Cursor = Cursors.Hand;
             }
         }
@@ -368,15 +448,35 @@ private const int ClickMoveTolerance = 5; // 允许抖动像素
             }
         }
 
-
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
+
+            // 路径栏手型提示
+            bool overBreadcrumb = false;
+            foreach (var seg in _pathSegments)
+            {
+                if (seg.Bounds.Contains(e.Location))
+                {
+                    overBreadcrumb = true;
+                    break;
+                }
+            }
+            if (overBreadcrumb)
+            {
+                Cursor = Cursors.Hand;
+                return;
+            }
+            else if (!_dragging)
+            {
+                Cursor = Cursors.Default;
+            }
+
             if (_dragging)
             {
                 int dy = e.Y - _lastMouseY;
                 _lastMouseY = e.Y;
-                ScrollOffset -= dy;            // 你的滚动逻辑
+                ScrollOffset -= dy;
             }
             else
             {
@@ -401,7 +501,7 @@ private const int ClickMoveTolerance = 5; // 允许抖动像素
                     Math.Abs(e.Y - _mouseDownPos.Y) <= ClickMoveTolerance;
 
                 if (isClick)
-                    OpenItem(upIndex);   // 👉 真点击才打开/进入
+                    OpenItem(upIndex);
             }
 
             _mouseDownIndex = -1;
@@ -425,7 +525,7 @@ private const int ClickMoveTolerance = 5; // 允许抖动像素
             return $"{size} B";
         }
 
-        // ⭐关键修改：全局初始化“文件夹”“默认文件”图标
+        // ⭐ 全局初始化“文件夹”“默认文件”图标
         private static void EnsureGlobalIcons()
         {
             if (s_folderIcon != null && s_defaultFileIcon != null) return;
@@ -435,14 +535,11 @@ private const int ClickMoveTolerance = 5; // 允许抖动像素
                     s_folderIcon = GetShellIconBitmap("dummy", FILE_ATTRIBUTE_DIRECTORY);
 
                 if (s_defaultFileIcon == null)
-                {
-                    // 用 ".txt" 或 "." 都可以拿到一个通用文件类型图标
                     s_defaultFileIcon = GetShellIconBitmap("dummy.", FILE_ATTRIBUTE_NORMAL);
-                }
             }
         }
 
-        // ⭐关键修改：获取（或创建）某扩展名的图标
+        // 从缓存取扩展名图标
         private static Bitmap GetIconFromCache(string ext)
         {
             lock (s_iconLock)
@@ -451,6 +548,7 @@ private const int ClickMoveTolerance = 5; // 允许抖动像素
             }
         }
 
+        // 确保扩展名图标在缓存
         private static void EnsureIconCached(string ext)
         {
             if (string.IsNullOrEmpty(ext)) ext = ".";
@@ -459,7 +557,6 @@ private const int ClickMoveTolerance = 5; // 允许抖动像素
                 if (s_iconByExt.ContainsKey(ext)) return;
             }
 
-            // 取一次 shell 图标并放入缓存
             Bitmap bmp = GetShellIconBitmap("dummy" + ext, FILE_ATTRIBUTE_NORMAL) ?? s_defaultFileIcon;
             lock (s_iconLock)
             {
@@ -468,7 +565,7 @@ private const int ClickMoveTolerance = 5; // 允许抖动像素
             }
         }
 
-        // ⭐关键修改：真正的 Shell 取图标（32x32）→ Bitmap，已 DestroyIcon，避免泄漏
+        // 取系统图标（32x32）→ Bitmap
         private static Bitmap GetShellIconBitmap(string pathOrExt, uint attrs)
         {
             SHFILEINFO sh = new();
@@ -479,7 +576,6 @@ private const int ClickMoveTolerance = 5; // 允许抖动像素
                 try
                 {
                     using var ico = Icon.FromHandle(sh.hIcon);
-                    // 复制为 Bitmap（32x32），FromHandle 的 Icon 需要自行 Destroy
                     return new Bitmap(ico.ToBitmap());
                 }
                 finally
@@ -498,7 +594,7 @@ private const int ClickMoveTolerance = 5; // 允许抖动像素
             public int iIcon;
             public uint dwAttributes;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string szDisplayName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]  public string szTypeName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)] public string szTypeName;
         }
 
         [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
@@ -507,22 +603,29 @@ private const int ClickMoveTolerance = 5; // 允许抖动像素
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool DestroyIcon(IntPtr hIcon);
 
-        private const uint SHGFI_ICON              = 0x000000100;
-        private const uint SHGFI_LARGEICON         = 0x000000000; // 32x32
+        private const uint SHGFI_ICON = 0x000000100;
+        private const uint SHGFI_LARGEICON = 0x000000000; // 32x32
         private const uint SHGFI_USEFILEATTRIBUTES = 0x000000010;
         private const uint FILE_ATTRIBUTE_DIRECTORY = 0x00000010;
-        private const uint FILE_ATTRIBUTE_NORMAL    = 0x00000080;
+        private const uint FILE_ATTRIBUTE_NORMAL = 0x00000080;
 
         // ===================== 数据结构 =====================
         private class FileItem
         {
-            public string   Name { get; set; }
-            public string   FullPath { get; set; }
-            public bool     IsDir { get; set; }
-            public long     Size { get; set; }
-            public string   Type { get; set; }
+            public string Name { get; set; }
+            public string FullPath { get; set; }
+            public bool IsDir { get; set; }
+            public long Size { get; set; }
+            public string Type { get; set; }
             public DateTime Modified { get; set; }
-            public Image    Icon { get; set; }
+            public Image Icon { get; set; }
+        }
+
+        // ===================== 面包屑辅助 =====================
+        private void BuildPathSegments(string path)
+        {
+            _pathSegments.Clear();
+            // 实际的绘制在 DrawPathBar 中完成，这里只清空以保证状态一致
         }
     }
 

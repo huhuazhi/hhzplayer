@@ -76,7 +76,7 @@ public partial class MainForm : Form
     /// </summary>
     const string CMD_sub_stereo_duplicate = "sub-stereo-duplicate";
 
-    int btnLeft = 40;    
+    int btnLeft = 40;
     int progressBarLeftWidth = 1981;
 
     public MainForm()
@@ -84,11 +84,11 @@ public partial class MainForm : Form
         InitializeComponent();
         //Player.SetPropertyString("osc", "no");
         //InitializeLogoOverlay();
-        this.DoubleBuffered = true;     // 开启双缓冲，避免闪烁
-        this.SetStyle(ControlStyles.AllPaintingInWmPaint |
-              ControlStyles.UserPaint |
-              ControlStyles.OptimizedDoubleBuffer, true);
-        this.UpdateStyles();
+        DoubleBuffered = true;     // 开启双缓冲，避免闪烁
+        //this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+        //      ControlStyles.UserPaint |
+        //      ControlStyles.OptimizedDoubleBuffer, true);
+        //this.UpdateStyles();
 
         UpdateDarkMode();
         InitializehhzOverlay();
@@ -100,10 +100,6 @@ public partial class MainForm : Form
             // 如果有命令行参数，直接初始化播放器并加载文件
             hhzMainPage.Visible = false;
             overlayPanel.Visible = true;
-            //ShowCursor();
-            //App.Settings.Enable3DMode = true;
-            //InitializePlayer();
-            //Player.Init(Handle, true);
             List<string> files = [];
 
             foreach (string arg in Environment.GetCommandLineArgs().Skip(1))
@@ -251,6 +247,14 @@ public partial class MainForm : Form
         hhzMainPage.BringToFront();
         hhzMainPage.FileDropped += HhzMainPage_FileDropped;
         hhzMainPage.FileOpened += HhzMainPage_FileOpened;
+
+        // 如果上次目录存在就恢复
+        if (!string.IsNullOrEmpty(App.Settings.LastOpenedFolder) &&
+            Directory.Exists(App.Settings.LastOpenedFolder))
+        {
+            hhzMainPage.LoadFolder(App.Settings.LastOpenedFolder);
+        }
+
         Controls.Add(hhzMainPage);
         overlayPanel = new System.Windows.Forms.Panel
         {
@@ -272,14 +276,30 @@ public partial class MainForm : Form
 
         //App.Settings.Enable3DMode = true;
         CycleFullScreenFor3D(App.Settings.Enable3DMode);
-
-        btn3DLeft.Click += btn3D_Click;
-        btn3DRight.Click += btn3D_Click;
+        
         btnBackLeft.Click += btnBack_Click;
         btnBackRight.Click += btnBack_Click;
+        btn3DLeft.Click += btn3D_Click;
+        btn3DRight.Click += btn3D_Click;
+        btn3DSubtitleModeLeft.Click += btnSubtitle_Click;
+        btn3DSubtitleModeRight.Click += btnSubtitle_Click;
+
+        btnVideoTrackLeft.Click += BtnVideoTrack_Click;
+        btnVideoTrackRight.Click += BtnVideoTrack_Click;
+        btnAudioTrackLeft.Click += BtnAudioTrack_Click;
+        btnAudioTrackRight.Click += BtnAudioTrack_Click;
+        btnSubtitleTrackLeft.Click += BtnSubtitleTrack_Click;
+        btnSubtitleTrackRight.Click += BtnSubtitleTrack_Click;
+
+        btnPlayLeft.Click += BtnPlay_Click;
+        btnPlayRight.Click += BtnPlay_Click;
+        btnStopLeft.Click += BtnStop_Click;
+        btnStopRight.Click += BtnStop_Click;
+
         progressBarLeft.MouseClick += ProgressBar_MouseClick;
         progressBarRight.MouseClick += ProgressBar_MouseClick;
 
+        HideVideoUI();
         //hhzMainPage.MouseUp += (s, e) =>
         //{
         //    if (e.Button == MouseButtons.Right)
@@ -290,6 +310,32 @@ public partial class MainForm : Form
         //    }
         //};
     }
+
+    private void BtnStop_Click(object? sender, EventArgs e)
+    {
+
+    }
+
+    private void BtnPlay_Click(object? sender, EventArgs e)
+    {
+
+    }
+
+    private void BtnSubtitleTrack_Click(object? sender, EventArgs e)
+    {
+
+    }
+
+    private void BtnAudioTrack_Click(object? sender, EventArgs e)
+    {
+        
+    }
+
+    private void BtnVideoTrack_Click(object? sender, EventArgs e)
+    {
+
+    }
+
     private System.Drawing.Image LoadMyLogo()
     {
         var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mylogo.png");
@@ -323,7 +369,7 @@ public partial class MainForm : Form
     {
         Player.Command("stop");
         hhzMainPage.Visible = true;
-        overlayPanel.Visible = false;        
+        overlayPanel.Visible = false;
         HideVideoUI();
     }
 
@@ -1128,12 +1174,7 @@ public partial class MainForm : Form
                     Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
                 }
             }
-            btnBackRight.Left = Screen.PrimaryScreen.Bounds.Width + btnBackLeft.Left;
-            btn3DSubtitleModeRight.Left = Screen.PrimaryScreen.Bounds.Width + btn3DSubtitleModeLeft.Left;
-            btn3DRight.Left = Screen.PrimaryScreen.Bounds.Width + btn3DLeft.Left;
-            progressBarRight.Left = Screen.PrimaryScreen.Bounds.Width + progressBarLeft.Left;
-            progressBarLeft.Width = (int)(0.8397 * Width / 2);
-            progressBarRight.Width = progressBarLeft.Width;
+            ShowVideoUI();
         }
         else
         {
@@ -1149,8 +1190,7 @@ public partial class MainForm : Form
             WindowState = FormWindowState.Normal;
             FormBorderStyle = FormBorderStyle.Sizable;
 
-            progressBarLeft.Width = (int)(0.8397 * Width);
-            progressBarRight.Width = progressBarLeftWidth;
+            HideVideoUI();
         }
     }
 
@@ -1832,12 +1872,14 @@ public partial class MainForm : Form
                     interval = 1000;
 
                 ProgressTimer.Interval = interval;
-                
-                btnBackRight.Visible = true;
-                btn3DSubtitleModeRight.Visible = true;
-                btn3DRight.Visible = true;
-                progressBarRight.Visible = true;
-                progressBarRight.Visible = true;
+
+                //if (App.Settings.Enable3DMode)
+                //{
+                //    btnBackRight.Visible = true;
+                //    btn3DSubtitleModeRight.Visible = true;
+                //    btn3DRight.Visible = true;
+                //    progressBarRight.Visible = true;
+                //}
                 //UpdateProgressBar();
             }
         });
@@ -2097,36 +2139,85 @@ public partial class MainForm : Form
         SaveWindowProperties();
     }
 
-    protected override void OnKeyDown(KeyEventArgs e)
-    {
-        // prevent annoying beep using alt key
-        if (ModifierKeys == Keys.Alt)
-            e.SuppressKeyPress = true;
-
-        base.OnKeyDown(e);
-    }
-
     void ShowVideoUI()
     {
-        btnBackLeft.Visible = true;
-        btn3DSubtitleModeLeft.Visible = true;
-        btn3DLeft.Visible = true;        
-        progressBarLeft.Visible = true;
+        if (App.Settings.Enable3DMode)
+        {
+            btnBackRight.Left = Screen.PrimaryScreen.Bounds.Width + btnBackLeft.Left;
+            btn3DRight.Left = Screen.PrimaryScreen.Bounds.Width + btn3DLeft.Left;
+            btn3DSubtitleModeRight.Left = Screen.PrimaryScreen.Bounds.Width + btn3DSubtitleModeLeft.Left;            
+            btnVideoTrackRight.Left = Screen.PrimaryScreen.Bounds.Width + btnVideoTrackLeft.Left;
+            btnAudioTrackRight.Left = Screen.PrimaryScreen.Bounds.Width + btnAudioTrackLeft.Left;
+            btnSubtitleTrackRight.Left = Screen.PrimaryScreen.Bounds.Width + btnSubtitleTrackLeft.Left;
+            btnPlayLeft.Left = btnPlayRight.Left - Screen.PrimaryScreen.Bounds.Width;
+            btnStopLeft.Left = btnStopRight.Left - Screen.PrimaryScreen.Bounds.Width;
 
-        btnBackRight.Visible = true;
-        btn3DSubtitleModeRight.Visible = true;
-        btn3DRight.Visible = true;
-        progressBarRight.Visible = true;
+            progressBarRight.Left = Screen.PrimaryScreen.Bounds.Width + progressBarLeft.Left;
+            progressBarLeft.Width = (int)(0.95 * Width) / 2;
+            progressBarRight.Width = progressBarLeft.Width;
 
+            btnBackLeft.Visible = true;
+            btn3DSubtitleModeLeft.Visible = true;
+            btn3DLeft.Visible = true;
+            progressBarLeft.Visible = true;
+            btnVideoTrackLeft.Visible = true;
+            btnAudioTrackLeft.Visible = true;
+            btnSubtitleTrackLeft.Visible = true;
+            btnPlayLeft.Visible = true;
+            btnStopLeft.Visible = true;
+
+            btnBackRight.Visible = true;
+            btn3DSubtitleModeRight.Visible = true;
+            btn3DRight.Visible = true;
+            progressBarRight.Visible = true;
+            btnVideoTrackRight.Visible = true;
+            btnAudioTrackRight.Visible = true;
+            btnSubtitleTrackLeft.Visible = true;
+            btnPlayRight.Visible = true;
+            btnStopRight.Visible = true;
+        }
+        else
+        {
+            btnBackLeft.Visible = true;
+            btn3DSubtitleModeLeft.Visible = true;
+            btn3DLeft.Visible = true;
+            progressBarLeft.Visible = true;
+            btnVideoTrackLeft.Visible = true;
+            btnAudioTrackLeft.Visible = true;
+            btnSubtitleTrackLeft.Visible = true;
+            btnPlayLeft.Visible = true;
+            btnStopLeft.Visible = true;
+            progressBarLeft.Width = (int)(0.95 * Width);
+
+            btnBackRight.Visible = false;
+            btn3DSubtitleModeRight.Visible = false;
+            btn3DRight.Visible = false;
+            progressBarRight.Visible = false;
+            btnVideoTrackRight.Visible = false;
+            btnAudioTrackRight.Visible = false;
+            btnSubtitleTrackRight.Visible = false;
+            btnPlayRight.Visible = false;
+            btnStopRight.Visible = false;
+        }
         btnBackLeft.BringToFront();
         btn3DSubtitleModeLeft.BringToFront();
         btn3DLeft.BringToFront();
         progressBarLeft.BringToFront();
+        btnVideoTrackLeft.BringToFront();
+        btnAudioTrackLeft.BringToFront();
+        btnSubtitleTrackLeft.BringToFront();
+        btnPlayLeft.BringToFront();
+        btnStopLeft.BringToFront();
 
         btnBackRight.BringToFront();
         btn3DSubtitleModeRight.BringToFront();
-        btn3DRight.BringToFront();        
+        btn3DRight.BringToFront();
         progressBarRight.BringToFront();
+        btnVideoTrackRight.BringToFront();
+        btnAudioTrackRight.BringToFront();
+        btnSubtitleTrackRight.BringToFront();
+        btnPlayRight.BringToFront();
+        btnStopRight.BringToFront();
     }
 
     void ShowCursor()
@@ -2138,18 +2229,28 @@ public partial class MainForm : Form
 
     void HideVideoUI()
     {
-        btnBackLeft.Visible = false;
-        btn3DSubtitleModeLeft.Visible = false;
-        btn3DLeft.Visible = false;
-        progressBarLeft.Visible = false;
+        //if (App.Settings.Enable3DMode)
+        {
+            btnBackLeft.Visible = false;
+            btn3DSubtitleModeLeft.Visible = false;
+            btn3DLeft.Visible = false;
+            progressBarLeft.Visible = false;
+            btnVideoTrackLeft.Visible = false;
+            btnAudioTrackLeft.Visible = false;
+            btnSubtitleTrackLeft.Visible = false;
+            btnPlayLeft.Visible = false;
+            btnStopLeft.Visible = false;
 
-        btnBackRight.Visible = false;
-        btn3DSubtitleModeRight.Visible = false;
-        btn3DRight.Visible = false;
-        progressBarRight.Visible = false;
-        
-        
-        
+            btnBackRight.Visible = false;
+            btn3DSubtitleModeRight.Visible = false;
+            btn3DRight.Visible = false;
+            progressBarRight.Visible = false;
+            btnVideoTrackRight.Visible = false;
+            btnAudioTrackRight.Visible = false;
+            btnSubtitleTrackRight.Visible = false;
+            btnPlayRight.Visible = false;
+            btnStopRight.Visible = false;
+        }
     }
     void HideCursor()
     {
@@ -2253,7 +2354,7 @@ public partial class MainForm : Form
 
     public static class v3DSubtitleMode
     {
-        public static void Auto(System.Windows.Forms.Button Lbutton, System.Windows.Forms.Button Rbutton)
+        public static void Auto(System.Windows.Forms.Label Lbutton, System.Windows.Forms.Label Rbutton)
         {
             if (Player.GetPropertyInt("width") > 3840)
             {
@@ -2268,7 +2369,7 @@ public partial class MainForm : Form
             Rbutton.Text = "3D字幕模式:自动";
         }
 
-        public static void On(System.Windows.Forms.Button Lbutton, System.Windows.Forms.Button Rbutton)
+        public static void On(System.Windows.Forms.Label Lbutton, System.Windows.Forms.Label Rbutton)
         {
             Player.SetPropertyBool(CMD_sub_stereo_on, true);
             Player.SetPropertyBool("sub-stereo-duplicate", false);
@@ -2276,7 +2377,7 @@ public partial class MainForm : Form
             Rbutton.Text = "3D字幕模式:双屏";
         }
 
-        public static void Off(System.Windows.Forms.Button Lbutton, System.Windows.Forms.Button Rbutton)
+        public static void Off(System.Windows.Forms.Label Lbutton, System.Windows.Forms.Label Rbutton)
         {
             Player.SetPropertyBool(CMD_sub_stereo_on, false);
             Lbutton.Text = "3D字幕模式:单屏";
@@ -2285,7 +2386,7 @@ public partial class MainForm : Form
     }
 
     int isub = 0;
-    private void btnSubtitle_Click(object sender, EventArgs e)
+    private void btnSubtitle_Click(object? sender, EventArgs e)
     {
         switch (isub)
         {
@@ -2303,6 +2404,377 @@ public partial class MainForm : Form
                 break;
             default:
                 break;
-        }        
+        }
+    }
+
+    private void MainForm_KeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.KeyCode)
+        {
+            case Keys.KeyCode:
+                break;
+            case Keys.Modifiers:
+                break;
+            case Keys.None:
+                break;
+            case Keys.LButton:
+                break;
+            case Keys.RButton:
+                break;
+            case Keys.Cancel:
+                break;
+            case Keys.MButton:
+                break;
+            case Keys.XButton1:
+                break;
+            case Keys.XButton2:
+                break;
+            case Keys.Back:
+                break;
+            case Keys.Tab:
+                break;
+            case Keys.LineFeed:
+                break;
+            case Keys.Clear:
+                break;
+            case Keys.Enter:
+                if (App.Settings.Enable3DMode == false)
+                {
+                    OverlayPanel_MouseDoubleClick(null, null);
+                }
+                break;
+            case Keys.ShiftKey:
+                break;
+            case Keys.ControlKey:
+                break;
+            case Keys.Menu:
+                break;
+            case Keys.Pause:
+                break;
+            case Keys.CapsLock:
+                break;
+            case Keys.HangulMode:
+                break;
+            case Keys.JunjaMode:
+                break;
+            case Keys.FinalMode:
+                break;
+            case Keys.HanjaMode:
+                break;
+            case Keys.Escape:
+                this.FormBorderStyle = FormBorderStyle.Sizable;
+                this.WindowState = FormWindowState.Normal;
+                break;
+            case Keys.IMEConvert:
+                break;
+            case Keys.IMENonconvert:
+                break;
+            case Keys.IMEAccept:
+                break;
+            case Keys.IMEModeChange:
+                break;
+            case Keys.Space:
+                Player.Command("cycle pause");
+                e.Handled = true;
+                break;
+            case Keys.PageUp:
+                break;
+            case Keys.PageDown:
+                break;
+            case Keys.End:
+                break;
+            case Keys.Home:
+                break;
+            case Keys.Left:
+                Player.Command("seek -5 relative");  // 从当前位置往后退 5 秒
+                break;
+            case Keys.Up:
+                break;
+            case Keys.Right:
+                Player.Command("seek 5 relative");   // 从当前位置往前跳 5 秒
+                break;
+            case Keys.Down:
+                break;
+            case Keys.Select:
+                break;
+            case Keys.Print:
+                break;
+            case Keys.Execute:
+                break;
+            case Keys.PrintScreen:
+                break;
+            case Keys.Insert:
+                break;
+            case Keys.Delete:
+                break;
+            case Keys.Help:
+                break;
+            case Keys.D0:
+                break;
+            case Keys.D1:
+                break;
+            case Keys.D2:
+                break;
+            case Keys.D3:
+                break;
+            case Keys.D4:
+                break;
+            case Keys.D5:
+                break;
+            case Keys.D6:
+                break;
+            case Keys.D7:
+                break;
+            case Keys.D8:
+                break;
+            case Keys.D9:
+                break;
+            case Keys.A:
+                break;
+            case Keys.B:
+                break;
+            case Keys.C:
+                break;
+            case Keys.D:
+                break;
+            case Keys.E:
+                break;
+            case Keys.F:
+                break;
+            case Keys.G:
+                break;
+            case Keys.H:
+                break;
+            case Keys.I:
+                break;
+            case Keys.J:
+                break;
+            case Keys.K:
+                break;
+            case Keys.L:
+                break;
+            case Keys.M:
+                break;
+            case Keys.N:
+                break;
+            case Keys.O:
+                break;
+            case Keys.P:
+                break;
+            case Keys.Q:
+                break;
+            case Keys.R:
+                break;
+            case Keys.S:
+                break;
+            case Keys.T:
+                break;
+            case Keys.U:
+                break;
+            case Keys.V:
+                break;
+            case Keys.W:
+                break;
+            case Keys.X:
+                break;
+            case Keys.Y:
+                break;
+            case Keys.Z:
+                break;
+            case Keys.LWin:
+                break;
+            case Keys.RWin:
+                break;
+            case Keys.Apps:
+                break;
+            case Keys.Sleep:
+                break;
+            case Keys.NumPad0:
+                break;
+            case Keys.NumPad1:
+                break;
+            case Keys.NumPad2:
+                break;
+            case Keys.NumPad3:
+                break;
+            case Keys.NumPad4:
+                break;
+            case Keys.NumPad5:
+                break;
+            case Keys.NumPad6:
+                break;
+            case Keys.NumPad7:
+                break;
+            case Keys.NumPad8:
+                break;
+            case Keys.NumPad9:
+                break;
+            case Keys.Multiply:
+                break;
+            case Keys.Add:
+                break;
+            case Keys.Separator:
+                break;
+            case Keys.Subtract:
+                break;
+            case Keys.Decimal:
+                break;
+            case Keys.Divide:
+                break;
+            case Keys.F1:
+                break;
+            case Keys.F2:
+                break;
+            case Keys.F3:
+                break;
+            case Keys.F4:
+                break;
+            case Keys.F5:
+                break;
+            case Keys.F6:
+                break;
+            case Keys.F7:
+                break;
+            case Keys.F8:
+                break;
+            case Keys.F9:
+                break;
+            case Keys.F10:
+                break;
+            case Keys.F11:
+                break;
+            case Keys.F12:
+                break;
+            case Keys.F13:
+                break;
+            case Keys.F14:
+                break;
+            case Keys.F15:
+                break;
+            case Keys.F16:
+                break;
+            case Keys.F17:
+                break;
+            case Keys.F18:
+                break;
+            case Keys.F19:
+                break;
+            case Keys.F20:
+                break;
+            case Keys.F21:
+                break;
+            case Keys.F22:
+                break;
+            case Keys.F23:
+                break;
+            case Keys.F24:
+                break;
+            case Keys.NumLock:
+                break;
+            case Keys.Scroll:
+                break;
+            case Keys.LShiftKey:
+                break;
+            case Keys.RShiftKey:
+                break;
+            case Keys.LControlKey:
+                break;
+            case Keys.RControlKey:
+                break;
+            case Keys.LMenu:
+                break;
+            case Keys.RMenu:
+                break;
+            case Keys.BrowserBack:
+                break;
+            case Keys.BrowserForward:
+                break;
+            case Keys.BrowserRefresh:
+                break;
+            case Keys.BrowserStop:
+                break;
+            case Keys.BrowserSearch:
+                break;
+            case Keys.BrowserFavorites:
+                break;
+            case Keys.BrowserHome:
+                break;
+            case Keys.VolumeMute:
+                break;
+            case Keys.VolumeDown:
+                break;
+            case Keys.VolumeUp:
+                break;
+            case Keys.MediaNextTrack:
+                break;
+            case Keys.MediaPreviousTrack:
+                break;
+            case Keys.MediaStop:
+                break;
+            case Keys.MediaPlayPause:
+                break;
+            case Keys.LaunchMail:
+                break;
+            case Keys.SelectMedia:
+                break;
+            case Keys.LaunchApplication1:
+                break;
+            case Keys.LaunchApplication2:
+                break;
+            case Keys.OemSemicolon: //oem1
+                break;
+            case Keys.Oemplus:
+                break;
+            case Keys.Oemcomma:
+                break;
+            case Keys.OemMinus:
+                break;
+            case Keys.OemPeriod:
+                break;
+            case Keys.OemQuestion: //oem2
+                break;
+            case Keys.Oemtilde:  //oem3
+                break;
+            case Keys.OemOpenBrackets: //oem4
+                break;
+            case Keys.OemPipe:      //oem5
+                break;
+            case Keys.OemCloseBrackets: //oem7
+                break;
+            case Keys.OemQuotes:        //oem8
+                break;
+            case Keys.OemBackslash:     //oem102
+                break;
+            case Keys.ProcessKey:
+                break;
+            case Keys.Packet:
+                break;
+            case Keys.Attn:
+                break;
+            case Keys.Crsel:
+                break;
+            case Keys.Exsel:
+                break;
+            case Keys.EraseEof:
+                break;
+            case Keys.Play:
+                break;
+            case Keys.Zoom:
+                break;
+            case Keys.NoName:
+                break;
+            case Keys.Pa1:
+                break;
+            case Keys.OemClear:
+                break;
+            case Keys.Shift:
+                break;
+            case Keys.Control:
+                break;
+            case Keys.Alt:
+                break;
+            default:
+                break;
+        }
     }
 }

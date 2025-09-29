@@ -22,6 +22,7 @@ public class AppSettings
     public string Mute = "no";
     public string StartupFolder = "";
     public bool Enable3DMode;
+    public string LastOpenedFolder = "";
 
     public void Save()
     {

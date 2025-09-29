@@ -122,7 +122,7 @@ namespace MpvNet.Windows
             _fileListLeft.DirectoryChanged += (_, path) =>
             {
                 if (_syncingFileDir) return;
-                try { _syncingFileDir = true; _fileListRight.NavigateTo(path); }
+                try { _syncingFileDir = true; _fileListRight.NavigateTo(path); App.Settings.LastOpenedFolder = path; }
                 finally { _syncingFileDir = false; }
             };
 
@@ -362,5 +362,27 @@ namespace MpvNet.Windows
         }
 
         public event EventHandler<string> FileOpened;
+        public void LoadFolder(string folder)
+        {
+            if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+                return;
+
+            try
+            {
+                _syncingFileDir = true;
+
+                // 两边同时导航
+                _fileListLeft.NavigateTo(folder);
+                _fileListRight.NavigateTo(folder);
+
+                // 保存到设置
+                App.Settings.LastOpenedFolder = folder;
+                App.Settings.Save();
+            }
+            finally
+            {
+                _syncingFileDir = false;
+            }
+        }
     }
 }
