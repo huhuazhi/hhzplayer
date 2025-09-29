@@ -43,7 +43,18 @@ public class AppSettings
         other
     }
 
+    public enumSubtitleMode SubtitleMode;
+    public enum enumSubtitleMode
+    {
+        Auto,
+        On,
+        Off,
+        other
+    }
+
+
     public enumFormBorderStyle FormBorderStyle;
+    public string RenderText;
 
     public void Save()
     {

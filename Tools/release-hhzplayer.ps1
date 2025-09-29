@@ -49,7 +49,7 @@ $PublishDirARM64 = Join-Path $SourceDir 'MpvNet.Windows\bin\Debug\win-arm64\publ
 $ProjectFile = Test (Join-Path $SourceDir 'MpvNet.Windows\MpvNet.Windows.csproj')
 dotnet publish $ProjectFile --self-contained false --configuration Debug --runtime win-x64
 dotnet publish $ProjectFile --self-contained false --configuration Debug --runtime win-arm64
-$PublishedExeFile64 = Test ($PublishDir64 + 'mpvnet.exe')
+$PublishedExeFile64 = Test ($PublishDir64 + 'hhzplayer.exe')
 
 # Create OutputName
 $VersionInfo = [Diagnostics.FileVersionInfo]::GetVersionInfo($PublishedExeFile64)
@@ -72,7 +72,7 @@ Copy-Item ($PublishDir64 + '*') $OutputDir64
 Copy-Item ($PublishDirARM64 + '*') $OutputDirARM64
 $BinDirX64 = Test (Join-Path $SourceDir 'MpvNet.Windows\bin\Debug\')
 $BinDirARM64 = Test (Join-Path $SourceDir 'MpvNet.Windows\bin\Debug\win-arm64\')
-$ExtraFiles = 'mpvnet.com', 'libmpv-2.dll', 'MediaInfo.dll'
+$ExtraFiles = 'hhzplayer.exe', 'libmpv-2.dll', 'MediaInfo.dll'
 $ExtraFiles | ForEach-Object { Copy-Item ($BinDirX64 + $_) ($OutputDir64 + $_) }
 $ExtraFiles | ForEach-Object { Copy-Item ($BinDirARM64 + $_) ($OutputDirARM64 + $_) }
 $LocaleDir = Test (Join-Path $SourceDir 'MpvNet.Windows\bin\Debug\Locale\')

@@ -105,6 +105,7 @@ public class MainPlayer : MpvClient
         //SetPropertyBool("input-default-bindings", true);
         //SetPropertyBool("input-builtin-bindings", false);
         //SetPropertyBool("input-media-keys", true);
+        SetPropertyDouble("volume", App.Settings.Volume);
         SetPropertyString("cursor-autohide", "no");
         SetPropertyString("autocreate-playlist", "filter");
         //SetPropertyString("media-controls", "yes");
@@ -174,7 +175,6 @@ public class MainPlayer : MpvClient
         });
 
         VideoRotate = GetPropertyInt("video-rotate");
-
         ObservePropertyInt("video-rotate", value =>
         {
             if (VideoRotate != value)

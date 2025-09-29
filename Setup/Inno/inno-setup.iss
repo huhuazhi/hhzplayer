@@ -1,8 +1,8 @@
 
-#define MyAppName "mpv.net"
-#define MyAppExeName "mpvnet.exe"
-#define MyAppSourceDir "..\..\MpvNet.Windows\bin\Debug"
-#define MyAppVersion GetFileVersion("..\..\MpvNet.Windows\bin\Debug\mpvnet.exe")
+#define MyAppName "hhzplayer"
+#define MyAppExeName "hhzplayer.exe"
+#define MyAppSourceDir "..\..\MpvNet.Windows\bin\Release"
+#define MyAppVersion GetFileVersion("..\..\MpvNet.Windows\bin\Release\hhzplayer.exe")
 
 [Setup]
 AppId={{9AA2B100-BEF3-44D0-B819-D8FC3C4D557D}}
@@ -12,8 +12,8 @@ AppPublisher=Frank Skare (stax76)
 ArchitecturesInstallIn64BitMode=x64
 Compression=lzma2
 DefaultDirName={autopf}\{#MyAppName}
-OutputBaseFilename=mpv.net-v{#MyAppVersion}-setup-x64
-OutputDir=E:\Desktop
+OutputBaseFilename=hhzplayer-v{#MyAppVersion}-setup-x64
+OutputDir=C:\Users\hhz\Desktop
 DefaultGroupName={#MyAppName}
 SetupIconFile=..\..\MpvNet.Windows\mpv-icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
