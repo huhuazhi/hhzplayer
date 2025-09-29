@@ -44,13 +44,15 @@ partial class MainForm
         btnAudioTrackLeft = new System.Windows.Forms.Label();
         btnSubtitleTrackLeft = new System.Windows.Forms.Label();
         btnVideoTrackLeft = new System.Windows.Forms.Label();
-        btnStopLeft = new System.Windows.Forms.Label();
+        btnFullScreenLeft = new System.Windows.Forms.Label();
         btnPlayLeft = new System.Windows.Forms.Label();
         btnPlayRight = new System.Windows.Forms.Label();
-        btnStopRight = new System.Windows.Forms.Label();
+        btnFullScreenRight = new System.Windows.Forms.Label();
         btnVideoTrackRight = new System.Windows.Forms.Label();
         btnSubtitleTrackRight = new System.Windows.Forms.Label();
         btnAudioTrackRight = new System.Windows.Forms.Label();
+        btnFullHalfRight = new System.Windows.Forms.Label();
+        btnFullHalfLeft = new System.Windows.Forms.Label();
         ((System.ComponentModel.ISupportInitialize)btnBackLeft).BeginInit();
         ((System.ComponentModel.ISupportInitialize)btnBackRight).BeginInit();
         SuspendLayout();
@@ -210,20 +212,20 @@ partial class MainForm
         btnVideoTrackLeft.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
         btnVideoTrackLeft.Visible = false;
         // 
-        // btnStopLeft
+        // btnFullScreenLeft
         // 
-        btnStopLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-        btnStopLeft.BackColor = System.Drawing.Color.Transparent;
-        btnStopLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-        btnStopLeft.CausesValidation = false;
-        btnStopLeft.ForeColor = System.Drawing.Color.White;
-        btnStopLeft.Location = new System.Drawing.Point(2179, 1063);
-        btnStopLeft.Name = "btnStopLeft";
-        btnStopLeft.Size = new System.Drawing.Size(104, 82);
-        btnStopLeft.TabIndex = 17;
-        btnStopLeft.Text = "停止";
-        btnStopLeft.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-        btnStopLeft.Visible = false;
+        btnFullScreenLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        btnFullScreenLeft.BackColor = System.Drawing.Color.Transparent;
+        btnFullScreenLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+        btnFullScreenLeft.CausesValidation = false;
+        btnFullScreenLeft.ForeColor = System.Drawing.Color.White;
+        btnFullScreenLeft.Location = new System.Drawing.Point(2179, 1063);
+        btnFullScreenLeft.Name = "btnFullScreenLeft";
+        btnFullScreenLeft.Size = new System.Drawing.Size(104, 82);
+        btnFullScreenLeft.TabIndex = 17;
+        btnFullScreenLeft.Text = "全屏";
+        btnFullScreenLeft.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+        btnFullScreenLeft.Visible = false;
         // 
         // btnPlayLeft
         // 
@@ -255,20 +257,20 @@ partial class MainForm
         btnPlayRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
         btnPlayRight.Visible = false;
         // 
-        // btnStopRight
+        // btnFullScreenRight
         // 
-        btnStopRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-        btnStopRight.BackColor = System.Drawing.Color.Transparent;
-        btnStopRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-        btnStopRight.CausesValidation = false;
-        btnStopRight.ForeColor = System.Drawing.Color.White;
-        btnStopRight.Location = new System.Drawing.Point(2179, 1063);
-        btnStopRight.Name = "btnStopRight";
-        btnStopRight.Size = new System.Drawing.Size(104, 82);
-        btnStopRight.TabIndex = 22;
-        btnStopRight.Text = "停止";
-        btnStopRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-        btnStopRight.Visible = false;
+        btnFullScreenRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        btnFullScreenRight.BackColor = System.Drawing.Color.Transparent;
+        btnFullScreenRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+        btnFullScreenRight.CausesValidation = false;
+        btnFullScreenRight.ForeColor = System.Drawing.Color.White;
+        btnFullScreenRight.Location = new System.Drawing.Point(2179, 1063);
+        btnFullScreenRight.Name = "btnFullScreenRight";
+        btnFullScreenRight.Size = new System.Drawing.Size(104, 82);
+        btnFullScreenRight.TabIndex = 22;
+        btnFullScreenRight.Text = "全屏";
+        btnFullScreenRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+        btnFullScreenRight.Visible = false;
         // 
         // btnVideoTrackRight
         // 
@@ -315,6 +317,36 @@ partial class MainForm
         btnAudioTrackRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
         btnAudioTrackRight.Visible = false;
         // 
+        // btnFullHalfRight
+        // 
+        btnFullHalfRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+        btnFullHalfRight.BackColor = System.Drawing.Color.Transparent;
+        btnFullHalfRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+        btnFullHalfRight.CausesValidation = false;
+        btnFullHalfRight.ForeColor = System.Drawing.Color.White;
+        btnFullHalfRight.Location = new System.Drawing.Point(1126, 1063);
+        btnFullHalfRight.Name = "btnFullHalfRight";
+        btnFullHalfRight.Size = new System.Drawing.Size(238, 82);
+        btnFullHalfRight.TabIndex = 25;
+        btnFullHalfRight.Text = "半分辨率左右";
+        btnFullHalfRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+        btnFullHalfRight.Visible = false;
+        // 
+        // btnFullHalfLeft
+        // 
+        btnFullHalfLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+        btnFullHalfLeft.BackColor = System.Drawing.Color.Transparent;
+        btnFullHalfLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+        btnFullHalfLeft.CausesValidation = false;
+        btnFullHalfLeft.ForeColor = System.Drawing.Color.White;
+        btnFullHalfLeft.Location = new System.Drawing.Point(1126, 1063);
+        btnFullHalfLeft.Name = "btnFullHalfLeft";
+        btnFullHalfLeft.Size = new System.Drawing.Size(238, 82);
+        btnFullHalfLeft.TabIndex = 24;
+        btnFullHalfLeft.Text = "半分辨率左右";
+        btnFullHalfLeft.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+        btnFullHalfLeft.Visible = false;
+        // 
         // MainForm
         // 
         AllowDrop = true;
@@ -322,13 +354,15 @@ partial class MainForm
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
         BackColor = System.Drawing.Color.Black;
         ClientSize = new System.Drawing.Size(2333, 1284);
+        Controls.Add(btnFullHalfRight);
+        Controls.Add(btnFullHalfLeft);
         Controls.Add(btnPlayRight);
-        Controls.Add(btnStopRight);
+        Controls.Add(btnFullScreenRight);
         Controls.Add(btnVideoTrackRight);
         Controls.Add(btnSubtitleTrackRight);
         Controls.Add(btnAudioTrackRight);
         Controls.Add(btnPlayLeft);
-        Controls.Add(btnStopLeft);
+        Controls.Add(btnFullScreenLeft);
         Controls.Add(btnVideoTrackLeft);
         Controls.Add(btnSubtitleTrackLeft);
         Controls.Add(btnAudioTrackLeft);
@@ -368,11 +402,13 @@ partial class MainForm
     public System.Windows.Forms.Label btnAudioTrackLeft;
     public System.Windows.Forms.Label btnSubtitleTrackLeft;
     public System.Windows.Forms.Label btnVideoTrackLeft;
-    private System.Windows.Forms.Label btnStopLeft;
+    private System.Windows.Forms.Label btnFullScreenLeft;
     private System.Windows.Forms.Label btnPlayLeft;
     private System.Windows.Forms.Label btnPlayRight;
-    private System.Windows.Forms.Label btnStopRight;
+    private System.Windows.Forms.Label btnFullScreenRight;
     public System.Windows.Forms.Label btnVideoTrackRight;
     public System.Windows.Forms.Label btnSubtitleTrackRight;
     public System.Windows.Forms.Label btnAudioTrackRight;
+    public System.Windows.Forms.Label btnFullHalfRight;
+    public System.Windows.Forms.Label btnFullHalfLeft;
 }

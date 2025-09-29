@@ -12,7 +12,8 @@ namespace MpvNet.Windows
         // ===================== 基本数据 =====================
         private readonly List<FileItem> _items = new();
 
-        private int _rowHeight = 40;
+        private int _rowHeight = 40;                    // 每行高度（文件项）
+        private int _headerHeight = 60;                 // ⭐ 标题栏高度（名称/大小/类型/修改日期）
         private readonly string[] _columns = { "名称", "大小", "类型", "修改日期" };
         private float[] _colWidths = { 0.50f, 0.15f, 0.15f, 0.20f };
 
@@ -92,6 +93,13 @@ namespace MpvNet.Windows
         {
             get => _rowHeight;
             set { _rowHeight = Math.Max(value, _iconSize + 8); Invalidate(); }
+        }
+
+        /// <summary>标题栏高度（只影响“名称/大小/类型/修改日期”那一行）。</summary>
+        public int HeaderHeight
+        {
+            get => _headerHeight;
+            set { _headerHeight = Math.Max(20, value); Invalidate(); }
         }
 
         public int IconSize
@@ -236,26 +244,33 @@ namespace MpvNet.Windows
 
             int y = 0;
 
-            // ⭐ 路径栏（面包屑）
+            // ===== 1) 路径栏（面包屑） =====
             DrawPathBar(g, ref y);
 
-            // 表头
-            int headerH = _rowHeight;
-            g.FillRectangle(_headerBrush, new Rectangle(0, y, Width, headerH));
+            // ===== 2) 标题栏 =====
+            g.FillRectangle(_headerBrush, new Rectangle(0, y, Width, _headerHeight));
             int colX = 0;
             for (int i = 0; i < _columns.Length; i++)
             {
                 int cw = (int)(Width * _colWidths[i]);
                 TextRenderer.DrawText(g, _columns[i], _headerFont,
-                    new Rectangle(colX + 8, y, cw - 16, headerH),
+                    new Rectangle(colX + 8, y, cw - 16, _headerHeight),
                     Color.White,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
                 colX += cw;
             }
-            y += headerH;
+            y += _headerHeight;
 
-            // 可见行裁剪
-            int viewportH = Math.Max(0, Height - y);
+            // ===== 3) 内容区（可滚动） =====
+            int contentTop = y;
+            int viewportH = Math.Max(0, Height - contentTop);
+            Rectangle contentRect = new Rectangle(0, contentTop, Width, viewportH);
+
+            // （A）对整个内容区设置裁剪，确保任何绘制都不会越过标题栏
+            var gs = g.Save();
+            g.SetClip(contentRect);
+
+            // 计算可见行
             int first = Math.Max(0, _scrollOffsetY / _rowHeight);
             int last = Math.Min(_items.Count - 1, (_scrollOffsetY + viewportH) / _rowHeight);
 
@@ -267,50 +282,54 @@ namespace MpvNet.Windows
             for (int i = first; i <= last; i++)
             {
                 var item = _items[i];
-                int drawY = y + i * _rowHeight - _scrollOffsetY;
-                var rowRect = new Rectangle(0, drawY, Width, _rowHeight);
 
-                if ((i & 1) == 1) g.FillRectangle(_altRowBrush, rowRect);
-                if (i == _hoverIndex) g.FillRectangle(_hoverBrush, rowRect);
-                //if (i == _selectedIndex) g.FillRectangle(_selectedBrush, rowRect);
+                // 该行理论位置（未裁剪）
+                int rowTop = contentTop + i * _rowHeight - _scrollOffsetY;
+                Rectangle rowRect = new Rectangle(0, rowTop, Width, _rowHeight);
+
+                // （B）把行矩形与内容区做一次交集，得到“可见矩形”
+                Rectangle visRow = Rectangle.Intersect(rowRect, contentRect);
+                if (visRow.Height <= 0) continue;
+
+                // 行背景（只填充可见部分，避免盖到标题）
+                if ((i & 1) == 1) g.FillRectangle(_altRowBrush, visRow);
+                if (i == _hoverIndex) g.FillRectangle(_hoverBrush, visRow);
+                //if (i == _selectedIndex) g.FillRectangle(_selectedBrush, visRow);
 
                 int x0 = 0, x1 = x0 + colW0, x2 = x1 + colW1, x3 = x2 + colW2;
 
-                // 图标 + 名称
+                // 图标（图像受 Graphics Clip 约束，这里仍按原始行坐标算居中）
                 if (item.Icon != null)
                 {
                     int iconX = x0 + 8;
-                    int iconY = drawY + (_rowHeight - _iconSize) / 2;
+                    int iconY = rowTop + (_rowHeight - _iconSize) / 2; // 注意：仍用 rowTop，靠 Clip 限制
                     g.DrawImage(item.Icon, new Rectangle(iconX, iconY, _iconSize, _iconSize));
                 }
 
+                // 文本统一使用“可见矩形 visRow”做 Y/Height，彻底避免越界
                 int nameLeft = x0 + 8 + _iconSize + 8;
-                TextRenderer.DrawText(g, item.Name, _itemFont,
-                    new Rectangle(nameLeft, drawY, colW0 - (nameLeft - x0) - 8, _rowHeight),
-                    Color.White,
+                var nameRect = new Rectangle(nameLeft, visRow.Top, colW0 - (nameLeft - x0) - 8, visRow.Height);
+                TextRenderer.DrawText(g, item.Name, _itemFont, nameRect, Color.White,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
 
-                // 大小
                 string sizeText = item.Size < 0 ? "" : FormatSize(item.Size);
-                TextRenderer.DrawText(g, sizeText, _itemFont,
-                    new Rectangle(x1 + 6, drawY, colW1 - 12, _rowHeight),
-                    Color.White,
+                var sizeRect = new Rectangle(x1 + 6, visRow.Top, colW1 - 12, visRow.Height);
+                TextRenderer.DrawText(g, sizeText, _itemFont, sizeRect, Color.White,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
 
-                // 类型
-                TextRenderer.DrawText(g, item.Type, _itemFont,
-                    new Rectangle(x2 + 6, drawY, colW2 - 12, _rowHeight),
-                    Color.White,
+                var typeRect = new Rectangle(x2 + 6, visRow.Top, colW2 - 12, visRow.Height);
+                TextRenderer.DrawText(g, item.Type, _itemFont, typeRect, Color.White,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
 
-                // 修改日期
-                TextRenderer.DrawText(g, item.Modified.ToString("yyyy-MM-dd HH:mm"), _itemFont,
-                    new Rectangle(x3 + 6, drawY, colW3 - 12, _rowHeight),
-                    Color.White,
+                var dateRect = new Rectangle(x3 + 6, visRow.Top, colW3 - 12, visRow.Height);
+                TextRenderer.DrawText(g, item.Modified.ToString("yyyy-MM-dd HH:mm"), _itemFont, dateRect, Color.White,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
             }
 
-            // 滚动范围
+            // 还原裁剪
+            g.Restore(gs);
+
+            // 更新滚动范围
             int itemsHeight = _items.Count * _rowHeight;
             _maxScroll = Math.Max(0, itemsHeight - viewportH);
 
@@ -326,8 +345,7 @@ namespace MpvNet.Windows
                 y += _pathBarHeight;
                 return;
             }
-
-            // 分割路径并绘制：分隔符显示为 ">"
+            // 分割路径并绘制：分隔符显示为 ">" 
             var parts = CurrentPath.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
 
             bool isUnc = CurrentPath.StartsWith(@"\\");
@@ -337,12 +355,11 @@ namespace MpvNet.Windows
             for (int i = 0; i < parts.Length; i++)
             {
                 string segLabel = parts[i];
-                string fullPath;
-
+                string fullPath ="";
                 if (isUnc)
                 {
-                    // UNC: \\server\share\dir\subdir
-                    // 将点击“server”与“share”都指向 \\server\share 根，之后逐级追加
+                    // UNC: \\server\share\dir\subdir 
+                    // 将点击“server”与“share”都指向 \\server\share 根，之后逐级追加 
                     string root = @"\\" + parts[0] + (parts.Length >= 2 ? "\\" + parts[1] : "");
                     if (i <= 1)
                         fullPath = root;
@@ -351,46 +368,31 @@ namespace MpvNet.Windows
                 }
                 else if (hasDrive)
                 {
-                    // 本地盘: C:\Users\Name\Videos
-                    string root = parts[0] + "\\";
-                    if (i == 0)
-                        fullPath = root;
-                    else
-                        fullPath = root + string.Join("\\", parts, 1, i);
-                }
-                else
-                {
-                    // 其它情况（相对路径等）
+                    // 本地盘: C:\Users\Name\Videos string root = parts[0] + "\\"; if (i == 0) fullPath = root; else fullPath = root + string.Join("\\", parts, 1, i); } else { // 其它情况（相对路径等） 
                     fullPath = string.Join("\\", parts, 0, i + 1);
                 }
-
                 Size textSize = TextRenderer.MeasureText(segLabel, _pathFont);
                 var rect = new Rectangle(x, y + 5, textSize.Width, _pathBarHeight - 10);
-
                 TextRenderer.DrawText(g, segLabel, _pathFont, rect, Color.LightBlue,
-                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
-
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
                 _pathSegments.Add((segLabel, fullPath, rect));
-
                 x += rect.Width + 10;
                 if (i < parts.Length - 1)
                 {
                     TextRenderer.DrawText(g, ">", _itemFont,
-                        new Rectangle(x, y, 20, _pathBarHeight),
-                        Color.White,
-                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
-                    x += 40;
+                     new Rectangle(x, y, 20, _pathBarHeight),
+                     Color.White, TextFormatFlags.Left |
+                     TextFormatFlags.VerticalCenter); x += 40;
                 }
             }
-
             y += _pathBarHeight;
         }
 
         // ===================== 交互 =====================
         private int HitTestIndex(int mouseY)
         {
-            // 内容区域从路径栏 + 表头之后开始
-            int headerTop = _pathBarHeight + _rowHeight;
+            // ⭐ 内容区域从“路径栏 + 标题栏”之后开始
+            int headerTop = _pathBarHeight + _headerHeight;
             int contentY = mouseY - headerTop + _scrollOffsetY;
             if (contentY < 0) return -1;
             int idx = contentY / _rowHeight;

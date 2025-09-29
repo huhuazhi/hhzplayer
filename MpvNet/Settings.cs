@@ -3,6 +3,7 @@ using System.Text;
 using System.Xml.Serialization;
 using System.Xml;
 using System.Drawing;
+using static MpvNet.AppSettings;
 
 namespace MpvNet;
 
@@ -23,6 +24,26 @@ public class AppSettings
     public string StartupFolder = "";
     public bool Enable3DMode;
     public string LastOpenedFolder = "";
+
+    //public System.Windows.Forms.FormWindowState WindowStatus { get; set; }
+    public enum enumWindowsStatus
+    {
+        Normal,
+        Minimized,
+        Maximized,
+        Other
+    }
+
+    public enumWindowsStatus WindowsStatus;
+
+    public enum enumFormBorderStyle
+    {
+        None,
+        Sizable,
+        other
+    }
+
+    public enumFormBorderStyle FormBorderStyle;
 
     public void Save()
     {

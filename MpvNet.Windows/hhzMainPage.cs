@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using static HandyControl.Tools.Interop.InteropValues;
+using FFmpeg.AutoGen;
 
 namespace MpvNet.Windows
 {
@@ -37,7 +39,10 @@ namespace MpvNet.Windows
 
         private Bitmap bg;
         private float _fileListBottomGapRatio = 0.07f;
-
+        public int vWidth;
+        public int vHeight;
+        public delegate void FileOpenedEventHandler(HHZMainPage sender, string path);
+        public event FileOpenedEventHandler FileOpened;
         public HHZMainPage()
         {
             InitializeComponent();
@@ -115,6 +120,11 @@ namespace MpvNet.Windows
             // 文件列表
             _fileListLeft = new FileList();
             _fileListRight = new FileList();
+
+            int ifilelistRowHeight = 80;
+            _fileListLeft.RowHeight = ifilelistRowHeight;
+            _fileListRight.RowHeight = ifilelistRowHeight;
+
             Controls.Add(_fileListLeft);
             Controls.Add(_fileListRight);
 
@@ -179,8 +189,8 @@ namespace MpvNet.Windows
 
 
             // 打开文件转发
-            _fileListLeft.FileOpened += (_, path) => FileOpened?.Invoke(this, path);
-            _fileListRight.FileOpened += (_, path) => FileOpened?.Invoke(this, path);
+            _fileListLeft.FileOpened += _fileListLeft_FileOpened;
+            _fileListRight.FileOpened += _fileListLeft_FileOpened;
 
             // 布局
             this.Resize += (_, __) => { UpdateLogoPosition(); UpdateBoundsLayout(); };
@@ -194,6 +204,12 @@ namespace MpvNet.Windows
             this.AllowDrop = true;
             this.DragEnter += HHZMainPage_DragEnter;
             this.DragDrop += HHZMainPage_DragDrop;
+        }
+
+        private void _fileListLeft_FileOpened(Object? sender, string path)
+        {
+            //(vWidth, vHeight) = GetVideoSizeFFmpeg(path);
+            FileOpened?.Invoke(this, path);
         }
 
         private Rectangle CalcBlueFrame(Rectangle host)
@@ -288,7 +304,7 @@ namespace MpvNet.Windows
             var font = new Font("Segoe UI", fontSize, FontStyle.Regular);
             _hintLabelLeft.Font = font; _hintLabelRight.Font = font;
 
-            int margin = 10, shift = 10, offsetX = 50;
+            int margin = 10, shift = 3, offsetX = 50;
 
             if (App.Settings.Enable3DMode)
             {
@@ -297,9 +313,9 @@ namespace MpvNet.Windows
                 _logoPicLeft.Location = new Point(offsetX + margin + shift, margin);
                 _logoPicRight.Location = new Point(halfWidth + offsetX + margin - shift, margin);
 
-                _hintLabelLeft.Location = new Point(_logoPicLeft.Right + 5, _logoPicLeft.Top + (_logoPicLeft.Height - _hintLabelLeft.Height) / 2);
+                _hintLabelLeft.Location = new Point(_logoPicLeft.Right + 5 + shift, _logoPicLeft.Top + (_logoPicLeft.Height - _hintLabelLeft.Height) / 2);
                 int textOffsetX = _hintLabelLeft.Left - (offsetX + margin);
-                _hintLabelRight.Location = new Point(halfWidth + offsetX + margin + textOffsetX,
+                _hintLabelRight.Location = new Point(halfWidth + offsetX + margin + textOffsetX - shift,
                                                      _logoPicRight.Top + (_logoPicRight.Height - _hintLabelRight.Height) / 2);
             }
             else
@@ -348,11 +364,11 @@ namespace MpvNet.Windows
 
         // 拖入
         public event EventHandler<string[]>? FileDropped;
-        private void HHZMainPage_DragEnter(object sender, DragEventArgs e)
+        private void HHZMainPage_DragEnter(object? sender, DragEventArgs e)
         {
             e.Effect = e.Data!.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
         }
-        private void HHZMainPage_DragDrop(object sender, DragEventArgs e)
+        private void HHZMainPage_DragDrop(object? sender, DragEventArgs e)
         {
             if (e.Data!.GetDataPresent(DataFormats.FileDrop))
             {
@@ -361,7 +377,6 @@ namespace MpvNet.Windows
             }
         }
 
-        public event EventHandler<string> FileOpened;
         public void LoadFolder(string folder)
         {
             if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
@@ -383,6 +398,37 @@ namespace MpvNet.Windows
             {
                 _syncingFileDir = false;
             }
+        }
+
+        public unsafe static (int Width, int Height) GetVideoSizeFFmpeg(string filePath)
+        {
+            ffmpeg.avformat_network_init();
+
+            AVFormatContext* pFormatContext = null;
+            if (ffmpeg.avformat_open_input(&pFormatContext, filePath, null, null) != 0)
+                return (0, 0);
+
+            if (ffmpeg.avformat_find_stream_info(pFormatContext, null) < 0)
+            {
+                ffmpeg.avformat_close_input(&pFormatContext);
+                return (0, 0);
+            }
+
+            for (int i = 0; i < pFormatContext->nb_streams; i++)
+            {
+                AVStream* stream = pFormatContext->streams[i];
+                AVCodecParameters* codecpar = stream->codecpar;
+                if (codecpar->codec_type == AVMediaType.AVMEDIA_TYPE_VIDEO)
+                {
+                    int w = codecpar->width;
+                    int h = codecpar->height;
+                    ffmpeg.avformat_close_input(&pFormatContext);
+                    return (w, h);
+                }
+            }
+
+            ffmpeg.avformat_close_input(&pFormatContext);
+            return (0, 0);
         }
     }
 }

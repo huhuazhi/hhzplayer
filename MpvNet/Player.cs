@@ -105,7 +105,7 @@ public class MainPlayer : MpvClient
         //SetPropertyBool("input-default-bindings", true);
         //SetPropertyBool("input-builtin-bindings", false);
         //SetPropertyBool("input-media-keys", true);
-
+        SetPropertyString("cursor-autohide", "no");
         SetPropertyString("autocreate-playlist", "filter");
         //SetPropertyString("media-controls", "yes");
         SetPropertyString("idle", "yes");
