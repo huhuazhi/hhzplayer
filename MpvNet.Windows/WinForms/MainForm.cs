@@ -423,13 +423,12 @@ public partial class MainForm : Form
         {
             Player.SetPropertyString("vo", "");
             Player.SetPropertyString("gpu-api", "");
-
-            //if (Player.Duration.TotalMicroseconds > 0)
-            //{
-            //    var vw = Player.GetPropertyInt("width");
-            //    var vh = Player.GetPropertyInt("height");
-            //    Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
-            //}
+            if (Player.Duration.TotalMicroseconds > 0)
+            {
+                var vw = Player.GetPropertyInt("width");
+                var vh = Player.GetPropertyInt("height");
+                Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
+            }
             _isReturn2D = true;
             switch (App.Settings.FormBorderStyle)
             {
@@ -539,7 +538,7 @@ public partial class MainForm : Form
     {
         if (!App.Settings.Enable3DMode)
         {
-            if (/*WindowState == FormWindowState.Normal &&*/ WasShown && !_isReturn2D)
+            if (WindowState != FormWindowState.Minimized && WasShown && !_isReturn2D)
             {
                 progressBarLeftWidth = progressBarLeft.Width;
                 if (WindowState != FormWindowState.Maximized)
