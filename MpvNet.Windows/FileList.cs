@@ -42,7 +42,7 @@ namespace MpvNet.Windows
 
         // 颜色
         private readonly Color _bgColor = Color.FromArgb(70, 20, 40, 70);
-        private readonly Color _altRowColor = Color.FromArgb(40, 50, 50, 80);
+        private readonly Color _altRowColor = Color.FromArgb(80, 60, 60, 60);
         private readonly Color _hoverColor = Color.FromArgb(80, 0, 120, 215);
         private readonly Color _selectedColor = Color.FromArgb(120, 0, 120, 215);
         private readonly Color _headerBg = Color.FromArgb(100, 0, 122, 204);

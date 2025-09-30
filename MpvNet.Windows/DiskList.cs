@@ -203,46 +203,65 @@ namespace MpvNet.Windows
             finally { _paintingBack = false; }
         }
 
+        // 边框宽度（可调），以及对应的内边距（向内缩进避免内容压线）
+        private float _borderWidth = 1.5f;
+        private int BorderPad => (int)Math.Ceiling(_borderWidth);
+
+        // 计算内矩形（内容真正可绘制区域 = 去掉四周边框的区域）
+        private Rectangle GetInnerRect()
+        {
+            int pad = BorderPad;
+            return new Rectangle(pad, pad, Math.Max(0, ClientSize.Width - pad * 2), Math.Max(0, ClientSize.Height - pad * 2));
+        }
+
+
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
-            g.SmoothingMode = SmoothingMode.HighQuality;
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
 
-            // 整体遵循圆角 Region（下角也会是圆的）
+            // 让整体仍遵循圆角 Region
             if (this.Region != null)
-                g.SetClip(this.Region, CombineMode.Replace);
+                g.SetClip(this.Region, System.Drawing.Drawing2D.CombineMode.Replace);
 
-            int viewportTop = ShowHeader ? HeaderHeight : 0;
+            // ★ 新：内矩形（扣除边框的内容区）
+            Rectangle inner = GetInnerRect();
 
-            // —— 标题栏（上部圆角） —— 
+            int headerTop = inner.Top;
+            int headerHeight = ShowHeader ? HeaderHeight : 0;
+            int viewportTop = headerTop + headerHeight;      // ★ 列表从内矩形的标题栏下方开始
+            int viewportBottom = inner.Bottom;
+
+            // —— 标题栏（上部圆角，限制在 inner 宽度）——
             if (ShowHeader)
             {
-                var headerRect = new Rectangle(0, 0, ClientSize.Width, HeaderHeight);
+                var headerRect = new Rectangle(inner.Left, inner.Top, inner.Width, HeaderHeight);
                 using (var path = CreateTopRoundedRect(headerRect, CornerRadiusTop))
                 using (var b = new SolidBrush(HeaderBackColor))
                     g.FillPath(b, path);
 
                 using var fTitle = MakeFont("Segoe UI Semibold", 10f, FontStyle.Regular, "Segoe UI", FontStyle.Bold);
                 using var brTitle = new SolidBrush(Color.White);
-                var textRect = new Rectangle(HeaderPadding.Left, HeaderPadding.Top,
-                                             ClientSize.Width - HeaderPadding.Horizontal,
-                                             HeaderHeight - HeaderPadding.Vertical);
+                var textRect = new Rectangle(headerRect.Left + HeaderPadding.Left,
+                                             headerRect.Top + HeaderPadding.Top,
+                                             headerRect.Width - HeaderPadding.Horizontal,
+                                             headerRect.Height - HeaderPadding.Vertical);
                 var sf = new StringFormat { LineAlignment = StringAlignment.Center };
                 g.DrawString(HeaderText, fTitle, brTitle, textRect, sf);
             }
 
-            // —— 列表内容（标题栏以下） —— 
-            var clipRect = new Rectangle(0, viewportTop, ClientSize.Width, Math.Max(0, ClientSize.Height - viewportTop));
-            Region oldClip = g.Clip; // 已包含 Region，另行与列表区域相交
+            // —— 列表内容（裁剪到 inner 的标题栏以下）——
+            var clipRect = new Rectangle(inner.Left, viewportTop, inner.Width, Math.Max(0, viewportBottom - viewportTop));
+            Region oldClip = g.Clip;
             using (var listClip = new Region(clipRect))
             {
                 listClip.Intersect(g.Clip);
                 g.Clip = listClip;
 
-                // 深蓝半透明背景（列表区域）
-                using (var listBg = new SolidBrush(Color.FromArgb(70, 50, 50, 50))) // A 越大越不透明
+                // （你之前加的）深蓝半透明背景，记得也用 clipRect
+                using (var listBg = new SolidBrush(Color.FromArgb(70, 50, 50, 50)))
                     g.FillRectangle(listBg, clipRect);
 
                 int y = viewportTop + _scrollY;
@@ -256,18 +275,20 @@ namespace MpvNet.Windows
                 using var hover = new SolidBrush(Color.FromArgb(22, 120, 170, 255));
                 using var sel = new SolidBrush(Color.FromArgb(40, 120, 170, 255));
 
-                int contentWidth = ClientSize.Width - 1;
+                int contentWidth = inner.Width - 1;                 // ★ 宽度用 inner
+                int rowLeft = inner.Left;                           // ★ X 从 inner.Left 开始
 
                 for (int i = 0; i < _items.Count; i++)
                 {
                     var it = _items[i];
-                    var rowRect = new Rectangle(0, y, contentWidth, RowHeight);
+                    var rowRect = new Rectangle(rowLeft, y, contentWidth, RowHeight);
 
-                    if (rowRect.Bottom >= viewportTop && rowRect.Top <= ClientSize.Height)
+                    if (rowRect.Bottom >= viewportTop && rowRect.Top <= viewportBottom)
                     {
                         Rectangle overlay = rowRect;
                         overlay.Y = Math.Max(viewportTop, overlay.Y - 2);
-                        overlay.Height = Math.Min(ClientSize.Height - overlay.Y, overlay.Height + 4);
+                        overlay.Height = Math.Min(viewportBottom - overlay.Y, overlay.Height + 4);
+
                         if (i == _selectedIndex) g.FillRectangle(sel, overlay);
                         else if (i == _hotIndex) g.FillRectangle(hover, overlay);
 
@@ -296,26 +317,20 @@ namespace MpvNet.Windows
                     y += RowHeight + RowSpacing;
                 }
             }
-
             g.Clip = oldClip;
 
-            // —— 最后：整体蓝色圆角边框 —— 
-            // 1px 边框；支持高 DPI 稍微加粗
-            float borderWidth = Math.Max(1f, this.DeviceDpi / 120f);
-            using (var pen = new Pen(Color.FromArgb(180, 80, 140, 255), borderWidth)) // 半透明蓝
+            // —— 最后：画外圈蓝色圆角边框（仍然在控件最外）——
+            using (var pen = new Pen(Color.FromArgb(180, 80, 140, 255), _borderWidth))
             {
-                pen.Alignment = System.Drawing.Drawing2D.PenAlignment.Inset; // 让边线尽量画在内部
-                var rect = new Rectangle(0, 0, ClientSize.Width - 1, ClientSize.Height - 1);
+                pen.Alignment = System.Drawing.Drawing2D.PenAlignment.Inset;
+                var outerRect = new Rectangle(0, 0, ClientSize.Width - 1, ClientSize.Height - 1);
 
                 using (var path = CreateRoundedRectPath(
-                    rect,
-                    CornerRadiusTop,   // 左上
-                    CornerRadiusTop,   // 右上
-                    CornerRadiusBottom,// 右下
-                    CornerRadiusBottom // 左下
-                ))
+                    outerRect,
+                    CornerRadiusTop, CornerRadiusTop,
+                    CornerRadiusBottom, CornerRadiusBottom))
                 {
-                    e.Graphics.DrawPath(pen, path);
+                    g.DrawPath(pen, path);
                 }
             }
         }
