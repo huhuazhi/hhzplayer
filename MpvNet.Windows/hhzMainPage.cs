@@ -18,8 +18,8 @@ namespace MpvNet.Windows
         private DiskList _diskListLeft;
         private DiskList _diskListRight;
 
-        private FileList _fileListLeft;
-        private FileList _fileListRight;
+        private FileListD3D _fileListLeft;
+        private FileListD3D _fileListRight;
 
         // 防止事件互相递归触发
         private bool _syncingDisk = false;        // 磁盘 列表的联动
@@ -118,8 +118,8 @@ namespace MpvNet.Windows
             };
 
             // 文件列表
-            _fileListLeft = new FileList();
-            _fileListRight = new FileList();
+            _fileListLeft = new FileListD3D();
+            _fileListRight = new FileListD3D();
 
             int ifilelistRowHeight = 80;
             _fileListLeft.RowHeight = ifilelistRowHeight;
@@ -128,64 +128,16 @@ namespace MpvNet.Windows
             Controls.Add(_fileListLeft);
             Controls.Add(_fileListRight);
 
-            // ② DirectoryChanged：统一用同一个闸门
-            _fileListLeft.DirectoryChanged += (_, path) =>
-            {
-                if (_syncingFileDir) return;
-                try { _syncingFileDir = true; _fileListRight.NavigateTo(path); App.Settings.LastOpenedFolder = path; }
-                finally { _syncingFileDir = false; }
-            };
+            _diskListLeft.DiskSelected += (_, root) => { _fileListLeft.NavigateTo(root, true); _fileListRight.NavigateTo(root, false); };
+            _diskListRight.DiskSelected += (_, root) => { _fileListLeft.NavigateTo(root, true); _fileListRight.NavigateTo(root, false); };
 
-            _fileListRight.DirectoryChanged += (_, path) =>
-            {
-                if (_syncingFileDir) return;
-                try { _syncingFileDir = true; _fileListLeft.NavigateTo(path); }
-                finally { _syncingFileDir = false; }
-            };
+            // 滚动同步（如果需要）
+            _fileListLeft.ViewportOffsetChanged += (_, e) => _fileListRight.ScrollOffset = e.OffsetY;
+            _fileListRight.ViewportOffsetChanged += (_, e) => _fileListLeft.ScrollOffset = e.OffsetY;
 
-
-            // —— 文件滚动联动（像素级）——
-            _fileListLeft.ViewportOffsetChanged += (_, e) =>
-            {
-                if (_syncingLeftFileScroll) return;
-                try { _syncingLeftFileScroll = true; _fileListRight.ScrollOffset = e.OffsetY; }
-                finally { _syncingLeftFileScroll = false; }
-            };
-            _fileListRight.ViewportOffsetChanged += (_, e) =>
-            {
-                if (_syncingRightFileScroll) return;
-                try { _syncingRightFileScroll = true; _fileListLeft.ScrollOffset = e.OffsetY; }
-                finally { _syncingRightFileScroll = false; }
-            };
-
-            // —— 文件悬停联动 —— 
-            _fileListLeft.HoverChanged += (_, e) =>
-            {
-                if (_syncingLeftFileHover) return;
-                try { _syncingLeftFileHover = true; _fileListRight.SetHotIndex(e.Index, raiseEvent: false); }
-                finally { _syncingLeftFileHover = false; }
-            };
-            _fileListRight.HoverChanged += (_, e) =>
-            {
-                if (_syncingRightFileHover) return;
-                try { _syncingRightFileHover = true; _fileListLeft.SetHotIndex(e.Index, raiseEvent: false); }
-                finally { _syncingRightFileHover = false; }
-            };
-
-            // ③ DiskSelected：两边同时导航时，也用同一个闸门，避免触发对方的 DirectoryChanged 再回调自己
-            _diskListLeft.DiskSelected += (_, root) =>
-            {
-                if (_syncingFileDir) return;
-                try { _syncingFileDir = true; _fileListLeft.NavigateTo(root); _fileListRight.NavigateTo(root); }
-                finally { _syncingFileDir = false; }
-            };
-
-            _diskListRight.DiskSelected += (_, root) =>
-            {
-                if (_syncingFileDir) return;
-                try { _syncingFileDir = true; _fileListLeft.NavigateTo(root); _fileListRight.NavigateTo(root); }
-                finally { _syncingFileDir = false; }
-            };
+            // 打开文件透传
+            _fileListLeft.FileOpened += (_, p) => FileOpened?.Invoke(this, p);
+            _fileListRight.FileOpened += (_, p) => FileOpened?.Invoke(this, p);
 
 
             // 打开文件转发
@@ -387,8 +339,8 @@ namespace MpvNet.Windows
                 _syncingFileDir = true;
 
                 // 两边同时导航
-                _fileListLeft.NavigateTo(folder);
-                _fileListRight.NavigateTo(folder);
+                _fileListLeft.NavigateTo(folder, true);
+                _fileListRight.NavigateTo(folder, true);
 
                 // 保存到设置
                 App.Settings.LastOpenedFolder = folder;
