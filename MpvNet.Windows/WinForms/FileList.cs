@@ -5,7 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace MpvNet.Windows
+namespace MpvNet.Windows.WinForms
 {
     public class FileList : Control
     {
@@ -396,7 +396,7 @@ namespace MpvNet.Windows
             int contentY = mouseY - headerTop + _scrollOffsetY;
             if (contentY < 0) return -1;
             int idx = contentY / _rowHeight;
-            return (idx >= 0 && idx < _items.Count) ? idx : -1;
+            return idx >= 0 && idx < _items.Count ? idx : -1;
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
@@ -572,8 +572,8 @@ namespace MpvNet.Windows
         {
             SHFILEINFO sh = new();
             uint flags = SHGFI_ICON | SHGFI_LARGEICON | SHGFI_USEFILEATTRIBUTES;
-            IntPtr h = SHGetFileInfo(pathOrExt, attrs, ref sh, (uint)Marshal.SizeOf<SHFILEINFO>(), flags);
-            if (sh.hIcon != IntPtr.Zero)
+            nint h = SHGetFileInfo(pathOrExt, attrs, ref sh, (uint)Marshal.SizeOf<SHFILEINFO>(), flags);
+            if (sh.hIcon != nint.Zero)
             {
                 try
                 {
@@ -592,7 +592,7 @@ namespace MpvNet.Windows
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct SHFILEINFO
         {
-            public IntPtr hIcon;
+            public nint hIcon;
             public int iIcon;
             public uint dwAttributes;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string szDisplayName;
@@ -600,10 +600,10 @@ namespace MpvNet.Windows
         }
 
         [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-        private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
+        private static extern nint SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
 
         [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool DestroyIcon(IntPtr hIcon);
+        private static extern bool DestroyIcon(nint hIcon);
 
         private const uint SHGFI_ICON = 0x000000100;
         private const uint SHGFI_LARGEICON = 0x000000000; // 32x32

@@ -45,6 +45,9 @@
 		<PackageReference Include="CommunityToolkit.Mvvm" />
 		<PackageReference Include="FFmpeg.AutoGen" />
 		<PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" />
+		<PackageReference Include="SkiaSharp" />
+		<PackageReference Include="SkiaSharp.Views.Desktop.Common" />
+		<PackageReference Include="SkiaSharp.Views.WindowsForms" />
 	</ItemGroup>
 
 	<ItemGroup>

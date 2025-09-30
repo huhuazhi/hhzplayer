@@ -39,12 +39,12 @@ public partial class MainForm : Form
         //Player.SetPropertyString("osc", "no");
         //InitializeLogoOverlay();
         DoubleBuffered = true;     // 开启双缓冲，避免闪烁
-        //this.SetStyle(ControlStyles.AllPaintingInWmPaint |
-        //      ControlStyles.UserPaint |
-        //      ControlStyles.OptimizedDoubleBuffer, true);
-        //this.UpdateStyles();
+        this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+              ControlStyles.UserPaint |
+              ControlStyles.OptimizedDoubleBuffer, true);
+        this.UpdateStyles();
 
-        UpdateDarkMode();
+        //UpdateDarkMode();
         InitializehhzOverlay();
         InitPlayerEvents();
 
@@ -82,7 +82,7 @@ public partial class MainForm : Form
                 // 在 UI 线程里更新控件
                 this.Invoke((MethodInvoker)(() =>
                 {
-                    lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {Player.Duration.Hours}:{Player.Duration.Minutes}:{Player.Duration.Seconds}";
+                    lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
                     lblDurationRight.Text = lblDurationLeft.Text;
 
                     //Debug.Print($"进度: {value:F1} 秒");
@@ -119,7 +119,7 @@ public partial class MainForm : Form
         });
     }
 
-    HHZMainPage hhzMainPage = new HHZMainPage();
+    HHZMainPage_SC hhzMainPage = new HHZMainPage_SC();
     private void InitializehhzOverlay()
     {
         hhzMainPage.BringToFront();
@@ -138,6 +138,9 @@ public partial class MainForm : Form
             BackColor = Color.Black,
         };
         overlayPanel.Visible = false;
+        this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+        btnBackLeft.BackColor = Color.Transparent;
+        overlayPanel.BackColor = Color.Transparent;
 
         Controls.Add(overlayPanel);
 
@@ -401,7 +404,7 @@ public partial class MainForm : Form
         }
     }
 
-    private void HhzMainPage_FileOpened(HHZMainPage sender, string path)
+    private void HhzMainPage_FileOpened(HHZMainPage_SC sender, string path)
     {
         if (path.Length > 0)
         {
@@ -967,7 +970,7 @@ public partial class MainForm : Form
         {
             if (Player.Duration.TotalMilliseconds > 0)
             {
-                lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {Player.Duration.Hours}:{Player.Duration.Minutes}:{Player.Duration.Seconds}";
+                lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
                 lblDurationRight.Text = lblDurationLeft.Text;
                 lblStatusLeft.Text = "正在播放";
                 lblStatusRight.Text = lblStatusLeft.Text;
@@ -1074,40 +1077,42 @@ public partial class MainForm : Form
     protected override void OnMouseWheel(MouseEventArgs e)
     {
         base.OnMouseWheel(e);
-
-        double vol = Player.GetPropertyDouble("volume");
-
-        if (e.Delta > 0)
+        if (overlayPanel.Visible == true)
         {
-            vol = Math.Min(vol + 5, 130); // 向上滚动增加音量
-        }
-        else if (e.Delta < 0)
-        {
-            vol = Math.Max(vol - 5, 0);   // 向下滚动减少音量
-        }
+            double vol = Player.GetPropertyDouble("volume");
 
-        Player.SetPropertyDouble("volume", vol);
-        App.Settings.Volume = (int)vol;
-        if (hhzMainPage.Visible == false)
-        {
-            _lastCursorChanged = Environment.TickCount;
-            ShowVideoUI();
+            if (e.Delta > 0)
+            {
+                vol = Math.Min(vol + 5, 130); // 向上滚动增加音量
+            }
+            else if (e.Delta < 0)
+            {
+                vol = Math.Max(vol - 5, 0);   // 向下滚动减少音量
+            }
+
+            Player.SetPropertyDouble("volume", vol);
+            App.Settings.Volume = (int)vol;
+            if (hhzMainPage.Visible == false)
+            {
+                _lastCursorChanged = Environment.TickCount;
+                ShowVideoUI();
+            }
+            lblVolumeLeft.Text = $"音量:{App.Settings.Volume}%";
+            lblVolumeRight.Text = lblVolumeLeft.Text;
         }
-        lblVolumeLeft.Text = $"音量:{App.Settings.Volume}%";
-        lblVolumeRight.Text = lblVolumeLeft.Text;
     }
 
     protected override void OnShown(EventArgs e)
     {
         base.OnShown(e);
-        if (WindowState == FormWindowState.Maximized)
-            Player.SetPropertyBool("window-maximized", true);
+        //if (WindowState == FormWindowState.Maximized)
+        //    Player.SetPropertyBool("window-maximized", true);
 
-        WpfApplication.Init();
-        Theme.UpdateWpfColors();
-        MessageBoxEx.MessageForeground = Theme.Current?.GetBrush("heading");
-        MessageBoxEx.MessageBackground = Theme.Current?.GetBrush("background");
-        MessageBoxEx.ButtonBackground = Theme.Current?.GetBrush("highlight");
+        //WpfApplication.Init();
+        //Theme.UpdateWpfColors();
+        //MessageBoxEx.MessageForeground = Theme.Current?.GetBrush("heading");
+        //MessageBoxEx.MessageBackground = Theme.Current?.GetBrush("background");
+        //MessageBoxEx.ButtonBackground = Theme.Current?.GetBrush("highlight");
         //InitAndBuildContextMenu();
         Cursor.Position = new Point(Cursor.Position.X + 1, Cursor.Position.Y);
         GlobalHotkey.RegisterGlobalHotkeys(Handle);
@@ -1118,7 +1123,7 @@ public partial class MainForm : Form
     //void ContextMenu_Closed(object sender, System.Windows.RoutedEventArgs e) => MenuAutoResetEvent.Set();
     protected override void OnResize(EventArgs e)
     {
-        base.OnResize(e);
+
         //if (Player.Duration.TotalMilliseconds > 0)
         {
             if (!App.Settings.Enable3DMode)
@@ -1126,6 +1131,7 @@ public partial class MainForm : Form
                 SaveWindowProperties();
             }
         }
+        base.OnResize(e);
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)

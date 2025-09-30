@@ -5,6 +5,7 @@ using System.IO;
 using System.Windows.Forms;
 using static HandyControl.Tools.Interop.InteropValues;
 using FFmpeg.AutoGen;
+using MpvNet.Windows.WinForms;
 
 namespace MpvNet.Windows
 {

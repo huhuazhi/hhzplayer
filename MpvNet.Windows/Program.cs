@@ -20,7 +20,7 @@ static class Program
             RegistryHelp.ProductName = AppInfo.Product;
             Translator.Current = new WpfTranslator();
 
-            Application.EnableVisualStyles();
+            //Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
             AppDomain.CurrentDomain.UnhandledException += (sender, e) => Terminal.WriteError(e.ExceptionObject);
