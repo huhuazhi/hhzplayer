@@ -44,7 +44,7 @@ public partial class MainForm : Form
               ControlStyles.OptimizedDoubleBuffer, true);
         this.UpdateStyles();
 
-        //UpdateDarkMode();
+        UpdateDarkMode();
         InitializehhzOverlay();
         InitPlayerEvents();
 
@@ -138,9 +138,6 @@ public partial class MainForm : Form
             BackColor = Color.Black,
         };
         overlayPanel.Visible = false;
-        this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
-        btnBackLeft.BackColor = Color.Transparent;
-        overlayPanel.BackColor = Color.Transparent;
 
         Controls.Add(overlayPanel);
 
@@ -1108,11 +1105,11 @@ public partial class MainForm : Form
         //if (WindowState == FormWindowState.Maximized)
         //    Player.SetPropertyBool("window-maximized", true);
 
-        //WpfApplication.Init();
-        //Theme.UpdateWpfColors();
-        //MessageBoxEx.MessageForeground = Theme.Current?.GetBrush("heading");
-        //MessageBoxEx.MessageBackground = Theme.Current?.GetBrush("background");
-        //MessageBoxEx.ButtonBackground = Theme.Current?.GetBrush("highlight");
+        WpfApplication.Init();
+        Theme.UpdateWpfColors();
+        MessageBoxEx.MessageForeground = Theme.Current?.GetBrush("heading");
+        MessageBoxEx.MessageBackground = Theme.Current?.GetBrush("background");
+        MessageBoxEx.ButtonBackground = Theme.Current?.GetBrush("highlight");
         //InitAndBuildContextMenu();
         Cursor.Position = new Point(Cursor.Position.X + 1, Cursor.Position.Y);
         GlobalHotkey.RegisterGlobalHotkeys(Handle);
