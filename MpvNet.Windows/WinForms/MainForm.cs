@@ -401,6 +401,10 @@ public partial class MainForm : Form
     {
         if (path.Length > 0)
         {
+            progressBarLeft.Value = 0;
+            progressBarRight.Value = 0;
+            lblCaptionLeft.Text = "正在加载...";
+            lblCaptionRight.Text = "正在加载...";
             hhzMainPage.Visible = false;
             overlayPanel.Visible = true;
             Player.LoadFiles(new[] { path }, true, false);
@@ -437,11 +441,29 @@ public partial class MainForm : Form
             //FullSBS画面比例最小值为2.35 * 2 : 1
             if ((double)vw / vh < 2.35 / 1) // half-SBS
             {
-                Player.SetPropertyString("video-aspect-override", (Width).ToString() + ":" + (Width / (vw * 2) * vh).ToString());
+                if ((Width / Height) <= 16.00 / 9)
+                {
+                    //One Screen
+                    Player.SetPropertyString("video-aspect-override", (Width).ToString() + ":" + ((Width / 2) / (vw / 2) * vh).ToString());
+                }
+                else
+                {
+                    //Two Screen
+                    Player.SetPropertyString("video-aspect-override", (Width * 2).ToString() + ":" + ((Width / 2) / (vw / 2) * vh).ToString());
+                }
             }
             else // full-SBS
             {
-                Player.SetPropertyString("video-aspect-override", (Width).ToString() + ":" + (Width /vw * vh) .ToString());
+                if ((Width / Height) <= 16.00 / 9)
+                {
+                    //One Screen
+                    Player.SetPropertyString("video-aspect-override", (Width).ToString() + ":" + (Width / (vw / 2) * vh).ToString());
+                }
+                else
+                {
+                    //Two Screen
+                    Player.SetPropertyString("video-aspect-override", (Width).ToString() + ":" + ((Width / (vw / 2) * vh) / 2).ToString());
+                }                    
             }
         }
     }
@@ -1335,7 +1357,7 @@ public partial class MainForm : Form
             case "2D字幕":
                 v3DSubtitleMode.Off(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
                 break;
-            case "2D转3D字幕":
+            case "单屏转3D字幕":
                 v3DSubtitleMode.Auto(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);                
                 break;
             default:
