@@ -65,8 +65,8 @@ public partial class MainForm : Form
                     files.Add(arg);
                 }
             }
-            Player.LoadFiles([.. files], true, false);            
-        }        
+            Player.LoadFiles([.. files], true, false);
+        }
     }
     double timepos;
 
@@ -93,14 +93,24 @@ public partial class MainForm : Form
                     }
                 }));
             }
+            if (App.Settings.Volume > 100)
+            {
+                lblVolumeLeft.ForeColor = Color.Red;
+                lblVolumeRight.ForeColor = Color.Red;
+            }
+            else if(App.Settings.Volume != 0)
+            {
+                lblVolumeLeft.ForeColor = Color.White;
+                lblVolumeRight.ForeColor = Color.White;
+            }
         });
-        
+
         Player.ObservePropertyBool("pause", (bool value) =>
         {
             this.Invoke((MethodInvoker)(() =>
             {
                 if (value)
-                {                    
+                {
                     bPause = true;
                     btnPlayLeft.Text = "播放";
                     btnPlayRight.Text = "播放";
@@ -110,7 +120,7 @@ public partial class MainForm : Form
                     bPause = false;
                     btnPlayLeft.Text = "暂停";
                     btnPlayRight.Text = "暂停";
-                }                
+                }
                 lblStatusLeft.Text = $"{(bPause ? "暂停中" : "播放中")}";
                 lblStatusRight.Text = lblStatusLeft.Text;
                 ShowCursor();
@@ -179,7 +189,7 @@ public partial class MainForm : Form
         CycleFullScreenFor3D(App.Settings.Enable3DMode);
 
         hhzMainPage.FileOpened += HhzMainPage_FileOpened;
-        hhzMainPage.FileDropped += HhzMainPage_FileDropped;        
+        hhzMainPage.FileDropped += HhzMainPage_FileDropped;
 
         overlayPanel.MouseMove += OverlayPanel_MouseMove;
         overlayPanel.MouseDoubleClick += OverlayPanel_MouseDoubleClick;
@@ -189,28 +199,28 @@ public partial class MainForm : Form
 
         btnBackLeft.Click += btnBack_Click;
         btnBackRight.Click += btnBack_Click;
-        
+
         btn3DLeft.Click += btn3D_Click;
         btn3DRight.Click += btn3D_Click;
-        
+
         btn3DSubtitleModeLeft.Click += btnSubtitle_Click;
         btn3DSubtitleModeRight.Click += btnSubtitle_Click;
-        
+
         btnRenderLeft.Click += BtnRender_Click;
         btnRenderRight.Click += BtnRender_Click;
 
         btnVideoTrackLeft.Click += BtnVideoTrack_Click;
         btnVideoTrackRight.Click += BtnVideoTrack_Click;
-        
+
         btnAudioTrackLeft.Click += BtnAudioTrack_Click;
         btnAudioTrackRight.Click += BtnAudioTrack_Click;
-        
+
         btnSubtitleTrackLeft.Click += BtnSubtitleTrack_Click;
         btnSubtitleTrackRight.Click += BtnSubtitleTrack_Click;
-        
+
         btnPlayLeft.Click += BtnPlay_Click;
         btnPlayRight.Click += BtnPlay_Click;
-        
+
         btnFullScreenLeft.Click += BtnFullScreen_Click;
         btnFullScreenRight.Click += BtnFullScreen_Click;
 
@@ -236,8 +246,8 @@ public partial class MainForm : Form
     int brvalue;
     private void ProgressBar_MouseMove(object? sender, MouseEventArgs e)
     {
-        brvalue = (int)((double)e.X / progressBarLeft.Width * progressBarLeft.Maximum) ;
-        tip.Show(TimeSpan.FromSeconds(brvalue).ToString(@"hh\:mm\:ss"), progressBarLeft, e.Location.X+1 + Screen.FromControl((ProgressBar)sender).Bounds.Left, e.Location.Y - 40);
+        brvalue = (int)((double)e.X / progressBarLeft.Width * progressBarLeft.Maximum);
+        tip.Show(TimeSpan.FromSeconds(brvalue).ToString(@"hh\:mm\:ss"), progressBarLeft, e.Location.X + 1 + Screen.FromControl((ProgressBar)sender).Bounds.Left, e.Location.Y - 40);
     }
 
     private void overlayPanel_DragDrop(object? sender, DragEventArgs e)
@@ -323,7 +333,7 @@ public partial class MainForm : Form
     }
 
     private void BtnAudioTrack_Click(object? sender, EventArgs e)
-    {        
+    {
         _audioMenuLeft?.Show(MousePosition);
     }
 
@@ -407,7 +417,7 @@ public partial class MainForm : Form
         {
             progressBarLeft.Value = 0;
             progressBarRight.Value = 0;
-            
+
             lblStatusLeft.Text = "正在加载...";
             lblStatusRight.Text = lblStatusLeft.Text;
 
@@ -470,7 +480,7 @@ public partial class MainForm : Form
                     //Two Screen
                     Player.SetPropertyString("video-aspect-override", $"{Width}:{Width / vw * vh}");
                     //Player.SetPropertyString("video-aspect-override", $"{Width}:{vh}");
-                }                    
+                }
             }
         }
     }
@@ -511,12 +521,7 @@ public partial class MainForm : Form
         }
         else
         {
-            if (Player.Duration.TotalMicroseconds > 0)
-            {
-                var vw = Player.GetPropertyInt("width");
-                var vh = Player.GetPropertyInt("height");
-                Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
-            }
+            setDefaultAspect();
             _isReturn2D = true;
             switch (App.Settings.FormBorderStyle)
             {
@@ -550,7 +555,7 @@ public partial class MainForm : Form
 
     private enumFormBorderStyle GetAppFormBorderStyle(FormBorderStyle formBorderStyle)
     {
-        switch (formBorderStyle) { 
+        switch (formBorderStyle) {
             case FormBorderStyle.None:
                 return enumFormBorderStyle.None;
             case FormBorderStyle.Sizable:
@@ -668,7 +673,7 @@ public partial class MainForm : Form
             else
             {
                 HideVideoUI();
-            }        
+            }
         }
     }
 
@@ -979,6 +984,10 @@ public partial class MainForm : Form
                 {
                     set3DFullHalf();
                 }
+                else
+                {
+                    setDefaultAspect();
+                }
                 //Player.SetPropertyString("video-aspect-override", "7680:2072");
                 //v3DSubtitleMode.Auto(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
 
@@ -1071,6 +1080,16 @@ public partial class MainForm : Form
         //SetDefaultSubId();
     }
 
+    private void setDefaultAspect()
+    {
+        if (Player.Duration.TotalMicroseconds > 0)
+        {
+            var vw = Player.GetPropertyInt("width");
+            var vh = Player.GetPropertyInt("height");
+            Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
+        }
+    }
+
     protected override void OnMouseWheel(MouseEventArgs e)
     {
         base.OnMouseWheel(e);
@@ -1079,7 +1098,7 @@ public partial class MainForm : Form
 
         if (e.Delta > 0)
         {
-            vol = Math.Min(vol + 5, 130); // 向上滚动增加音量
+            vol = Math.Min(vol + 5, 150); // 向上滚动增加音量
         }
         else if (e.Delta < 0)
         {
@@ -1093,8 +1112,20 @@ public partial class MainForm : Form
             _lastCursorChanged = Environment.TickCount;
             ShowVideoUI();
         }
-        lblVolumeLeft.Text = $"音量:{App.Settings.Volume}%";
-        lblVolumeRight.Text = lblVolumeLeft.Text;
+        if (App.Settings.Volume == 0)
+        {
+            lblVolumeLeft.Text = "静音";
+            lblVolumeRight.Text = lblVolumeLeft.Text;
+            lblVolumeLeft.ForeColor = Color.Red;
+            lblVolumeRight.ForeColor = Color.Red;
+        }
+        else
+        {
+            lblVolumeLeft.Text = $"音量:{App.Settings.Volume}%";
+            lblVolumeRight.Text = lblVolumeLeft.Text;
+            lblVolumeLeft.ForeColor = Color.White;
+            lblVolumeRight.ForeColor = Color.White;
+        }
     }
 
     protected override void OnShown(EventArgs e)
