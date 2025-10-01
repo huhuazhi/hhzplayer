@@ -1,9 +1,11 @@
 ﻿
 using CommunityToolkit.Mvvm.Messaging;
+using MpvNet.ExtensionMethod;
 using MpvNet.MVVM;
 using MpvNet.Windows.UI;
 using MpvNet.Windows.WPF;
 using MpvNet.Windows.WPF.MsgBox;
+using MyApp;
 using System.Drawing;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -44,7 +46,7 @@ public partial class MainForm : Form
         //      ControlStyles.OptimizedDoubleBuffer, true);
         //this.UpdateStyles();
 
-        UpdateDarkMode();
+        //UpdateDarkMode();
         InitializehhzOverlay();
         InitPlayerEvents();
 
@@ -54,6 +56,7 @@ public partial class MainForm : Form
             // 如果有命令行参数，直接初始化播放器并加载文件
             hhzMainPage.Visible = false;
             overlayPanel.Visible = true;
+            CursorTimer.Enabled = true;
             List<string> files = [];
 
             foreach (string arg in Environment.GetCommandLineArgs().Skip(1))
@@ -82,7 +85,7 @@ public partial class MainForm : Form
                 // 在 UI 线程里更新控件
                 this.Invoke((MethodInvoker)(() =>
                 {
-                    lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {Player.Duration.Hours}:{Player.Duration.Minutes}:{Player.Duration.Seconds}";
+                    lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
                     lblDurationRight.Text = lblDurationLeft.Text;
 
                     //Debug.Print($"进度: {value:F1} 秒");
@@ -92,16 +95,6 @@ public partial class MainForm : Form
                         SetProgressBarValue(value);
                     }
                 }));
-            }
-            if (App.Settings.Volume > 100)
-            {
-                lblVolumeLeft.ForeColor = Color.Red;
-                lblVolumeRight.ForeColor = Color.Red;
-            }
-            else if(App.Settings.Volume != 0)
-            {
-                lblVolumeLeft.ForeColor = Color.White;
-                lblVolumeRight.ForeColor = Color.White;
             }
         });
 
@@ -124,7 +117,6 @@ public partial class MainForm : Form
                 lblStatusLeft.Text = $"{(bPause ? "暂停中" : "播放中")}";
                 lblStatusRight.Text = lblStatusLeft.Text;
                 ShowCursor();
-                _lastCursorChanged = Environment.TickCount;
             }));
         });
     }
@@ -154,36 +146,21 @@ public partial class MainForm : Form
         Text = "hhzPlayer";
 
         Player.Init(overlayPanel.Handle, true);
-        switch (App.Settings.RenderText)
-        {
-            case "2D渲染器":
-                Player.SetPropertyString("vo", "gpu-next");
-                Player.SetPropertyString("gpu-api", "d3d11");
-                btnRenderLeft.Text = "2D渲染器";
-                break;
-            case "3D渲染器":
-                Player.SetPropertyString("vo", "gpu");
-                Player.SetPropertyString("gpu-api", "opengl");
-                btnRenderLeft.Text = "3D渲染器";
-                break;
-            default:
-                break;
-        }
 
-        switch (App.Settings.SubtitleMode)
-        {
-            case enumSubtitleMode.Auto: //Auto模式转下一个
-                v3DSubtitleMode.Auto(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
-                break;
-            case enumSubtitleMode.On:
-                v3DSubtitleMode.On(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
-                break;
-            case enumSubtitleMode.Off:
-                v3DSubtitleMode.Off(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
-                break;
-            default:
-                break;
-        }
+        //switch (App.Settings.SubtitleMode)
+        //{
+        //    case enumSubtitleMode.Auto: //Auto模式转下一个
+        //        v3DSubtitleMode.Auto(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
+        //        break;
+        //    case enumSubtitleMode.On:
+        //        v3DSubtitleMode.On(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
+        //        break;
+        //    case enumSubtitleMode.Off:
+        //        v3DSubtitleMode.Off(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
+        //        break;
+        //    default:
+        //        break;
+        //}
 
         //App.Settings.Enable3DMode = true;
         CycleFullScreenFor3D(App.Settings.Enable3DMode);
@@ -260,6 +237,7 @@ public partial class MainForm : Form
             {
                 hhzMainPage.Visible = false;
                 overlayPanel.Visible = true;
+                CursorTimer.Enabled = true;
                 Player.LoadFiles(files, true, false);
             }
             catch (Exception ex)
@@ -281,24 +259,38 @@ public partial class MainForm : Form
         }
     }
 
+    void setRender(string RenderText)
+    {
+        switch (RenderText)
+        {
+            case "2D渲染器":
+                btnRenderLeft.Text = "2D渲染器";
+                Player.SetPropertyString("vo", "gpu-next");
+                Player.SetPropertyString("gpu-api", "d3d11");
+                break;
+            case "3D渲染器":
+                btnRenderLeft.Text = "3D渲染器";
+                Player.SetPropertyString("vo", "gpu");
+                Player.SetPropertyString("gpu-api", "opengl");
+                break;
+            default:
+                break;
+        }
+    }
+
     private void BtnRender_Click(object? sender, EventArgs e)
     {
         //Player.SetPropertyString("video-aspect-override", "32:9");
         if (btnRenderLeft.Text == "3D渲染器")
         {
             btnRenderLeft.Text = "2D渲染器";
-            Player.SetPropertyString("vo", "gpu-next");
-            Player.SetPropertyString("gpu-api", "d3d11");
-            //v3DSubtitleMode.Off(btn3DSubtitleModeLeft,btn3DSubtitleModeRight);
         }
         else
         {
             btnRenderLeft.Text = "3D渲染器";
-            Player.SetPropertyString("vo", "gpu");
-            Player.SetPropertyString("gpu-api", "opengl");
-            //v3DSubtitleMode.Auto(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
         }
-        App.Settings.RenderText = btnRenderLeft.Text;
+        SettingsManager.Current.RenderText = btnRenderLeft.Text;
+        setRender(SettingsManager.Current.RenderText);        
     }
 
     private void BtnFullScreen_Click(object? sender, EventArgs e)
@@ -370,6 +362,8 @@ public partial class MainForm : Form
             Player.Command("stop");
             hhzMainPage.Visible = true;
             overlayPanel.Visible = false;
+            CursorTimer.Enabled = false;
+            ShowCursor();
             HideVideoUI();
             //btnFullScreenLeft.Visible = true;
         }
@@ -402,18 +396,15 @@ public partial class MainForm : Form
         {
             Debug.Print($"{DateTime.Now.ToString()}-MouseMoveShowCursor");
             ShowCursor();
-            _lastCursorChanged = Environment.TickCount;
-            _lastCursorPosition = MousePosition;
-        }
-        if (e.Button == MouseButtons.Right)
-        {
-            //UpdateMenu();
-        }
-    }
 
-    private void HhzMainPage_FileOpened(HHZMainPage sender, string path)
+        }
+        SaveWindowProperties();
+        base.OnMouseMove(e);
+    }    
+
+    private void HhzMainPage_FileOpened(HHZMainPage sender, string[] paths)
     {
-        if (path.Length > 0)
+        if (paths.Length > 0)
         {
             progressBarLeft.Value = 0;
             progressBarRight.Value = 0;
@@ -423,7 +414,33 @@ public partial class MainForm : Form
 
             hhzMainPage.Visible = false;
             overlayPanel.Visible = true;
-            Player.LoadFiles(new[] { path }, true, false);
+            CursorTimer.Enabled = true;
+
+            string newPath = Path.ChangeExtension(paths[0], ".hhz");
+            SettingsManager.Load(newPath);
+            Set3DSubtitleMode(SettingsManager.Current.SubtitleMode);
+            setRender(SettingsManager.Current.RenderText);
+            Player.LoadFiles(paths, true, false);
+            if (SettingsManager.Current.LastVideoTrackId != -1) Player.SetPropertyString("vid", SettingsManager.Current.LastVideoTrackId.ToString());
+            if (SettingsManager.Current.LastAudioTrackId != -1) Player.SetPropertyString("aid", SettingsManager.Current.LastAudioTrackId.ToString());
+            if (SettingsManager.Current.LastSubtitleTrackId != -1) Player.SetPropertyString("sid", SettingsManager.Current.LastSubtitleTrackId.ToString());
+            if (SettingsManager.Current.VideoAspestW != "0" && SettingsManager.Current.VideoAspestH != "0") Player.SetPropertyString("video-aspect-override", $"{SettingsManager.Current.VideoAspestW}:{SettingsManager.Current.VideoAspestH}");
+            if (FileTypes.IsAudio(Path.GetExtension(paths[0]).Replace(".",""))/*Player.Path.Ext())*/) //音频格式
+            {
+                isAudio = true;
+                overlayPanel.BackgroundImage = LoadMyLogo();
+                overlayPanel.BackgroundImageLayout = ImageLayout.Center;
+                ShowAudioUI();
+                //Player.SetPropertyString("audio-display", "visualizer");
+                //Player.SetPropertyString("audio-display", "waveform");
+                //Player.Command("af add lavfi=[showspectrum=s=1280x720:mode=combined:color=intensity]");
+                //Player.Command("af add lavfi=[showwaves=s=1280x720:mode=cline]");
+            }
+            else
+            {
+                isAudio = false;
+                overlayPanel.BackgroundImage = null;
+            }
         }
     }
 
@@ -431,9 +448,7 @@ public partial class MainForm : Form
     {
         if (files != null && files.Length > 0)
         {
-            hhzMainPage.Visible = false;
-            overlayPanel.Visible = true;
-            Player.LoadFiles(files, true, false); // 你项目里的 Player 调用
+            HhzMainPage_FileOpened(null, files);
         }
     }
 
@@ -449,7 +464,7 @@ public partial class MainForm : Form
 
     void set3DFullHalf()
     {
-        if (Player.Duration.TotalMicroseconds > 0)
+        if (Player.Duration.TotalMicroseconds > 0 && (SettingsManager.Current.VideoAspestW == "0" && SettingsManager.Current.VideoAspestH == "0"))
         {
             var vw = Player.GetPropertyInt("width");
             var vh = Player.GetPropertyInt("height");
@@ -546,7 +561,7 @@ public partial class MainForm : Form
             }
             Bounds = new Rectangle(App.Settings.WindowLocation.X, App.Settings.WindowLocation.Y,
                                    App.Settings.WindowSize.Width, App.Settings.WindowSize.Height);
-            v3DSubtitleMode.On(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
+            //v3DSubtitleMode.Sub2D(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
             _isReturn2D = false;
             btn3DLeft.Text = "2D模式";
             HideVideoUI();
@@ -777,9 +792,18 @@ public partial class MainForm : Form
             {
                 switch (type)
                 {
-                    case "video": Player.SetPropertyString("vid", id.ToString()); break;
-                    case "audio": Player.SetPropertyString("aid", id.ToString()); break;
-                    case "sub": Player.SetPropertyString("sid", id.ToString()); break;
+                    case "video": 
+                        Player.SetPropertyString("vid", id.ToString());
+                        SettingsManager.Current.LastVideoTrackId = id;
+                        break;
+                    case "audio":
+                        Player.SetPropertyString("aid", id.ToString());
+                        SettingsManager.Current.LastAudioTrackId = id;
+                        break;
+                    case "sub":
+                        Player.SetPropertyString("sid", id.ToString());
+                        SettingsManager.Current.LastSubtitleTrackId = id;
+                        break;
                 }
                 BuildAllTrackMenus(); // 刷新勾选状态
             };
@@ -787,9 +811,18 @@ public partial class MainForm : Form
             {
                 switch (type)
                 {
-                    case "video": Player.SetPropertyString("vid", id.ToString()); break;
-                    case "audio": Player.SetPropertyString("aid", id.ToString()); break;
-                    case "sub": Player.SetPropertyString("sid", id.ToString()); break;
+                    case "video":
+                        Player.SetPropertyString("vid", id.ToString());
+                        SettingsManager.Current.LastVideoTrackId = id;
+                        break;
+                    case "audio":
+                        Player.SetPropertyString("aid", id.ToString());
+                        SettingsManager.Current.LastAudioTrackId = id;
+                        break;
+                    case "sub":
+                        Player.SetPropertyString("sid", id.ToString());
+                        SettingsManager.Current.LastSubtitleTrackId = id;
+                        break;
                 }
                 BuildAllTrackMenus(); // 刷新勾选状态
             };
@@ -820,6 +853,40 @@ public partial class MainForm : Form
         noVidr.Click += (_, __) => { Player.SetPropertyString("vid", "no"); BuildAllTrackMenus(); };
         _videoMenuRight.Items.Add(noVidr);
 
+        _videoMenuLeft.Items.Add(new ToolStripSeparator());
+        _videoMenuRight.Items.Add(new ToolStripSeparator());
+        var defVidl = new ToolStripMenuItem("视频: 默认")
+        {
+            Checked = curVid == "no",
+            CheckOnClick = false
+        };
+        var defVidr = new ToolStripMenuItem("视频: 默认")
+        {
+            Checked = curVid == "no",
+            CheckOnClick = false
+        };
+        defVidl.Click += (_, __) => {SettingsManager.Current.LastVideoTrackId = -1;};
+        _videoMenuLeft.Items.Add(defVidl);
+        defVidr.Click += (_, __) => {SettingsManager.Current.LastVideoTrackId = -1;};
+        _videoMenuRight.Items.Add(defVidr);
+
+        _videoMenuLeft.Items.Add(new ToolStripSeparator());
+        _videoMenuRight.Items.Add(new ToolStripSeparator());        
+        var Videoaspectl = new ToolStripMenuItem("强制播放比例")
+        {
+            Checked = curVid == "no",
+            CheckOnClick = false
+        };
+        var Videoaspectr = new ToolStripMenuItem("强制播放比例")
+        {
+            Checked = curVid == "no",
+            CheckOnClick = false
+        };
+        Videoaspectl.Click += Videoaspectl_Click;
+        _videoMenuLeft.Items.Add(Videoaspectl);
+        Videoaspectr.Click += Videoaspectl_Click;
+        _videoMenuRight.Items.Add(Videoaspectr);
+
         _audioMenuLeft.Items.Add(new ToolStripSeparator());
         _audioMenuRight.Items.Add(new ToolStripSeparator());
         var noAidl = new ToolStripMenuItem("音频: 无音频")
@@ -832,10 +899,23 @@ public partial class MainForm : Form
             Checked = curAid == "no",
             CheckOnClick = false
         };
-        noAidl.Click += (_, __) => { Player.SetPropertyString("aid", "no"); BuildAllTrackMenus(); };
-        noAidr.Click += (_, __) => { Player.SetPropertyString("aid", "no"); BuildAllTrackMenus(); };
-        _audioMenuLeft.Items.Add(noAidl);
-        _audioMenuRight.Items.Add(noAidr);
+
+        _audioMenuLeft.Items.Add(new ToolStripSeparator());
+        _audioMenuRight.Items.Add(new ToolStripSeparator());
+        var defAidl = new ToolStripMenuItem("音频: 默认")
+        {
+            Checked = curAid == "no",
+            CheckOnClick = false
+        };
+        var defAidr = new ToolStripMenuItem("音频: 默认")
+        {
+            Checked = curAid == "no",
+            CheckOnClick = false
+        };
+        defAidl.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; };
+        defAidr.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; };
+        _audioMenuLeft.Items.Add(defAidl);
+        _audioMenuRight.Items.Add(defAidr);
 
         _subMenuLeft.Items.Add(new ToolStripSeparator());
         _subMenuRight.Items.Add(new ToolStripSeparator());
@@ -853,8 +933,29 @@ public partial class MainForm : Form
         noSubr.Click += (_, __) => { Player.SetPropertyString("sid", "no"); BuildAllTrackMenus(); };
         _subMenuLeft.Items.Add(noSubl);
         _subMenuRight.Items.Add(noSubr);
+
+        var defSubl = new ToolStripMenuItem("字幕: 默认")
+        {
+            Checked = curSid == "no",
+            CheckOnClick = false
+        };
+        var defSubr = new ToolStripMenuItem("字幕: 默认")
+        {
+            Checked = curSid == "no",
+            CheckOnClick = false
+        };
+        defSubl.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; };
+        defSubr.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; };
+        _subMenuLeft.Items.Add(defSubl);
+        _subMenuRight.Items.Add(defSubr);
     }
 
+    FormMediaProperty frmMediaProperty;
+    private void Videoaspectl_Click(object? sender, EventArgs e)
+    {
+        (frmMediaProperty = new FormMediaProperty()).Show();
+        //Player.SetPropertyString("video-aspect-override", "4:3");
+    }
     // ======== 帮助函数 ========
 
     // 读取码率（bps）。优先 demux-bitrate（number），退回 metadata.BPS（string，单位 bps）
@@ -965,14 +1066,42 @@ public partial class MainForm : Form
 
         return string.Join("/", mapped);
     }
+    private Image LoadMyLogo()
+    {
+        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mylogo.png");
+        if (File.Exists(path)) return new Bitmap(path);
+        var bmp = new Bitmap(1, 1);
+        using (var g = Graphics.FromImage(bmp)) g.Clear(Color.Transparent);
+        return bmp;
+    }
+
+    void ShowAudioUI()
+    {
+        btnFullScreenLeft.Visible = true;
+        btn3DLeft.Visible = false;
+        btn3DRight.Visible = false;
+        btn3DSubtitleModeLeft.Visible = false;
+        btn3DSubtitleModeRight.Visible = false;        
+        btnRenderLeft.Visible = false;
+        btnRenderRight.Visible = false;
+        btnBackLeft.Visible = true;        
+        progressBarLeft.Visible = true;
+        btnVideoTrackLeft.Visible = true;
+        btnAudioTrackLeft.Visible = true;
+        btnSubtitleTrackLeft.Visible = true;
+        btnPlayLeft.Visible = true;
+        lblDurationLeft.Visible = true;
+        lblStatusLeft.Visible = true;
+        lblVolumeLeft.Visible = true;
+    }
 
     void Player_FileLoaded()
     {
         BeginInvoke(() =>
         {
             if (Player.Duration.TotalMilliseconds > 0)
-            {
-                lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {Player.Duration.Hours}:{Player.Duration.Minutes}:{Player.Duration.Seconds}";
+            {   
+                lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
                 lblDurationRight.Text = lblDurationLeft.Text;
                 lblStatusLeft.Text = "正在播放";
                 lblStatusRight.Text = lblStatusLeft.Text;
@@ -1082,49 +1211,30 @@ public partial class MainForm : Form
 
     private void setDefaultAspect()
     {
-        if (Player.Duration.TotalMicroseconds > 0)
+        if (Player.Duration.TotalMicroseconds > 0 && (SettingsManager.Current.VideoAspestW == "0" && SettingsManager.Current.VideoAspestH == "0"))
         {
             var vw = Player.GetPropertyInt("width");
             var vh = Player.GetPropertyInt("height");
-            Player.SetPropertyString("video-aspect-override", vw.ToString() + ":" + vh.ToString());
+            Player.SetPropertyString("video-aspect-override", "0");
         }
     }
 
     protected override void OnMouseWheel(MouseEventArgs e)
     {
         base.OnMouseWheel(e);
-
-        double vol = Player.GetPropertyDouble("volume");
-
-        if (e.Delta > 0)
-        {
-            vol = Math.Min(vol + 5, 150); // 向上滚动增加音量
-        }
-        else if (e.Delta < 0)
-        {
-            vol = Math.Max(vol - 5, 0);   // 向下滚动减少音量
-        }
-
-        Player.SetPropertyDouble("volume", vol);
-        App.Settings.Volume = (int)vol;
         if (hhzMainPage.Visible == false)
         {
-            _lastCursorChanged = Environment.TickCount;
-            ShowVideoUI();
-        }
-        if (App.Settings.Volume == 0)
-        {
-            lblVolumeLeft.Text = "静音";
-            lblVolumeRight.Text = lblVolumeLeft.Text;
-            lblVolumeLeft.ForeColor = Color.Red;
-            lblVolumeRight.ForeColor = Color.Red;
-        }
-        else
-        {
-            lblVolumeLeft.Text = $"音量:{App.Settings.Volume}%";
-            lblVolumeRight.Text = lblVolumeLeft.Text;
-            lblVolumeLeft.ForeColor = Color.White;
-            lblVolumeRight.ForeColor = Color.White;
+            double vol = Player.GetPropertyDouble("volume");
+
+            if (e.Delta > 0)
+            {
+                vol = Math.Min(vol + 5, 150); // 向上滚动增加音量
+            }
+            else if (e.Delta < 0)
+            {
+                vol = Math.Max(vol - 5, 0);   // 向下滚动减少音量
+            }
+            ShowVolumeUI(vol);
         }
     }
 
@@ -1178,26 +1288,93 @@ public partial class MainForm : Form
         base.OnMouseDown(e);
     }
 
-    //protected override void OnMouseMove(MouseEventArgs e)
-    //{
-    //    base.OnMouseMove(e);
-
-    //    if (App.Settings.Enable3DMode == false && IsCursorPosDifferent(_mouseDownLocation) &&
-    //        WindowState == FormWindowState.Normal &&
-    //        e.Button == MouseButtons.Left && !IsMouseInOsc() &&
-    //        Player.GetPropertyBool("window-dragging"))
-    //    {
-    //        var HTCAPTION = new IntPtr(2);
-    //        var WM_NCLBUTTONDOWN = 0xA1;
-    //        ReleaseCapture();
-    //        PostMessage(Handle, WM_NCLBUTTONDOWN, HTCAPTION, IntPtr.Zero);
-    //    }
-    //}
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        OverlayPanel_MouseMove(null, e);
+        base.OnMouseMove(e);
+        //if (App.Settings.Enable3DMode == false && IsCursorPosDifferent(_mouseDownLocation) &&
+        //    WindowState == FormWindowState.Normal &&
+        //    e.Button == MouseButtons.Left && !IsMouseInOsc() &&
+        //    Player.GetPropertyBool("window-dragging"))
+        //{
+        //    var HTCAPTION = new IntPtr(2);
+        //    var WM_NCLBUTTONDOWN = 0xA1;
+        //    ReleaseCapture();
+        //    PostMessage(Handle, WM_NCLBUTTONDOWN, HTCAPTION, IntPtr.Zero);
+        //}
+    }
 
     protected override void OnMove(EventArgs e)
     {
-        base.OnMove(e);
-        SaveWindowProperties();
+        base.OnMove(e);        
+    }
+
+    void ShowVolumeUI(double vol)
+    {
+        Player.SetPropertyDouble("volume", vol);
+        App.Settings.Volume = (int)vol;
+        lblVolumeLeft.Text = $"音量:{App.Settings.Volume}%";
+        lblVolumeRight.Text = lblVolumeLeft.Text;
+
+        if (App.Settings.Volume > 100)
+        {
+            lblVolumeLeft.ForeColor = Color.Red;
+            lblVolumeRight.ForeColor = Color.Red;
+        }
+        else if (App.Settings.Volume != 0)
+        {            
+            lblVolumeLeft.ForeColor = Color.White;
+            lblVolumeRight.ForeColor = Color.White;
+        }
+        else
+        {
+            lblVolumeLeft.Text = "静音";
+            lblVolumeRight.Text = lblVolumeLeft.Text;
+            lblVolumeLeft.ForeColor = Color.Red;
+            lblVolumeRight.ForeColor = Color.Red;
+        }
+
+        if (App.Settings.Enable3DMode)
+        {
+            lblVolumeLeft.Visible = true;
+            lblVolumeRight.Visible = true;
+
+        }
+        else
+        {
+            lblVolumeLeft.Visible = true;
+            lblVolumeRight.Visible = false;
+        }
+        _lastCursorChanged = Environment.TickCount;
+    }
+
+    private void ShowProgressBar()
+    {
+        Player.SetPropertyString("osc", "no");
+        Player.SetPropertyDouble("osd-level", 0);
+        if (App.Settings.Enable3DMode)
+        {
+            progressBarRight.Visible = true;
+            lblDurationRight.Visible = true;
+            lblStatusRight.Visible = true;
+            lblVolumeRight.Visible = true;
+        }
+
+        progressBarLeft.Visible = true;
+        lblDurationLeft.Visible = true;
+        lblStatusLeft.Visible = true;
+        lblVolumeLeft.Visible = true;
+
+        progressBarLeft.BringToFront();
+        lblDurationLeft.BringToFront();
+        lblStatusLeft.BringToFront();
+        lblVolumeLeft.BringToFront();
+
+        progressBarRight.BringToFront();
+        lblDurationRight.BringToFront();
+        lblStatusRight.BringToFront();
+        lblVolumeRight.BringToFront();
+        _lastCursorChanged = Environment.TickCount;
     }
 
     void ShowCursor()
@@ -1205,15 +1382,17 @@ public partial class MainForm : Form
         ShowVideoUI();
         overlayPanel.Cursor = Cursors.Default;
         Cursor.Show();
+        _lastCursorPosition = MousePosition;
+        _lastCursorChanged = Environment.TickCount;        
     }
 
     void ShowVideoUI()
     {
         if (App.Settings.Enable3DMode)
-        {            
+        {
             btnBackRight.Left = Width / 2 + btnBackLeft.Left;
             btn3DRight.Left = Width / 2 + btn3DLeft.Left;
-            btn3DSubtitleModeRight.Left = Width / 2 + btn3DSubtitleModeLeft.Left;            
+            btn3DSubtitleModeRight.Left = Width / 2 + btn3DSubtitleModeLeft.Left;
             btnVideoTrackRight.Left = Width / 2 + btnVideoTrackLeft.Left;
             btnAudioTrackRight.Left = Width / 2 + btnAudioTrackLeft.Left;
             btnSubtitleTrackRight.Left = Width / 2 + btnSubtitleTrackLeft.Left;
@@ -1249,40 +1428,67 @@ public partial class MainForm : Form
         }
         else
         {
-            progressBarLeft.Width = (int)(0.95 * Width);            
+            progressBarLeft.Width = (int)(0.95 * Width);
             lblStatusLeft.Width = (progressBarLeft.Width - lblDurationLeft.Width - lblVolumeLeft.Width);
             lblVolumeLeft.Left = lblStatusLeft.Left + lblStatusLeft.Width;
 
-            btnFullScreenLeft.Visible = true;
-            //btnFullScreenRight.Visible = false;
+            if (isAudio)
+            {
+                ShowAudioUI();
+                btnFullScreenLeft.Visible = true;
+                //btnFullScreenRight.Visible = false;
 
-            btnBackRight.Visible = false;
-            btn3DSubtitleModeRight.Visible = false;
-            btn3DRight.Visible = false;
-            progressBarRight.Visible = false;
-            btnVideoTrackRight.Visible = false;
-            btnAudioTrackRight.Visible = false;
-            btnSubtitleTrackRight.Visible = false;
-            btnRenderRight.Visible = false;
-            btnPlayRight.Visible = false;
-            lblDurationRight.Visible = false;
-            lblStatusRight.Visible = false;
-            lblVolumeRight.Visible = false;
+                btnBackRight.Visible = false;
+                btn3DSubtitleModeRight.Visible = false;
+                btn3DRight.Visible = false;
+                progressBarRight.Visible = false;
+                btnVideoTrackRight.Visible = false;
+                btnAudioTrackRight.Visible = false;
+                btnSubtitleTrackRight.Visible = false;
+                btnRenderRight.Visible = false;
+                btnPlayRight.Visible = false;
+                lblDurationRight.Visible = false;
+                lblStatusRight.Visible = false;
+                lblVolumeRight.Visible = false;
+            }
+            else
+            {
+                btnFullScreenLeft.Visible = true;
+                //btnFullScreenRight.Visible = false;
+
+                btnBackRight.Visible = false;
+                btn3DSubtitleModeRight.Visible = false;
+                btn3DRight.Visible = false;
+                progressBarRight.Visible = false;
+                btnVideoTrackRight.Visible = false;
+                btnAudioTrackRight.Visible = false;
+                btnSubtitleTrackRight.Visible = false;
+                btnRenderRight.Visible = false;
+                btnPlayRight.Visible = false;
+                lblDurationRight.Visible = false;
+                lblStatusRight.Visible = false;
+                lblVolumeRight.Visible = false;
+            }
         }
-
-        btnBackLeft.Visible = true;
-        btn3DSubtitleModeLeft.Visible = true;
-        btn3DLeft.Visible = true;
-        progressBarLeft.Visible = true;
-        btnVideoTrackLeft.Visible = true;
-        btnAudioTrackLeft.Visible = true;
-        btnSubtitleTrackLeft.Visible = true;
-        btnRenderLeft.Visible = true;
-        btnPlayLeft.Visible = true;
-        lblDurationLeft.Visible = true;
-        lblStatusLeft.Visible = true;
-        lblVolumeLeft.Visible = true;
-
+        if (isAudio)
+        {
+            ShowAudioUI();
+        }
+        else
+        {
+            btnBackLeft.Visible = true;
+            btn3DSubtitleModeLeft.Visible = true;
+            btn3DLeft.Visible = true;
+            progressBarLeft.Visible = true;
+            btnVideoTrackLeft.Visible = true;
+            btnAudioTrackLeft.Visible = true;
+            btnSubtitleTrackLeft.Visible = true;
+            btnRenderLeft.Visible = true;
+            btnPlayLeft.Visible = true;
+            lblDurationLeft.Visible = true;
+            lblStatusLeft.Visible = true;
+            lblVolumeLeft.Visible = true;
+        }
         btnBackLeft.BringToFront();
         btn3DSubtitleModeLeft.BringToFront();
         btn3DLeft.BringToFront();
@@ -1306,10 +1512,11 @@ public partial class MainForm : Form
         btnSubtitleTrackRight.BringToFront();
         btnRenderRight.BringToFront();
         btnPlayRight.BringToFront();
-        btnFullScreenRight.BringToFront();        
+        btnFullScreenRight.BringToFront();
         lblDurationRight.BringToFront();
         lblStatusRight.BringToFront();
         lblVolumeRight.BringToFront();
+        _lastCursorChanged = Environment.TickCount;
     }
 
     void HideVideoUI()
@@ -1376,6 +1583,8 @@ public partial class MainForm : Form
         //SaveWindowProperties();
         //Player.Command("write-watch-later-config");
         App.Settings.Save();
+        //if (SettingsManager.Current.IsModify)
+        //SettingsManager.Save();
 
         //if (Player.IsQuitNeeded)
         Player.CommandV("quit");
@@ -1408,46 +1617,55 @@ public partial class MainForm : Form
             App.Settings.SubtitleMode = enumSubtitleMode.Auto;
         }
 
-        public static void On(System.Windows.Forms.Label Lbutton, System.Windows.Forms.Label Rbutton)
+        public static void Sub2D(System.Windows.Forms.Label Lbutton, System.Windows.Forms.Label Rbutton)
         {
 
-            Lbutton.Text = "2D字幕";
-            Rbutton.Text = "2D字幕";
+            Lbutton.Text = "2D字幕(自动3D)";
+            Rbutton.Text = "2D字幕(自动3D)";
             Player.SetPropertyBool(CMD_sub_stereo_on, false);
             //Player.SetPropertyBool("sub-stereo-duplicate", false);
             App.Settings.SubtitleMode = enumSubtitleMode.On;
         }
 
-        public static void Off(System.Windows.Forms.Label Lbutton, System.Windows.Forms.Label Rbutton)
+        public static void Sub3D(System.Windows.Forms.Label Lbutton, System.Windows.Forms.Label Rbutton)
         {
             Player.SetPropertyBool(CMD_sub_stereo_on, true);
             //Player.SetPropertyBool("sub-stereo-duplicate", false);
-            Lbutton.Text = "单屏转3D字幕";
-            Rbutton.Text = "单屏转3D字幕";
+            Lbutton.Text = "3D字幕";
+            Rbutton.Text = "3D字幕";
             App.Settings.SubtitleMode = enumSubtitleMode.Off;
         }
     }
 
     int isub = 0;
     private bool _isReturn2D;
+    private bool isAudio;
+
+    void Set3DSubtitleMode(string mode3DSubtitle)
+    {
+        if (mode3DSubtitle.Contains("2D字幕(自动3D)"))
+        {
+            v3DSubtitleMode.Sub2D(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
+        }
+        else
+        {
+            v3DSubtitleMode.Sub3D(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
+        }
+        _lastCursorChanged = Environment.TickCount;        
+    }
 
     private void btnSubtitle_Click(object? sender, EventArgs e)
     {
-        switch (btn3DSubtitleModeLeft.Text)
+        if (SettingsManager.Current.SubtitleMode.Contains("2D字幕(自动3D)"))
         {
-            case "3D字幕模式:自动": //Auto模式转下一个
-                v3DSubtitleMode.On(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
-                break;
-            case "2D字幕":
-                v3DSubtitleMode.Off(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
-                break;
-            case "单屏转3D字幕":
-                v3DSubtitleMode.Auto(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);                
-                break;
-            default:
-                break;
+            SettingsManager.Current.SubtitleMode = "3D字幕";
+            v3DSubtitleMode.Sub3D(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
         }
-        _lastCursorChanged = Environment.TickCount;
+        else
+        {
+            SettingsManager.Current.SubtitleMode = "2D字幕(自动3D)";
+            v3DSubtitleMode.Sub2D(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
+        }
     }
 
     private void MainForm_KeyDown(object sender, KeyEventArgs e)
@@ -1544,13 +1762,27 @@ public partial class MainForm : Form
                 break;
             case Keys.Left:
                 Player.Command("seek -5 relative");  // 从当前位置往后退 5 秒
+                ShowProgressBar();
                 break;
             case Keys.Up:
+                if (hhzMainPage.Visible == false)
+                {
+                    double vol = Player.GetPropertyDouble("volume");
+                    vol = Math.Min(vol + 5, 150); // 向上滚动增加音量
+                    ShowVolumeUI(vol);
+                }
                 break;
             case Keys.Right:
                 Player.Command("seek 5 relative");   // 从当前位置往前跳 5 秒
+                ShowProgressBar();
                 break;
             case Keys.Down:
+                if (hhzMainPage.Visible == false)
+                {
+                    double vol = Player.GetPropertyDouble("volume");
+                    vol = Math.Max(vol - 5, 0);   // 向下滚动减少音量
+                    ShowVolumeUI(vol);
+                }
                 break;
             case Keys.Select:
                 break;

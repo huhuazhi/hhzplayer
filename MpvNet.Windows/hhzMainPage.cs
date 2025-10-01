@@ -41,7 +41,7 @@ namespace MpvNet.Windows
         private float _fileListBottomGapRatio = 0.07f;
         public int vWidth;
         public int vHeight;
-        public delegate void FileOpenedEventHandler(HHZMainPage sender, string path);
+        public delegate void FileOpenedEventHandler(HHZMainPage sender, string[] paths);
         public event FileOpenedEventHandler FileOpened;
         public HHZMainPage()
         {
@@ -187,8 +187,7 @@ namespace MpvNet.Windows
                 finally { _syncingFileDir = false; }
             };
 
-
-            // 打开文件转发
+            //// 打开文件转发
             _fileListLeft.FileOpened += _fileListLeft_FileOpened;
             _fileListRight.FileOpened += _fileListLeft_FileOpened;
 
@@ -206,10 +205,10 @@ namespace MpvNet.Windows
             this.DragDrop += HHZMainPage_DragDrop;
         }
 
-        private void _fileListLeft_FileOpened(Object? sender, string path)
+        private void _fileListLeft_FileOpened(Object? sender, string[] paths)
         {
-            //(vWidth, vHeight) = GetVideoSizeFFmpeg(path);
-            FileOpened?.Invoke(this, path);
+            //(vWidth, vHeight) = GetVideoSizeFFmpeg(paths[0]);
+            FileOpened?.Invoke(this, paths);
         }
 
         private Rectangle CalcBlueFrame(Rectangle host)

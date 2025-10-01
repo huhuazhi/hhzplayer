@@ -112,9 +112,19 @@ public class MainPlayer : MpvClient
         SetPropertyString("idle", "yes");
         SetPropertyString("screenshot-directory", "~~desktop/");
         //SetPropertyString("osd-playing-msg", "${media-title}");
-        SetPropertyString("osc", "no");
+        SetPropertyString("keepaspect-window", "no");
         SetPropertyString("config-dir", ConfigFolder);
         SetPropertyString("config", "yes");
+
+        SetPropertyString("osc", "no");
+        SetPropertyDouble("osd-level", 0);
+        SetPropertyString("osd-bar", "no");
+        SetPropertyString("sub-codepage", "gbk");
+
+        SetPropertyDouble("contrast", 10);
+        SetPropertyDouble("brightness", -3);
+        SetPropertyDouble("saturation", 30);
+
 
         ////特外
         SetPropertyString("sub-stereo-duplicate", "yes");

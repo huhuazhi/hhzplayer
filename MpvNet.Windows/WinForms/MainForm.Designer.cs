@@ -65,7 +65,6 @@ partial class MainForm
         // 
         // CursorTimer
         // 
-        CursorTimer.Enabled = true;
         CursorTimer.Interval = 500;
         CursorTimer.Tick += CursorTimer_Tick;
         // 
@@ -73,9 +72,10 @@ partial class MainForm
         // 
         progressBarLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
         progressBarLeft.ForeColor = System.Drawing.Color.DeepSkyBlue;
-        progressBarLeft.Location = new System.Drawing.Point(40, 2022);
+        progressBarLeft.Location = new System.Drawing.Point(40, 920);
         progressBarLeft.Name = "progressBarLeft";
-        progressBarLeft.Size = new System.Drawing.Size(3750, 20);
+        progressBarLeft.Size = new System.Drawing.Size(1860, 45);
+        progressBarLeft.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
         progressBarLeft.TabIndex = 8;
         progressBarLeft.Visible = false;
         // 
@@ -99,7 +99,7 @@ partial class MainForm
         btn3DLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btn3DLeft.CausesValidation = false;
         btn3DLeft.ForeColor = System.Drawing.Color.White;
-        btn3DLeft.Location = new System.Drawing.Point(40, 2056);
+        btn3DLeft.Location = new System.Drawing.Point(40, 976);
         btn3DLeft.Name = "btn3DLeft";
         btn3DLeft.Size = new System.Drawing.Size(104, 82);
         btn3DLeft.TabIndex = 6;
@@ -114,7 +114,7 @@ partial class MainForm
         btn3DSubtitleModeLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btn3DSubtitleModeLeft.CausesValidation = false;
         btn3DSubtitleModeLeft.ForeColor = System.Drawing.Color.White;
-        btn3DSubtitleModeLeft.Location = new System.Drawing.Point(150, 2056);
+        btn3DSubtitleModeLeft.Location = new System.Drawing.Point(150, 976);
         btn3DSubtitleModeLeft.Name = "btn3DSubtitleModeLeft";
         btn3DSubtitleModeLeft.Size = new System.Drawing.Size(238, 82);
         btn3DSubtitleModeLeft.TabIndex = 9;
@@ -138,9 +138,10 @@ partial class MainForm
         // progressBarRight
         // 
         progressBarRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-        progressBarRight.Location = new System.Drawing.Point(40, 2022);
+        progressBarRight.Location = new System.Drawing.Point(40, 920);
         progressBarRight.Name = "progressBarRight";
-        progressBarRight.Size = new System.Drawing.Size(2243, 20);
+        progressBarRight.Size = new System.Drawing.Size(1860, 45);
+        progressBarRight.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
         progressBarRight.TabIndex = 11;
         progressBarRight.Visible = false;
         // 
@@ -150,7 +151,7 @@ partial class MainForm
         btn3DSubtitleModeRight.BackColor = System.Drawing.Color.Transparent;
         btn3DSubtitleModeRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btn3DSubtitleModeRight.ForeColor = System.Drawing.Color.White;
-        btn3DSubtitleModeRight.Location = new System.Drawing.Point(150, 2056);
+        btn3DSubtitleModeRight.Location = new System.Drawing.Point(150, 976);
         btn3DSubtitleModeRight.Name = "btn3DSubtitleModeRight";
         btn3DSubtitleModeRight.Size = new System.Drawing.Size(238, 82);
         btn3DSubtitleModeRight.TabIndex = 12;
@@ -165,7 +166,7 @@ partial class MainForm
         btn3DRight.BackColor = System.Drawing.Color.Transparent;
         btn3DRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btn3DRight.ForeColor = System.Drawing.Color.White;
-        btn3DRight.Location = new System.Drawing.Point(40, 2056);
+        btn3DRight.Location = new System.Drawing.Point(40, 976);
         btn3DRight.Name = "btn3DRight";
         btn3DRight.Size = new System.Drawing.Size(104, 82);
         btn3DRight.TabIndex = 13;
@@ -180,7 +181,7 @@ partial class MainForm
         btnAudioTrackLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnAudioTrackLeft.CausesValidation = false;
         btnAudioTrackLeft.ForeColor = System.Drawing.Color.White;
-        btnAudioTrackLeft.Location = new System.Drawing.Point(638, 2056);
+        btnAudioTrackLeft.Location = new System.Drawing.Point(638, 976);
         btnAudioTrackLeft.Name = "btnAudioTrackLeft";
         btnAudioTrackLeft.Size = new System.Drawing.Size(238, 82);
         btnAudioTrackLeft.TabIndex = 14;
@@ -195,7 +196,7 @@ partial class MainForm
         btnSubtitleTrackLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnSubtitleTrackLeft.CausesValidation = false;
         btnSubtitleTrackLeft.ForeColor = System.Drawing.Color.White;
-        btnSubtitleTrackLeft.Location = new System.Drawing.Point(882, 2056);
+        btnSubtitleTrackLeft.Location = new System.Drawing.Point(882, 976);
         btnSubtitleTrackLeft.Name = "btnSubtitleTrackLeft";
         btnSubtitleTrackLeft.Size = new System.Drawing.Size(238, 82);
         btnSubtitleTrackLeft.TabIndex = 15;
@@ -210,7 +211,7 @@ partial class MainForm
         btnVideoTrackLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnVideoTrackLeft.CausesValidation = false;
         btnVideoTrackLeft.ForeColor = System.Drawing.Color.White;
-        btnVideoTrackLeft.Location = new System.Drawing.Point(394, 2056);
+        btnVideoTrackLeft.Location = new System.Drawing.Point(394, 976);
         btnVideoTrackLeft.Name = "btnVideoTrackLeft";
         btnVideoTrackLeft.Size = new System.Drawing.Size(238, 82);
         btnVideoTrackLeft.TabIndex = 16;
@@ -225,7 +226,7 @@ partial class MainForm
         btnFullScreenLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnFullScreenLeft.CausesValidation = false;
         btnFullScreenLeft.ForeColor = System.Drawing.Color.White;
-        btnFullScreenLeft.Location = new System.Drawing.Point(3686, 2056);
+        btnFullScreenLeft.Location = new System.Drawing.Point(1796, 976);
         btnFullScreenLeft.Name = "btnFullScreenLeft";
         btnFullScreenLeft.Size = new System.Drawing.Size(104, 82);
         btnFullScreenLeft.TabIndex = 17;
@@ -239,7 +240,7 @@ partial class MainForm
         btnPlayLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnPlayLeft.CausesValidation = false;
         btnPlayLeft.ForeColor = System.Drawing.Color.White;
-        btnPlayLeft.Location = new System.Drawing.Point(3576, 2056);
+        btnPlayLeft.Location = new System.Drawing.Point(1686, 976);
         btnPlayLeft.Name = "btnPlayLeft";
         btnPlayLeft.Size = new System.Drawing.Size(104, 82);
         btnPlayLeft.TabIndex = 18;
@@ -254,7 +255,7 @@ partial class MainForm
         btnPlayRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnPlayRight.CausesValidation = false;
         btnPlayRight.ForeColor = System.Drawing.Color.White;
-        btnPlayRight.Location = new System.Drawing.Point(3576, 2056);
+        btnPlayRight.Location = new System.Drawing.Point(1686, 976);
         btnPlayRight.Name = "btnPlayRight";
         btnPlayRight.Size = new System.Drawing.Size(104, 82);
         btnPlayRight.TabIndex = 23;
@@ -269,7 +270,7 @@ partial class MainForm
         btnFullScreenRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnFullScreenRight.CausesValidation = false;
         btnFullScreenRight.ForeColor = System.Drawing.Color.White;
-        btnFullScreenRight.Location = new System.Drawing.Point(3686, 2056);
+        btnFullScreenRight.Location = new System.Drawing.Point(1796, 976);
         btnFullScreenRight.Name = "btnFullScreenRight";
         btnFullScreenRight.Size = new System.Drawing.Size(104, 82);
         btnFullScreenRight.TabIndex = 22;
@@ -284,7 +285,7 @@ partial class MainForm
         btnVideoTrackRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnVideoTrackRight.CausesValidation = false;
         btnVideoTrackRight.ForeColor = System.Drawing.Color.White;
-        btnVideoTrackRight.Location = new System.Drawing.Point(394, 2056);
+        btnVideoTrackRight.Location = new System.Drawing.Point(394, 976);
         btnVideoTrackRight.Name = "btnVideoTrackRight";
         btnVideoTrackRight.Size = new System.Drawing.Size(238, 82);
         btnVideoTrackRight.TabIndex = 21;
@@ -299,7 +300,7 @@ partial class MainForm
         btnSubtitleTrackRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnSubtitleTrackRight.CausesValidation = false;
         btnSubtitleTrackRight.ForeColor = System.Drawing.Color.White;
-        btnSubtitleTrackRight.Location = new System.Drawing.Point(882, 2056);
+        btnSubtitleTrackRight.Location = new System.Drawing.Point(882, 976);
         btnSubtitleTrackRight.Name = "btnSubtitleTrackRight";
         btnSubtitleTrackRight.Size = new System.Drawing.Size(238, 82);
         btnSubtitleTrackRight.TabIndex = 20;
@@ -314,7 +315,7 @@ partial class MainForm
         btnAudioTrackRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnAudioTrackRight.CausesValidation = false;
         btnAudioTrackRight.ForeColor = System.Drawing.Color.White;
-        btnAudioTrackRight.Location = new System.Drawing.Point(638, 2056);
+        btnAudioTrackRight.Location = new System.Drawing.Point(638, 976);
         btnAudioTrackRight.Name = "btnAudioTrackRight";
         btnAudioTrackRight.Size = new System.Drawing.Size(238, 82);
         btnAudioTrackRight.TabIndex = 19;
@@ -329,7 +330,7 @@ partial class MainForm
         btnRenderRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnRenderRight.CausesValidation = false;
         btnRenderRight.ForeColor = System.Drawing.Color.White;
-        btnRenderRight.Location = new System.Drawing.Point(1126, 2056);
+        btnRenderRight.Location = new System.Drawing.Point(1126, 976);
         btnRenderRight.Name = "btnRenderRight";
         btnRenderRight.Size = new System.Drawing.Size(238, 82);
         btnRenderRight.TabIndex = 25;
@@ -344,7 +345,7 @@ partial class MainForm
         btnRenderLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnRenderLeft.CausesValidation = false;
         btnRenderLeft.ForeColor = System.Drawing.Color.White;
-        btnRenderLeft.Location = new System.Drawing.Point(1126, 2056);
+        btnRenderLeft.Location = new System.Drawing.Point(1126, 976);
         btnRenderLeft.Name = "btnRenderLeft";
         btnRenderLeft.Size = new System.Drawing.Size(238, 82);
         btnRenderLeft.TabIndex = 24;
@@ -357,7 +358,7 @@ partial class MainForm
         lblDurationLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         lblDurationLeft.Font = new System.Drawing.Font("Segoe UI", 16.125F);
         lblDurationLeft.ForeColor = System.Drawing.Color.White;
-        lblDurationLeft.Location = new System.Drawing.Point(41, 1953);
+        lblDurationLeft.Location = new System.Drawing.Point(41, 851);
         lblDurationLeft.Name = "lblDurationLeft";
         lblDurationLeft.Size = new System.Drawing.Size(382, 66);
         lblDurationLeft.TabIndex = 28;
@@ -370,7 +371,7 @@ partial class MainForm
         lblDurationRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         lblDurationRight.Font = new System.Drawing.Font("Segoe UI", 16.125F);
         lblDurationRight.ForeColor = System.Drawing.Color.White;
-        lblDurationRight.Location = new System.Drawing.Point(41, 1953);
+        lblDurationRight.Location = new System.Drawing.Point(41, 851);
         lblDurationRight.Name = "lblDurationRight";
         lblDurationRight.Size = new System.Drawing.Size(382, 66);
         lblDurationRight.TabIndex = 29;
@@ -383,9 +384,9 @@ partial class MainForm
         lblStatusLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
         lblStatusLeft.Font = new System.Drawing.Font("Segoe UI", 16.125F);
         lblStatusLeft.ForeColor = System.Drawing.Color.White;
-        lblStatusLeft.Location = new System.Drawing.Point(429, 1953);
+        lblStatusLeft.Location = new System.Drawing.Point(429, 851);
         lblStatusLeft.Name = "lblStatusLeft";
-        lblStatusLeft.Size = new System.Drawing.Size(3135, 66);
+        lblStatusLeft.Size = new System.Drawing.Size(1245, 66);
         lblStatusLeft.TabIndex = 30;
         lblStatusLeft.Text = "正在加载...";
         lblStatusLeft.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -396,9 +397,9 @@ partial class MainForm
         lblStatusRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
         lblStatusRight.Font = new System.Drawing.Font("Segoe UI", 16.125F);
         lblStatusRight.ForeColor = System.Drawing.Color.White;
-        lblStatusRight.Location = new System.Drawing.Point(429, 1953);
+        lblStatusRight.Location = new System.Drawing.Point(429, 851);
         lblStatusRight.Name = "lblStatusRight";
-        lblStatusRight.Size = new System.Drawing.Size(3135, 66);
+        lblStatusRight.Size = new System.Drawing.Size(1245, 66);
         lblStatusRight.TabIndex = 31;
         lblStatusRight.Text = "正在加载...";
         lblStatusRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -409,7 +410,7 @@ partial class MainForm
         lblVolumeLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
         lblVolumeLeft.Font = new System.Drawing.Font("Segoe UI", 16.125F);
         lblVolumeLeft.ForeColor = System.Drawing.Color.White;
-        lblVolumeLeft.Location = new System.Drawing.Point(3549, 1953);
+        lblVolumeLeft.Location = new System.Drawing.Point(1659, 851);
         lblVolumeLeft.Name = "lblVolumeLeft";
         lblVolumeLeft.Size = new System.Drawing.Size(242, 66);
         lblVolumeLeft.TabIndex = 32;
@@ -422,7 +423,7 @@ partial class MainForm
         lblVolumeRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
         lblVolumeRight.Font = new System.Drawing.Font("Segoe UI", 16.125F);
         lblVolumeRight.ForeColor = System.Drawing.Color.White;
-        lblVolumeRight.Location = new System.Drawing.Point(3549, 1953);
+        lblVolumeRight.Location = new System.Drawing.Point(1659, 851);
         lblVolumeRight.Name = "lblVolumeRight";
         lblVolumeRight.Size = new System.Drawing.Size(242, 66);
         lblVolumeRight.TabIndex = 33;
@@ -436,7 +437,7 @@ partial class MainForm
         AutoScaleDimensions = new System.Drawing.SizeF(192F, 192F);
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
         BackColor = System.Drawing.Color.Black;
-        ClientSize = new System.Drawing.Size(3840, 2160);
+        ClientSize = new System.Drawing.Size(1950, 1080);
         Controls.Add(lblVolumeRight);
         Controls.Add(lblVolumeLeft);
         Controls.Add(lblStatusRight);
@@ -464,7 +465,6 @@ partial class MainForm
         Controls.Add(btnBackRight);
         Controls.Add(btnBackLeft);
         Font = new System.Drawing.Font("Segoe UI", 9F);
-        FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
         Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
         KeyPreview = true;
         Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);

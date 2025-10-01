@@ -13,7 +13,7 @@ namespace MpvNet.Windows
         private readonly List<FileItem> _items = new();
 
         private int _rowHeight = 40;                    // 每行高度（文件项）
-        private int _headerHeight = 60;                 // ⭐ 标题栏高度（名称/大小/类型/修改日期）
+        private int _headerHeight = 60;                 // ⭐ 标题栏高度
         private readonly string[] _columns = { "名称", "大小", "类型", "修改日期" };
         private float[] _colWidths = { 0.50f, 0.15f, 0.15f, 0.20f };
 
@@ -59,7 +59,7 @@ namespace MpvNet.Windows
         private int _pathBarHeight = 50;
 
         // 事件
-        public event EventHandler<string> FileOpened;
+        public event EventHandler<string[]> FileOpened;
         public event EventHandler<string> DirectoryChanged;
         public event EventHandler<HoverChangedEventArgs> HoverChanged;
         public event EventHandler<ViewportOffsetChangedEventArgs> ViewportOffsetChanged;
@@ -95,7 +95,6 @@ namespace MpvNet.Windows
             set { _rowHeight = Math.Max(value, _iconSize + 8); Invalidate(); }
         }
 
-        /// <summary>标题栏高度（只影响“名称/大小/类型/修改日期”那一行）。</summary>
         public int HeaderHeight
         {
             get => _headerHeight;
@@ -137,6 +136,8 @@ namespace MpvNet.Windows
         // ===================== 导航 =====================
         public void NavigateTo(string path)
         {
+            path = NormalizeRootPath(path); // ⭐ 统一处理
+
             if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return;
 
             PrewarmIconsForDirectory(path);
@@ -148,7 +149,16 @@ namespace MpvNet.Windows
             Invalidate();
         }
 
-        public void LoadFiles(string path) => NavigateTo(path);
+        private static string NormalizeRootPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+
+            // 修复裸盘符 C: => C:\
+            if (path.Length == 2 && char.IsLetter(path[0]) && path[1] == ':')
+                return path + "\\";
+
+            return path;
+        }
 
         private void PrewarmIconsForDirectory(string path)
         {
@@ -162,7 +172,7 @@ namespace MpvNet.Windows
                     set.Add(ext);
                 }
             }
-            catch { /* 忽略 */ }
+            catch { }
 
             foreach (var ext in set) EnsureIconCached(ext);
         }
@@ -173,7 +183,6 @@ namespace MpvNet.Windows
 
             var diRoot = new DirectoryInfo(path);
 
-            // “..” 返回上一级
             if (diRoot.Parent != null)
             {
                 _items.Add(new FileItem
@@ -188,7 +197,6 @@ namespace MpvNet.Windows
                 });
             }
 
-            // 目录
             try
             {
                 foreach (var dir in Directory.GetDirectories(path))
@@ -206,9 +214,8 @@ namespace MpvNet.Windows
                     });
                 }
             }
-            catch { /* 忽略 */ }
+            catch { }
 
-            // 文件
             try
             {
                 foreach (var file in Directory.GetFiles(path))
@@ -230,7 +237,7 @@ namespace MpvNet.Windows
                     });
                 }
             }
-            catch { /* 忽略 */ }
+            catch { }
         }
 
         // ===================== 绘制 =====================
@@ -238,16 +245,11 @@ namespace MpvNet.Windows
         {
             base.OnPaint(e);
             var g = e.Graphics;
-
-            // 背景
             g.FillRectangle(_bgBrush, ClientRectangle);
 
             int y = 0;
-
-            // ===== 1) 路径栏（面包屑） =====
             DrawPathBar(g, ref y);
 
-            // ===== 2) 标题栏 =====
             g.FillRectangle(_headerBrush, new Rectangle(0, y, Width, _headerHeight));
             int colX = 0;
             for (int i = 0; i < _columns.Length; i++)
@@ -261,16 +263,13 @@ namespace MpvNet.Windows
             }
             y += _headerHeight;
 
-            // ===== 3) 内容区（可滚动） =====
             int contentTop = y;
             int viewportH = Math.Max(0, Height - contentTop);
             Rectangle contentRect = new Rectangle(0, contentTop, Width, viewportH);
 
-            // （A）对整个内容区设置裁剪，确保任何绘制都不会越过标题栏
             var gs = g.Save();
             g.SetClip(contentRect);
 
-            // 计算可见行
             int first = Math.Max(0, _scrollOffsetY / _rowHeight);
             int last = Math.Min(_items.Count - 1, (_scrollOffsetY + viewportH) / _rowHeight);
 
@@ -282,31 +281,23 @@ namespace MpvNet.Windows
             for (int i = first; i <= last; i++)
             {
                 var item = _items[i];
-
-                // 该行理论位置（未裁剪）
                 int rowTop = contentTop + i * _rowHeight - _scrollOffsetY;
                 Rectangle rowRect = new Rectangle(0, rowTop, Width, _rowHeight);
-
-                // （B）把行矩形与内容区做一次交集，得到“可见矩形”
                 Rectangle visRow = Rectangle.Intersect(rowRect, contentRect);
                 if (visRow.Height <= 0) continue;
 
-                // 行背景（只填充可见部分，避免盖到标题）
                 if ((i & 1) == 1) g.FillRectangle(_altRowBrush, visRow);
                 if (i == _hoverIndex) g.FillRectangle(_hoverBrush, visRow);
-                //if (i == _selectedIndex) g.FillRectangle(_selectedBrush, visRow);
 
                 int x0 = 0, x1 = x0 + colW0, x2 = x1 + colW1, x3 = x2 + colW2;
 
-                // 图标（图像受 Graphics Clip 约束，这里仍按原始行坐标算居中）
                 if (item.Icon != null)
                 {
                     int iconX = x0 + 8;
-                    int iconY = rowTop + (_rowHeight - _iconSize) / 2; // 注意：仍用 rowTop，靠 Clip 限制
+                    int iconY = rowTop + (_rowHeight - _iconSize) / 2;
                     g.DrawImage(item.Icon, new Rectangle(iconX, iconY, _iconSize, _iconSize));
                 }
 
-                // 文本统一使用“可见矩形 visRow”做 Y/Height，彻底避免越界
                 int nameLeft = x0 + 8 + _iconSize + 8;
                 var nameRect = new Rectangle(nameLeft, visRow.Top, colW0 - (nameLeft - x0) - 8, visRow.Height);
                 TextRenderer.DrawText(g, item.Name, _itemFont, nameRect, Color.White,
@@ -326,14 +317,9 @@ namespace MpvNet.Windows
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
             }
 
-            // 还原裁剪
             g.Restore(gs);
-
-            // 更新滚动范围
             int itemsHeight = _items.Count * _rowHeight;
             _maxScroll = Math.Max(0, itemsHeight - viewportH);
-
-            // 外框
             g.DrawRectangle(_borderPen, 1, 1, Width - 2, Height - 2);
         }
 
@@ -345,9 +331,8 @@ namespace MpvNet.Windows
                 y += _pathBarHeight;
                 return;
             }
-            // 分割路径并绘制：分隔符显示为 ">" 
-            var parts = CurrentPath.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
 
+            var parts = CurrentPath.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
             bool isUnc = CurrentPath.StartsWith(@"\\");
             bool hasDrive = parts.Length > 0 && parts[0].EndsWith(":");
 
@@ -355,43 +340,54 @@ namespace MpvNet.Windows
             for (int i = 0; i < parts.Length; i++)
             {
                 string segLabel = parts[i];
-                string fullPath ="";
+                string fullPath;
+
                 if (isUnc)
                 {
-                    // UNC: \\server\share\dir\subdir 
-                    // 将点击“server”与“share”都指向 \\server\share 根，之后逐级追加 
                     string root = @"\\" + parts[0] + (parts.Length >= 2 ? "\\" + parts[1] : "");
                     if (i <= 1)
                         fullPath = root;
                     else
-                        fullPath = root + "\\" + string.Join("\\", parts, 2, i - 1 + 1);
+                        fullPath = root + "\\" + string.Join("\\", parts, 2, i - 1);
                 }
                 else if (hasDrive)
                 {
-                    // 本地盘: C:\Users\Name\Videos string root = parts[0] + "\\"; if (i == 0) fullPath = root; else fullPath = root + string.Join("\\", parts, 1, i); } else { // 其它情况（相对路径等） 
+                    string root = parts[0] + "\\"; // ⭐ 强制带斜杠
+                    if (i == 0)
+                        fullPath = root;
+                    else
+                        fullPath = root + string.Join("\\", parts, 1, i);
+                }
+                else
+                {
                     fullPath = string.Join("\\", parts, 0, i + 1);
                 }
+
                 Size textSize = TextRenderer.MeasureText(segLabel, _pathFont);
                 var rect = new Rectangle(x, y + 5, textSize.Width, _pathBarHeight - 10);
+
                 TextRenderer.DrawText(g, segLabel, _pathFont, rect, Color.LightBlue,
-                TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+
                 _pathSegments.Add((segLabel, fullPath, rect));
+
                 x += rect.Width + 10;
                 if (i < parts.Length - 1)
                 {
                     TextRenderer.DrawText(g, ">", _itemFont,
-                     new Rectangle(x, y, 20, _pathBarHeight),
-                     Color.White, TextFormatFlags.Left |
-                     TextFormatFlags.VerticalCenter); x += 40;
+                        new Rectangle(x, y, 20, _pathBarHeight),
+                        Color.White,
+                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
+                    x += 40;
                 }
             }
+
             y += _pathBarHeight;
         }
 
         // ===================== 交互 =====================
         private int HitTestIndex(int mouseY)
         {
-            // ⭐ 内容区域从“路径栏 + 标题栏”之后开始
             int headerTop = _pathBarHeight + _headerHeight;
             int contentY = mouseY - headerTop + _scrollOffsetY;
             if (contentY < 0) return -1;
@@ -402,18 +398,17 @@ namespace MpvNet.Windows
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             base.OnMouseWheel(e);
-            ScrollOffset += -e.Delta; // 120/格
+            ScrollOffset += -e.Delta;
         }
 
         private Point _mouseDownPos;
         private int _mouseDownIndex = -1;
-        private const int ClickMoveTolerance = 5; // 允许抖动像素
+        private const int ClickMoveTolerance = 5;
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
 
-            // 先命中路径栏
             foreach (var seg in _pathSegments)
             {
                 if (seg.Bounds.Contains(e.Location))
@@ -427,7 +422,6 @@ namespace MpvNet.Windows
             {
                 _dragging = true;
                 _lastMouseY = e.Y;
-
                 _mouseDownPos = e.Location;
                 _mouseDownIndex = HitTestIndex(e.Y);
                 Cursor = Cursors.Hand;
@@ -446,7 +440,7 @@ namespace MpvNet.Windows
             }
             else
             {
-                FileOpened?.Invoke(this, item.FullPath);
+                FileOpened?.Invoke(this, new[] { item.FullPath });
             }
         }
 
@@ -454,7 +448,6 @@ namespace MpvNet.Windows
         {
             base.OnMouseMove(e);
 
-            // 路径栏手型提示
             bool overBreadcrumb = false;
             foreach (var seg in _pathSegments)
             {
@@ -527,7 +520,6 @@ namespace MpvNet.Windows
             return $"{size} B";
         }
 
-        // ⭐ 全局初始化“文件夹”“默认文件”图标
         private static void EnsureGlobalIcons()
         {
             if (s_folderIcon != null && s_defaultFileIcon != null) return;
@@ -535,13 +527,11 @@ namespace MpvNet.Windows
             {
                 if (s_folderIcon == null)
                     s_folderIcon = GetShellIconBitmap("dummy", FILE_ATTRIBUTE_DIRECTORY);
-
                 if (s_defaultFileIcon == null)
                     s_defaultFileIcon = GetShellIconBitmap("dummy.", FILE_ATTRIBUTE_NORMAL);
             }
         }
 
-        // 从缓存取扩展名图标
         private static Bitmap GetIconFromCache(string ext)
         {
             lock (s_iconLock)
@@ -550,7 +540,6 @@ namespace MpvNet.Windows
             }
         }
 
-        // 确保扩展名图标在缓存
         private static void EnsureIconCached(string ext)
         {
             if (string.IsNullOrEmpty(ext)) ext = ".";
@@ -567,7 +556,6 @@ namespace MpvNet.Windows
             }
         }
 
-        // 取系统图标（32x32）→ Bitmap
         private static Bitmap GetShellIconBitmap(string pathOrExt, uint attrs)
         {
             SHFILEINFO sh = new();
@@ -588,7 +576,6 @@ namespace MpvNet.Windows
             return null;
         }
 
-        // ===================== Win32 =====================
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct SHFILEINFO
         {
@@ -606,12 +593,11 @@ namespace MpvNet.Windows
         private static extern bool DestroyIcon(IntPtr hIcon);
 
         private const uint SHGFI_ICON = 0x000000100;
-        private const uint SHGFI_LARGEICON = 0x000000000; // 32x32
+        private const uint SHGFI_LARGEICON = 0x000000000;
         private const uint SHGFI_USEFILEATTRIBUTES = 0x000000010;
         private const uint FILE_ATTRIBUTE_DIRECTORY = 0x00000010;
         private const uint FILE_ATTRIBUTE_NORMAL = 0x00000080;
 
-        // ===================== 数据结构 =====================
         private class FileItem
         {
             public string Name { get; set; }
@@ -623,12 +609,7 @@ namespace MpvNet.Windows
             public Image Icon { get; set; }
         }
 
-        // ===================== 面包屑辅助 =====================
-        private void BuildPathSegments(string path)
-        {
-            _pathSegments.Clear();
-            // 实际的绘制在 DrawPathBar 中完成，这里只清空以保证状态一致
-        }
+        private void BuildPathSegments(string path) => _pathSegments.Clear();
     }
 
     public class HoverChangedEventArgs : EventArgs
