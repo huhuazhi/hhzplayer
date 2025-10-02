@@ -1,9 +1,5 @@
-﻿using System;
-using System.Diagnostics;
-using System.Drawing;
-using System.IO;
+﻿using System.Drawing;
 using System.Windows.Forms;
-using static HandyControl.Tools.Interop.InteropValues;
 using FFmpeg.AutoGen;
 
 namespace MpvNet.Windows
@@ -160,19 +156,26 @@ namespace MpvNet.Windows
                 finally { _syncingRightFileScroll = false; }
             };
 
-            // —— 文件悬停联动 —— 
             _fileListLeft.HoverChanged += (_, e) =>
             {
                 if (_syncingLeftFileHover) return;
-                try { _syncingLeftFileHover = true; _fileListRight.SetHotIndex(e.Index, raiseEvent: false); }
-                finally { _syncingLeftFileHover = false; }
+                if (_fileListRight.HotIndex != e.Index) // ⭐ 避免重复无效刷新
+                {
+                    try { _syncingLeftFileHover = true; _fileListRight.SetHotIndex(e.Index, raiseEvent: false); }
+                    finally { _syncingLeftFileHover = false; }
+                }
             };
+
             _fileListRight.HoverChanged += (_, e) =>
             {
                 if (_syncingRightFileHover) return;
-                try { _syncingRightFileHover = true; _fileListLeft.SetHotIndex(e.Index, raiseEvent: false); }
-                finally { _syncingRightFileHover = false; }
+                if (_fileListLeft.HotIndex != e.Index) // ⭐ 避免重复无效刷新
+                {
+                    try { _syncingRightFileHover = true; _fileListLeft.SetHotIndex(e.Index, raiseEvent: false); }
+                    finally { _syncingRightFileHover = false; }
+                }
             };
+
 
             // ③ DiskSelected：两边同时导航时，也用同一个闸门，避免触发对方的 DirectoryChanged 再回调自己
             _diskListLeft.DiskSelected += (_, root) =>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -58,6 +59,10 @@ namespace MpvNet.Windows
         public event EventHandler<ViewportOffsetChangedEventArgs> ViewportOffsetChanged;
 
         public string CurrentPath { get; private set; } = string.Empty;
+        public int HotIndex => _hoverIndex;
+
+        [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+        private static extern int StrCmpLogicalW(string psz1, string psz2);
 
         public FileList()
         {
@@ -84,7 +89,7 @@ namespace MpvNet.Windows
         public int RowHeight
         {
             get => _rowHeight;
-            set { _rowHeight = Math.Max(value, _iconSize + 8); Invalidate(); }
+            set { _rowHeight = Math.Max(value, _iconSize + 8); InvalidateNameBmpAll(); Invalidate(); }
         }
 
         public int HeaderHeight
@@ -100,6 +105,7 @@ namespace MpvNet.Windows
             {
                 _iconSize = Math.Max(16, Math.Min(64, value));
                 if (_rowHeight < _iconSize + 8) _rowHeight = _iconSize + 8;
+                InvalidateNameBmpAll();
                 Invalidate();
             }
         }
@@ -107,7 +113,15 @@ namespace MpvNet.Windows
         public float[] ColumnWidths
         {
             get => _colWidths;
-            set { if (value != null && value.Length == 4) { _colWidths = value; Invalidate(); } }
+            set
+            {
+                if (value != null && value.Length == 4)
+                {
+                    _colWidths = value;
+                    InvalidateNameBmpAll(); // 列宽变化需要重建缓存
+                    Invalidate();
+                }
+            }
         }
 
         public int ScrollOffset
@@ -164,9 +178,35 @@ namespace MpvNet.Windows
             foreach (var ext in set) EnsureIconCached(ext);
         }
 
+        private sealed class ExplorerNameComparer : IComparer<FileItem>
+        {
+            public static readonly ExplorerNameComparer Instance = new();
+
+            public int Compare(FileItem? a, FileItem? b)
+            {
+                if (ReferenceEquals(a, b)) return 0;
+                if (a is null) return -1;
+                if (b is null) return 1;
+
+                bool aUp = a.IsDir && a.Name == "..";
+                bool bUp = b.IsDir && b.Name == "..";
+                if (aUp || bUp) return aUp ? (bUp ? 0 : -1) : 1;
+
+                if (a.IsDir != b.IsDir) return a.IsDir ? -1 : 1;
+
+                return StrCmpLogicalW(a.Name, b.Name);
+            }
+        }
+
         private void LoadFilesCore(string path)
         {
+            foreach (var it in _items)
+            {
+                it.NameBmp?.Dispose();
+                it.NameBmp = null;
+            }
             _items.Clear();
+
             var diRoot = new DirectoryInfo(path);
 
             if (diRoot.Parent != null)
@@ -225,6 +265,8 @@ namespace MpvNet.Windows
                 }
             }
             catch { }
+
+            _items.Sort(ExplorerNameComparer.Instance);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -281,7 +323,6 @@ namespace MpvNet.Windows
                 if (!item.IconLoaded && !item.IsDir)
                 {
                     item.IconLoaded = true;
-                    string ext = Path.GetExtension(item.FullPath);
                     Task.Run(() =>
                     {
                         var icon = GetShellIconBitmap(item.FullPath, FILE_ATTRIBUTE_NORMAL);
@@ -300,11 +341,16 @@ namespace MpvNet.Windows
                     g.DrawImage(item.Icon, new Rectangle(iconX, iconY, _iconSize, _iconSize));
                 }
 
+                // 缓存绘制文件名
                 int nameLeft = x0 + 8 + _iconSize + 8;
                 var nameRect = new Rectangle(nameLeft, visRow.Top, colW0 - (nameLeft - x0) - 8, visRow.Height);
-                TextRenderer.DrawText(g, item.Name, _itemFont, nameRect, Color.White,
-                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                EnsureNameBmp(item, nameRect.Width, nameRect.Height);
+                if (item.NameBmp != null)
+                {
+                    g.DrawImageUnscaled(item.NameBmp, nameRect.Left, nameRect.Top);
+                }
 
+                // 其他列照旧
                 string sizeText = item.Size < 0 ? "" : FormatSize(item.Size);
                 var sizeRect = new Rectangle(x1 + 6, visRow.Top, colW1 - 12, visRow.Height);
                 TextRenderer.DrawText(g, sizeText, _itemFont, sizeRect, Color.White,
@@ -323,6 +369,37 @@ namespace MpvNet.Windows
             int itemsHeight = _items.Count * _rowHeight;
             _maxScroll = Math.Max(0, itemsHeight - viewportH);
             g.DrawRectangle(_borderPen, 1, 1, Width - 2, Height - 2);
+        }
+
+        private void EnsureNameBmp(FileItem item, int width, int height)
+        {
+            width = Math.Max(1, width);
+            height = Math.Max(1, height);
+            if (item.NameBmp != null && item.NameBmpW == width && item.NameBmpH == height) return;
+
+            item.NameBmp?.Dispose();
+            var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            using (var g = Graphics.FromImage(bmp))
+            {
+                g.Clear(Color.Transparent);
+                TextRenderer.DrawText(g, item.Name, _itemFont,
+                    new Rectangle(0, 0, width, height),
+                    Color.White,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis |
+                    TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding);
+            }
+            item.NameBmp = bmp;
+            item.NameBmpW = width;
+            item.NameBmpH = height;
+        }
+
+        private void InvalidateNameBmpAll()
+        {
+            foreach (var it in _items)
+            {
+                it.NameBmp?.Dispose();
+                it.NameBmp = null;
+            }
         }
 
         private void DrawPathBar(Graphics g, ref int y)
@@ -502,9 +579,20 @@ namespace MpvNet.Windows
 
         public void SetHotIndex(int index, bool raiseEvent = true)
         {
+            if (_hoverIndex == index) return;
+            int old = _hoverIndex;
             _hoverIndex = index;
+
             if (raiseEvent) HoverChanged?.Invoke(this, new HoverChangedEventArgs(index));
-            Invalidate();
+
+            if (old >= 0) Invalidate(GetRowRect(old));
+            if (_hoverIndex >= 0) Invalidate(GetRowRect(_hoverIndex));
+        }
+
+        private Rectangle GetRowRect(int index)
+        {
+            int y = _pathBarHeight + _headerHeight + index * _rowHeight - _scrollOffsetY;
+            return new Rectangle(0, y, Width, _rowHeight);
         }
 
         private static string FormatSize(long size)
@@ -605,6 +693,11 @@ namespace MpvNet.Windows
             public DateTime Modified { get; set; }
             public Image Icon { get; set; }
             public bool IconLoaded { get; set; }
+
+            // 缓存名称位图
+            public Bitmap NameBmp;
+            public int NameBmpW;
+            public int NameBmpH;
         }
 
         private void BuildPathSegments(string path) => _pathSegments.Clear();
