@@ -938,19 +938,19 @@ public partial class MainForm : Form
 
         _videoMenuLeft.Items.Add(new ToolStripSeparator());
         _videoMenuRight.Items.Add(new ToolStripSeparator());
-        var defVidl = new ToolStripMenuItem("视频: 默认")
+        var defVidl = new ToolStripMenuItem("恢复默认")
         {
-            Checked = curVid == "no",
+            Checked = false,
             CheckOnClick = false
         };
-        var defVidr = new ToolStripMenuItem("视频: 默认")
+        var defVidr = new ToolStripMenuItem("恢复默认")
         {
-            Checked = curVid == "no",
+            Checked = false,
             CheckOnClick = false
         };
-        defVidl.Click += (_, __) => {SettingsManager.Current.LastVideoTrackId = -1;};
+        defVidl.Click += (_, __) => {SettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
         _videoMenuLeft.Items.Add(defVidl);
-        defVidr.Click += (_, __) => {SettingsManager.Current.LastVideoTrackId = -1;};
+        defVidr.Click += (_, __) => {SettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
         _videoMenuRight.Items.Add(defVidr);
 
         _videoMenuLeft.Items.Add(new ToolStripSeparator());
@@ -989,19 +989,19 @@ public partial class MainForm : Form
 
         _audioMenuLeft.Items.Add(new ToolStripSeparator());
         _audioMenuRight.Items.Add(new ToolStripSeparator());
-        var defAidl = new ToolStripMenuItem("音频: 默认")
+        var defAidl = new ToolStripMenuItem("恢复默认")
         {
-            Checked = curAid == "no",
+            Checked = false,
             CheckOnClick = false
         };
-        var defAidr = new ToolStripMenuItem("音频: 默认")
+        var defAidr = new ToolStripMenuItem("恢复默认")
         {
-            Checked = curAid == "no",
+            Checked = false,
             CheckOnClick = false
         };
-        defAidl.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; };
+        defAidl.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };
         _audioMenuLeft.Items.Add(defAidl);
-        defAidr.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; };        
+        defAidr.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };        
         _audioMenuRight.Items.Add(defAidr);
 
         _subMenuLeft.Items.Add(new ToolStripSeparator());
@@ -1021,19 +1021,19 @@ public partial class MainForm : Form
         noSubr.Click += (_, __) => { Player.SetPropertyString("sid", "no"); BuildAllTrackMenus(); };
         _subMenuRight.Items.Add(noSubr);
 
-        var defSubl = new ToolStripMenuItem("字幕: 默认")
+        var defSubl = new ToolStripMenuItem("恢复默认")
         {
-            Checked = curSid == "no",
+            Checked = false,
             CheckOnClick = false
         };
-        var defSubr = new ToolStripMenuItem("字幕: 默认")
+        var defSubr = new ToolStripMenuItem("恢复默认")
         {
-            Checked = curSid == "no",
+            Checked = false,
             CheckOnClick = false
         };
-        defSubl.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; };
+        defSubl.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };
         _subMenuLeft.Items.Add(defSubl);
-        defSubr.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; };        
+        defSubr.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };        
         _subMenuRight.Items.Add(defSubr);
     }
 

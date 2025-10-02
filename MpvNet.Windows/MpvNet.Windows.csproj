@@ -12,7 +12,7 @@
 		<FileVersion>7.1.1.4</FileVersion>
 		<AssemblyVersion>7.1.1.4</AssemblyVersion>
 		<InformationalVersion>7.1.1.4</InformationalVersion>
-		<ApplicationIcon>hhzplayer256x256.ico</ApplicationIcon>
+		<ApplicationIcon>hhzplayer512x512.ico</ApplicationIcon>
 		<PackageIcon>hhzplayer.PNG</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="hhzplayer256x256.ico" />
+		<Content Include="hhzplayer512x512.ico" />
 	</ItemGroup>
 
 	<ItemGroup>
