@@ -439,7 +439,7 @@ public partial class MainForm : Form
         if (_lastCursorPosition != MousePosition /*&& ClientRectangle.Contains(PointToClient(MousePosition)) && ActiveForm == this*/)
         {
             //Debug.Print($"{DateTime.Now.ToString()}-MouseMoveShowCursor");
-            if (btn3DLeft.Visible == false)
+            if (btn3DLeft.Visible == false || progressBarLeft.Visible == false)
             {
                 ShowCursor();
                 ShowVideoOSD();
@@ -448,9 +448,9 @@ public partial class MainForm : Form
         //SaveWindowProperties();
         base.OnMouseMove(e);
         if (App.Settings.Enable3DMode == false && /*IsCursorPosDifferent(_mouseDownLocation) &&*/
-    WindowState == FormWindowState.Normal &&
-    e.Button == MouseButtons.Left && /*!IsMouseInOsc() &&*/
-    Player.GetPropertyBool("window-dragging"))
+            WindowState == FormWindowState.Normal &&
+            e.Button == MouseButtons.Left && /*!IsMouseInOsc() &&*/
+            Player.GetPropertyBool("window-dragging"))
         {
             var HTCAPTION = new IntPtr(2);
             var WM_NCLBUTTONDOWN = 0xA1;
@@ -748,7 +748,7 @@ public partial class MainForm : Form
         {
             if (_videoMenuLeft.Visible || _audioMenuLeft.Visible || _subMenuLeft.Visible)
                 return;
-            if (btn3DLeft.Visible == true/*ClientRectangle.Contains(PointToClient(MousePosition)) && ActiveForm == this && !ContextMenu.IsVisible && !IsMouseInOsc()*/)
+            if (btn3DLeft.Visible == true || progressBarLeft.Visible == true/*ClientRectangle.Contains(PointToClient(MousePosition)) && ActiveForm == this && !ContextMenu.IsVisible && !IsMouseInOsc()*/)
             {
                 HideCursor();
                 HideVideoOSD();
