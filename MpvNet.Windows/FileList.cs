@@ -3,44 +3,39 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MpvNet.Windows
 {
     public class FileList : Control
     {
-        // ===================== 基本数据 =====================
         private readonly List<FileItem> _items = new();
 
-        private int _rowHeight = 40;                    // 每行高度（文件项）
-        private int _headerHeight = 60;                 // ⭐ 标题栏高度
+        private int _rowHeight = 40;
+        private int _headerHeight = 60;
         private readonly string[] _columns = { "名称", "大小", "类型", "修改日期" };
         private float[] _colWidths = { 0.50f, 0.15f, 0.15f, 0.20f };
 
         private int _hoverIndex = -1;
         private int _selectedIndex = -1;
 
-        // 图标尺寸
         private int _iconSize = 32;
 
-        // ⭐ 图标缓存（全局）
         private static readonly object s_iconLock = new();
         private static readonly Dictionary<string, Bitmap> s_iconByExt = new(StringComparer.OrdinalIgnoreCase);
         private static Bitmap s_folderIcon;
         private static Bitmap s_defaultFileIcon;
 
-        // 滚动
         private int _scrollOffsetY = 0;
         private int _maxScroll = 0;
         private bool _dragging = false;
         private int _lastMouseY;
 
-        // 字体
         private readonly Font _headerFont = new("Segoe UI", 10, FontStyle.Bold);
         private readonly Font _itemFont = new("Segoe UI", 10, FontStyle.Regular);
         private readonly Font _pathFont = new("Segoe UI", 10, FontStyle.Regular);
 
-        // 颜色
         private readonly Color _bgColor = Color.FromArgb(70, 20, 40, 70);
         private readonly Color _altRowColor = Color.FromArgb(80, 60, 60, 60);
         private readonly Color _hoverColor = Color.FromArgb(80, 0, 120, 215);
@@ -54,11 +49,9 @@ namespace MpvNet.Windows
         private readonly SolidBrush _headerBrush;
         private readonly Pen _borderPen;
 
-        // ⭐ 路径栏（面包屑）
         private List<(string Segment, string FullPath, Rectangle Bounds)> _pathSegments = new();
         private int _pathBarHeight = 50;
 
-        // 事件
         public event EventHandler<string[]> FileOpened;
         public event EventHandler<string> DirectoryChanged;
         public event EventHandler<HoverChangedEventArgs> HoverChanged;
@@ -88,7 +81,6 @@ namespace MpvNet.Windows
             MouseEnter += (_, __) => Focus();
         }
 
-        // ===================== 属性 =====================
         public int RowHeight
         {
             get => _rowHeight;
@@ -133,11 +125,9 @@ namespace MpvNet.Windows
             }
         }
 
-        // ===================== 导航 =====================
         public void NavigateTo(string path)
         {
-            path = NormalizeRootPath(path); // ⭐ 统一处理
-
+            path = NormalizeRootPath(path);
             if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return;
 
             PrewarmIconsForDirectory(path);
@@ -152,11 +142,8 @@ namespace MpvNet.Windows
         private static string NormalizeRootPath(string path)
         {
             if (string.IsNullOrEmpty(path)) return path;
-
-            // 修复裸盘符 C: => C:\
             if (path.Length == 2 && char.IsLetter(path[0]) && path[1] == ':')
                 return path + "\\";
-
             return path;
         }
 
@@ -180,7 +167,6 @@ namespace MpvNet.Windows
         private void LoadFilesCore(string path)
         {
             _items.Clear();
-
             var diRoot = new DirectoryInfo(path);
 
             if (diRoot.Parent != null)
@@ -193,7 +179,8 @@ namespace MpvNet.Windows
                     Size = -1,
                     Type = "上一级目录",
                     Modified = DateTime.Now,
-                    Icon = s_folderIcon
+                    Icon = s_folderIcon,
+                    IconLoaded = true
                 });
             }
 
@@ -210,7 +197,8 @@ namespace MpvNet.Windows
                         Size = -1,
                         Type = "文件夹",
                         Modified = di.LastWriteTime,
-                        Icon = s_folderIcon
+                        Icon = s_folderIcon,
+                        IconLoaded = true
                     });
                 }
             }
@@ -223,8 +211,6 @@ namespace MpvNet.Windows
                     var fi = new FileInfo(file);
                     string ext = fi.Extension;
                     if (string.IsNullOrEmpty(ext)) ext = ".";
-                    var icon = GetIconFromCache(ext) ?? s_defaultFileIcon;
-
                     _items.Add(new FileItem
                     {
                         Name = fi.Name,
@@ -233,14 +219,14 @@ namespace MpvNet.Windows
                         Size = fi.Length,
                         Type = string.IsNullOrEmpty(fi.Extension) ? "文件" : fi.Extension.ToUpperInvariant(),
                         Modified = fi.LastWriteTime,
-                        Icon = icon
+                        Icon = s_defaultFileIcon,
+                        IconLoaded = false
                     });
                 }
             }
             catch { }
         }
 
-        // ===================== 绘制 =====================
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -290,6 +276,22 @@ namespace MpvNet.Windows
                 if (i == _hoverIndex) g.FillRectangle(_hoverBrush, visRow);
 
                 int x0 = 0, x1 = x0 + colW0, x2 = x1 + colW1, x3 = x2 + colW2;
+
+                // 延迟加载图标
+                if (!item.IconLoaded && !item.IsDir)
+                {
+                    item.IconLoaded = true;
+                    string ext = Path.GetExtension(item.FullPath);
+                    Task.Run(() =>
+                    {
+                        var icon = GetShellIconBitmap(item.FullPath, FILE_ATTRIBUTE_NORMAL);
+                        if (icon != null)
+                        {
+                            item.Icon = icon;
+                            BeginInvoke(new Action(Invalidate));
+                        }
+                    });
+                }
 
                 if (item.Icon != null)
                 {
@@ -352,7 +354,7 @@ namespace MpvNet.Windows
                 }
                 else if (hasDrive)
                 {
-                    string root = parts[0] + "\\"; // ⭐ 强制带斜杠
+                    string root = parts[0] + "\\";
                     if (i == 0)
                         fullPath = root;
                     else
@@ -385,7 +387,6 @@ namespace MpvNet.Windows
             y += _pathBarHeight;
         }
 
-        // ===================== 交互 =====================
         private int HitTestIndex(int mouseY)
         {
             int headerTop = _pathBarHeight + _headerHeight;
@@ -408,7 +409,6 @@ namespace MpvNet.Windows
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
-
             foreach (var seg in _pathSegments)
             {
                 if (seg.Bounds.Contains(e.Location))
@@ -431,7 +431,6 @@ namespace MpvNet.Windows
         private void OpenItem(int index)
         {
             if (index < 0 || index >= _items.Count) return;
-
             var item = _items[index];
             if (item.IsDir)
             {
@@ -447,7 +446,6 @@ namespace MpvNet.Windows
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-
             bool overBreadcrumb = false;
             foreach (var seg in _pathSegments)
             {
@@ -509,7 +507,6 @@ namespace MpvNet.Windows
             Invalidate();
         }
 
-        // ===================== 工具 =====================
         private static string FormatSize(long size)
         {
             const double KB = 1024.0, MB = KB * 1024, GB = MB * 1024, TB = GB * 1024;
@@ -607,6 +604,7 @@ namespace MpvNet.Windows
             public string Type { get; set; }
             public DateTime Modified { get; set; }
             public Image Icon { get; set; }
+            public bool IconLoaded { get; set; }
         }
 
         private void BuildPathSegments(string path) => _pathSegments.Clear();

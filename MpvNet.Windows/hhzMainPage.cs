@@ -31,14 +31,16 @@ namespace MpvNet.Windows
         private bool _syncingRightFileHover = false;   // 文件 列表悬停联动
         private bool _syncingRightFileScroll = false;  // 文件 列表滚动联动
 
-        // 蓝色框比例
+        // 磁盘列表位置大小
         private const float FRAME_LEFT = 0.0255f;
         private const float FRAME_TOP = 0.095f;
         private const float FRAME_WIDTH = 0.253f;
         private const float FRAME_HEIGHT = 0.400f;
 
         private Bitmap bg;
-        private float _fileListBottomGapRatio = 0.07f;
+        
+        //文件列表右部、底部留白比例
+        private float _fileListBottomGapRatio = 0.1f;
         public int vWidth;
         public int vHeight;
         public delegate void FileOpenedEventHandler(HHZMainPage sender, string[] paths);
@@ -226,6 +228,7 @@ namespace MpvNet.Windows
             int w = this.ClientSize.Width, h = this.ClientSize.Height;
             if (w <= 0 || h <= 0) return;
 
+            //文件列表右部、底部留白
             int bottomGap = (int)Math.Round(h * _fileListBottomGapRatio);
 
             if (App.Settings.Enable3DMode)
@@ -341,7 +344,7 @@ namespace MpvNet.Windows
             g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
-            if (bg == null) 
+            if (bg == null)
             {
                 g.Clear(Color.Black);
                 return;

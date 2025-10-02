@@ -47,7 +47,6 @@ partial class MainForm
         btnFullScreenLeft = new System.Windows.Forms.Label();
         btnPlayLeft = new System.Windows.Forms.Label();
         btnPlayRight = new System.Windows.Forms.Label();
-        btnFullScreenRight = new System.Windows.Forms.Label();
         btnVideoTrackRight = new System.Windows.Forms.Label();
         btnSubtitleTrackRight = new System.Windows.Forms.Label();
         btnAudioTrackRight = new System.Windows.Forms.Label();
@@ -70,11 +69,11 @@ partial class MainForm
         // 
         // progressBarLeft
         // 
-        progressBarLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+        progressBarLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         progressBarLeft.ForeColor = System.Drawing.Color.DeepSkyBlue;
         progressBarLeft.Location = new System.Drawing.Point(40, 920);
         progressBarLeft.Name = "progressBarLeft";
-        progressBarLeft.Size = new System.Drawing.Size(1860, 45);
+        progressBarLeft.Size = new System.Drawing.Size(1830, 45);
         progressBarLeft.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
         progressBarLeft.TabIndex = 8;
         progressBarLeft.Visible = false;
@@ -105,7 +104,6 @@ partial class MainForm
         btn3DLeft.TabIndex = 6;
         btn3DLeft.Text = "3D";
         btn3DLeft.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-        btn3DLeft.Visible = false;
         // 
         // btn3DSubtitleModeLeft
         // 
@@ -140,7 +138,7 @@ partial class MainForm
         progressBarRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
         progressBarRight.Location = new System.Drawing.Point(40, 920);
         progressBarRight.Name = "progressBarRight";
-        progressBarRight.Size = new System.Drawing.Size(1860, 45);
+        progressBarRight.Size = new System.Drawing.Size(1830, 45);
         progressBarRight.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
         progressBarRight.TabIndex = 11;
         progressBarRight.Visible = false;
@@ -172,7 +170,6 @@ partial class MainForm
         btn3DRight.TabIndex = 13;
         btn3DRight.Text = "3D";
         btn3DRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-        btn3DRight.Visible = false;
         // 
         // btnAudioTrackLeft
         // 
@@ -226,7 +223,7 @@ partial class MainForm
         btnFullScreenLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnFullScreenLeft.CausesValidation = false;
         btnFullScreenLeft.ForeColor = System.Drawing.Color.White;
-        btnFullScreenLeft.Location = new System.Drawing.Point(1796, 976);
+        btnFullScreenLeft.Location = new System.Drawing.Point(1766, 976);
         btnFullScreenLeft.Name = "btnFullScreenLeft";
         btnFullScreenLeft.Size = new System.Drawing.Size(104, 82);
         btnFullScreenLeft.TabIndex = 17;
@@ -240,7 +237,7 @@ partial class MainForm
         btnPlayLeft.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnPlayLeft.CausesValidation = false;
         btnPlayLeft.ForeColor = System.Drawing.Color.White;
-        btnPlayLeft.Location = new System.Drawing.Point(1686, 976);
+        btnPlayLeft.Location = new System.Drawing.Point(1656, 976);
         btnPlayLeft.Name = "btnPlayLeft";
         btnPlayLeft.Size = new System.Drawing.Size(104, 82);
         btnPlayLeft.TabIndex = 18;
@@ -255,28 +252,13 @@ partial class MainForm
         btnPlayRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
         btnPlayRight.CausesValidation = false;
         btnPlayRight.ForeColor = System.Drawing.Color.White;
-        btnPlayRight.Location = new System.Drawing.Point(1686, 976);
+        btnPlayRight.Location = new System.Drawing.Point(1656, 976);
         btnPlayRight.Name = "btnPlayRight";
         btnPlayRight.Size = new System.Drawing.Size(104, 82);
         btnPlayRight.TabIndex = 23;
         btnPlayRight.Text = "播放";
         btnPlayRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
         btnPlayRight.Visible = false;
-        // 
-        // btnFullScreenRight
-        // 
-        btnFullScreenRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-        btnFullScreenRight.BackColor = System.Drawing.Color.Transparent;
-        btnFullScreenRight.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-        btnFullScreenRight.CausesValidation = false;
-        btnFullScreenRight.ForeColor = System.Drawing.Color.White;
-        btnFullScreenRight.Location = new System.Drawing.Point(1796, 976);
-        btnFullScreenRight.Name = "btnFullScreenRight";
-        btnFullScreenRight.Size = new System.Drawing.Size(104, 82);
-        btnFullScreenRight.TabIndex = 22;
-        btnFullScreenRight.Text = "全屏";
-        btnFullScreenRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-        btnFullScreenRight.Visible = false;
         // 
         // btnVideoTrackRight
         // 
@@ -386,7 +368,7 @@ partial class MainForm
         lblStatusLeft.ForeColor = System.Drawing.Color.White;
         lblStatusLeft.Location = new System.Drawing.Point(429, 851);
         lblStatusLeft.Name = "lblStatusLeft";
-        lblStatusLeft.Size = new System.Drawing.Size(1245, 66);
+        lblStatusLeft.Size = new System.Drawing.Size(1215, 66);
         lblStatusLeft.TabIndex = 30;
         lblStatusLeft.Text = "正在加载...";
         lblStatusLeft.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -399,7 +381,7 @@ partial class MainForm
         lblStatusRight.ForeColor = System.Drawing.Color.White;
         lblStatusRight.Location = new System.Drawing.Point(429, 851);
         lblStatusRight.Name = "lblStatusRight";
-        lblStatusRight.Size = new System.Drawing.Size(1245, 66);
+        lblStatusRight.Size = new System.Drawing.Size(1215, 66);
         lblStatusRight.TabIndex = 31;
         lblStatusRight.Text = "正在加载...";
         lblStatusRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -407,10 +389,10 @@ partial class MainForm
         // 
         // lblVolumeLeft
         // 
-        lblVolumeLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        lblVolumeLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
         lblVolumeLeft.Font = new System.Drawing.Font("Segoe UI", 16.125F);
         lblVolumeLeft.ForeColor = System.Drawing.Color.White;
-        lblVolumeLeft.Location = new System.Drawing.Point(1659, 851);
+        lblVolumeLeft.Location = new System.Drawing.Point(1629, 851);
         lblVolumeLeft.Name = "lblVolumeLeft";
         lblVolumeLeft.Size = new System.Drawing.Size(242, 66);
         lblVolumeLeft.TabIndex = 32;
@@ -420,10 +402,10 @@ partial class MainForm
         // 
         // lblVolumeRight
         // 
-        lblVolumeRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        lblVolumeRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
         lblVolumeRight.Font = new System.Drawing.Font("Segoe UI", 16.125F);
         lblVolumeRight.ForeColor = System.Drawing.Color.White;
-        lblVolumeRight.Location = new System.Drawing.Point(1659, 851);
+        lblVolumeRight.Location = new System.Drawing.Point(1629, 851);
         lblVolumeRight.Name = "lblVolumeRight";
         lblVolumeRight.Size = new System.Drawing.Size(242, 66);
         lblVolumeRight.TabIndex = 33;
@@ -437,7 +419,7 @@ partial class MainForm
         AutoScaleDimensions = new System.Drawing.SizeF(192F, 192F);
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
         BackColor = System.Drawing.Color.Black;
-        ClientSize = new System.Drawing.Size(1950, 1080);
+        ClientSize = new System.Drawing.Size(1920, 1080);
         Controls.Add(lblVolumeRight);
         Controls.Add(lblVolumeLeft);
         Controls.Add(lblStatusRight);
@@ -448,7 +430,6 @@ partial class MainForm
         Controls.Add(btnRenderRight);
         Controls.Add(btnRenderLeft);
         Controls.Add(btnPlayRight);
-        Controls.Add(btnFullScreenRight);
         Controls.Add(btnVideoTrackRight);
         Controls.Add(btnSubtitleTrackRight);
         Controls.Add(btnAudioTrackRight);
@@ -495,7 +476,6 @@ partial class MainForm
     private System.Windows.Forms.Label btnFullScreenLeft;
     private System.Windows.Forms.Label btnPlayLeft;
     private System.Windows.Forms.Label btnPlayRight;
-    private System.Windows.Forms.Label btnFullScreenRight;
     public System.Windows.Forms.Label btnVideoTrackRight;
     public System.Windows.Forms.Label btnSubtitleTrackRight;
     public System.Windows.Forms.Label btnAudioTrackRight;

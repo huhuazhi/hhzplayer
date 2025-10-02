@@ -40,8 +40,8 @@ namespace MyApp
             set { lastSubtitleTrackId = value; if (!SettingsManager.IsLoading) SettingsManager.Save(); }
         }
 
-        private string renderText = "2D渲染器";
-        [DefaultValue("2D渲染器")]
+        private string renderText = "3D渲染器";
+        [DefaultValue("3D渲染器")]
         public string RenderText
         {
             get => renderText;
@@ -70,7 +70,7 @@ namespace MyApp
             LastVideoTrackId == -1 &&
             LastAudioTrackId == -1 &&
             LastSubtitleTrackId == -1 &&
-            RenderText == "2D渲染器" &&
+            RenderText == "3D渲染器" &&
             VideoAspestW == "0" &&
             VideoAspestH == "0";
 
@@ -81,7 +81,7 @@ namespace MyApp
 
     public static class SettingsManager
     {
-        private static string filePath = "settings.xml";
+        private static string filePath/* = "hhzsettings.xml"*/;
         private static hhzFileSettings currentSettings;
         internal static bool IsLoading { get; private set; }
 
@@ -89,7 +89,7 @@ namespace MyApp
 
         public static hhzFileSettings Load(string FilePath = null)
         {
-            if (!string.IsNullOrEmpty(FilePath)) filePath = FilePath;
+            /*if (string.IsNullOrEmpty(FilePath))*/ filePath = FilePath;
             if (!File.Exists(filePath))
             {
                 currentSettings = new hhzFileSettings();
@@ -106,10 +106,10 @@ namespace MyApp
             return currentSettings;
         }
 
-        public static void Save(string FilePath = null)
+        public static void Save(/*string FilePath = null*/)
         {
-            if (!string.IsNullOrEmpty(FilePath)) filePath = FilePath;
-            if (string.IsNullOrEmpty(filePath)) throw new InvalidOperationException("保存失败：文件路径为空。");
+            //if (!string.IsNullOrEmpty(FilePath)) filePath = FilePath;
+            /*if (string.IsNullOrEmpty(filePath)) throw new InvalidOperationException("保存失败：文件路径为空。");*/
 
             currentSettings ??= new hhzFileSettings();
 
