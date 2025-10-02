@@ -16,10 +16,10 @@ namespace MpvNet.Windows
         private int _rowHeight = 40;
         private int _headerHeight = 60;
         private readonly string[] _columns = { "名称", "大小", "类型", "修改日期" };
-        private float[] _colWidths = { 0.50f, 0.15f, 0.15f, 0.20f };
+        private float[] _colWidths = { 0.50f, 0.15f, 0.15f, 0.20f }; // 4 列比例
 
         private int _hoverIndex = -1;
-        private int _selectedIndex = -1;
+        private int _selectedIndex = -1; // 预留（目前未使用）
 
         private int _iconSize = 32;
 
@@ -89,7 +89,12 @@ namespace MpvNet.Windows
         public int RowHeight
         {
             get => _rowHeight;
-            set { _rowHeight = Math.Max(value, _iconSize + 8); InvalidateNameBmpAll(); Invalidate(); }
+            set
+            {
+                _rowHeight = Math.Max(value, _iconSize + 8);
+                InvalidateAllTextBitmaps(); // 行高变化 → 失效文本位图
+                Invalidate();
+            }
         }
 
         public int HeaderHeight
@@ -105,8 +110,7 @@ namespace MpvNet.Windows
             {
                 _iconSize = Math.Max(16, Math.Min(64, value));
                 if (_rowHeight < _iconSize + 8) _rowHeight = _iconSize + 8;
-                InvalidateNameBmpAll();
-                Invalidate();
+                Invalidate(); // 图标大小变只需重绘
             }
         }
 
@@ -118,7 +122,7 @@ namespace MpvNet.Windows
                 if (value != null && value.Length == 4)
                 {
                     _colWidths = value;
-                    InvalidateNameBmpAll(); // 列宽变化需要重建缓存
+                    InvalidateAllTextBitmaps(); // 列宽变化 → 失效文本位图
                     Invalidate();
                 }
             }
@@ -134,8 +138,8 @@ namespace MpvNet.Windows
                 {
                     _scrollOffsetY = clamped;
                     ViewportOffsetChanged?.Invoke(this, new ViewportOffsetChangedEventArgs(_scrollOffsetY));
+                    Invalidate();
                 }
-                Invalidate();
             }
         }
 
@@ -145,6 +149,11 @@ namespace MpvNet.Windows
             if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return;
 
             PrewarmIconsForDirectory(path);
+
+            // 清理旧位图缓存，避免泄漏
+            DisposeAllTextBitmaps();
+            _items.Clear();
+
             LoadFilesCore(path);
             CurrentPath = path;
             _scrollOffsetY = 0;
@@ -200,13 +209,6 @@ namespace MpvNet.Windows
 
         private void LoadFilesCore(string path)
         {
-            foreach (var it in _items)
-            {
-                it.NameBmp?.Dispose();
-                it.NameBmp = null;
-            }
-            _items.Clear();
-
             var diRoot = new DirectoryInfo(path);
 
             if (diRoot.Parent != null)
@@ -278,6 +280,7 @@ namespace MpvNet.Windows
             int y = 0;
             DrawPathBar(g, ref y);
 
+            // 表头
             g.FillRectangle(_headerBrush, new Rectangle(0, y, Width, _headerHeight));
             int colX = 0;
             for (int i = 0; i < _columns.Length; i++)
@@ -316,10 +319,11 @@ namespace MpvNet.Windows
 
                 if ((i & 1) == 1) g.FillRectangle(_altRowBrush, visRow);
                 if (i == _hoverIndex) g.FillRectangle(_hoverBrush, visRow);
+                if (i == _selectedIndex) g.FillRectangle(_selectedBrush, visRow);
 
                 int x0 = 0, x1 = x0 + colW0, x2 = x1 + colW1, x3 = x2 + colW2;
 
-                // 延迟加载图标
+                // 延迟加载“文件”图标（文件夹已用 s_folderIcon）
                 if (!item.IconLoaded && !item.IsDir)
                 {
                     item.IconLoaded = true;
@@ -329,11 +333,12 @@ namespace MpvNet.Windows
                         if (icon != null)
                         {
                             item.Icon = icon;
-                            BeginInvoke(new Action(Invalidate));
+                            try { BeginInvoke(new Action(Invalidate)); } catch { }
                         }
                     });
                 }
 
+                // 图标
                 if (item.Icon != null)
                 {
                     int iconX = x0 + 8;
@@ -341,28 +346,28 @@ namespace MpvNet.Windows
                     g.DrawImage(item.Icon, new Rectangle(iconX, iconY, _iconSize, _iconSize));
                 }
 
-                // 缓存绘制文件名
+                // —— 名称列（缓存位图）——
                 int nameLeft = x0 + 8 + _iconSize + 8;
                 var nameRect = new Rectangle(nameLeft, visRow.Top, colW0 - (nameLeft - x0) - 8, visRow.Height);
                 EnsureNameBmp(item, nameRect.Width, nameRect.Height);
-                if (item.NameBmp != null)
-                {
-                    g.DrawImageUnscaled(item.NameBmp, nameRect.Left, nameRect.Top);
-                }
+                if (item.NameBmp != null) g.DrawImageUnscaled(item.NameBmp, nameRect.Left, nameRect.Top);
 
-                // 其他列照旧
+                // —— 大小列（缓存位图）——
                 string sizeText = item.Size < 0 ? "" : FormatSize(item.Size);
                 var sizeRect = new Rectangle(x1 + 6, visRow.Top, colW1 - 12, visRow.Height);
-                TextRenderer.DrawText(g, sizeText, _itemFont, sizeRect, Color.White,
-                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                EnsureSizeBmp(item, sizeText, sizeRect.Width, sizeRect.Height);
+                if (item.SizeBmp != null) g.DrawImageUnscaled(item.SizeBmp, sizeRect.Left, sizeRect.Top);
 
+                // —— 类型列（缓存位图）——
                 var typeRect = new Rectangle(x2 + 6, visRow.Top, colW2 - 12, visRow.Height);
-                TextRenderer.DrawText(g, item.Type, _itemFont, typeRect, Color.White,
-                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                EnsureTypeBmp(item, item.Type, typeRect.Width, typeRect.Height);
+                if (item.TypeBmp != null) g.DrawImageUnscaled(item.TypeBmp, typeRect.Left, typeRect.Top);
 
+                // —— 日期列（缓存位图）——
+                string dateText = item.Modified == DateTime.MinValue ? "" : item.Modified.ToString("yyyy-MM-dd HH:mm");
                 var dateRect = new Rectangle(x3 + 6, visRow.Top, colW3 - 12, visRow.Height);
-                TextRenderer.DrawText(g, item.Modified.ToString("yyyy-MM-dd HH:mm"), _itemFont, dateRect, Color.White,
-                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                EnsureDateBmp(item, dateText, dateRect.Width, dateRect.Height);
+                if (item.DateBmp != null) g.DrawImageUnscaled(item.DateBmp, dateRect.Left, dateRect.Top);
             }
 
             g.Restore(gs);
@@ -371,37 +376,61 @@ namespace MpvNet.Windows
             g.DrawRectangle(_borderPen, 1, 1, Width - 2, Height - 2);
         }
 
+        // —— 文本位图缓存：名称 / 大小 / 类型 / 日期 —— 
+
+        private static readonly TextFormatFlags TextFlags =
+            TextFormatFlags.Left |
+            TextFormatFlags.VerticalCenter |
+            TextFormatFlags.EndEllipsis |
+            TextFormatFlags.NoPrefix |
+            TextFormatFlags.SingleLine |
+            TextFormatFlags.NoPadding;
+
         private void EnsureNameBmp(FileItem item, int width, int height)
+            => EnsureTextBmp(ref item.NameBmp, ref item.NameBmpW, ref item.NameBmpH, item.Name, width, height);
+
+        private void EnsureSizeBmp(FileItem item, string text, int width, int height)
+            => EnsureTextBmp(ref item.SizeBmp, ref item.SizeBmpW, ref item.SizeBmpH, text, width, height);
+
+        private void EnsureTypeBmp(FileItem item, string text, int width, int height)
+            => EnsureTextBmp(ref item.TypeBmp, ref item.TypeBmpW, ref item.TypeBmpH, text, width, height);
+
+        private void EnsureDateBmp(FileItem item, string text, int width, int height)
+            => EnsureTextBmp(ref item.DateBmp, ref item.DateBmpW, ref item.DateBmpH, text, width, height);
+
+        private void EnsureTextBmp(ref Bitmap bmp, ref int bw, ref int bh, string text, int width, int height)
         {
             width = Math.Max(1, width);
             height = Math.Max(1, height);
-            if (item.NameBmp != null && item.NameBmpW == width && item.NameBmpH == height) return;
 
-            item.NameBmp?.Dispose();
-            var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
-            using (var g = Graphics.FromImage(bmp))
+            if (bmp != null && bw == width && bh == height)
+                return;
+
+            bmp?.Dispose();
+            var nb = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            using (var g = Graphics.FromImage(nb))
             {
                 g.Clear(Color.Transparent);
-                TextRenderer.DrawText(g, item.Name, _itemFont,
-                    new Rectangle(0, 0, width, height),
-                    Color.White,
-                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis |
-                    TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding);
+                TextRenderer.DrawText(g, text ?? "", _itemFont, new Rectangle(0, 0, width, height), Color.White, TextFlags);
             }
-            item.NameBmp = bmp;
-            item.NameBmpW = width;
-            item.NameBmpH = height;
+            bmp = nb;
+            bw = width;
+            bh = height;
         }
 
-        private void InvalidateNameBmpAll()
+        private void InvalidateAllTextBitmaps()
         {
             foreach (var it in _items)
-            {
-                it.NameBmp?.Dispose();
-                it.NameBmp = null;
-            }
+                it.InvalidateTextBitmaps();
         }
 
+        private void DisposeAllTextBitmaps()
+        {
+            foreach (var it in _items)
+                it.DisposeTextBitmaps();
+        }
+
+        // —— 面包屑 —— 
         private void DrawPathBar(Graphics g, ref int y)
         {
             _pathSegments.Clear();
@@ -486,6 +515,8 @@ namespace MpvNet.Windows
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+
+            // 面包屑点击
             foreach (var seg in _pathSegments)
             {
                 if (seg.Bounds.Contains(e.Location))
@@ -523,6 +554,8 @@ namespace MpvNet.Windows
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
+
+            // 面包屑 hover
             bool overBreadcrumb = false;
             foreach (var seg in _pathSegments)
             {
@@ -694,13 +727,39 @@ namespace MpvNet.Windows
             public Image Icon { get; set; }
             public bool IconLoaded { get; set; }
 
-            // 缓存名称位图
-            public Bitmap NameBmp;
-            public int NameBmpW;
-            public int NameBmpH;
+            // 文本位图缓存
+            public Bitmap NameBmp; public int NameBmpW; public int NameBmpH;
+            public Bitmap SizeBmp; public int SizeBmpW; public int SizeBmpH;
+            public Bitmap TypeBmp; public int TypeBmpW; public int TypeBmpH;
+            public Bitmap DateBmp; public int DateBmpW; public int DateBmpH;
+
+            public void InvalidateTextBitmaps()
+            {
+                NameBmp?.Dispose(); NameBmp = null; NameBmpW = NameBmpH = 0;
+                SizeBmp?.Dispose(); SizeBmp = null; SizeBmpW = SizeBmpH = 0;
+                TypeBmp?.Dispose(); TypeBmp = null; TypeBmpW = TypeBmpH = 0;
+                DateBmp?.Dispose(); DateBmp = null; DateBmpW = DateBmpH = 0;
+            }
+
+            public void DisposeTextBitmaps() => InvalidateTextBitmaps();
         }
 
         private void BuildPathSegments(string path) => _pathSegments.Clear();
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            base.OnSizeChanged(e);
+            InvalidateAllTextBitmaps(); // 宽高变化需要重建文本位图
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                DisposeAllTextBitmaps();
+            }
+            base.Dispose(disposing);
+        }
     }
 
     public class HoverChangedEventArgs : EventArgs
