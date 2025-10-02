@@ -14,6 +14,7 @@ using static MpvNet.AppSettings;
 
 using static MpvNet.Windows.Native.WinApi;
 using static MpvNet.Windows.Help.WinApiHelp;
+using System.Windows.Forms.Design;
 
 namespace MpvNet.Windows.WinForms;
 
@@ -40,13 +41,27 @@ public partial class MainForm : Form
     private Timer clickTimer;
     private bool isDoubleClick = false;
 
+    private Timer ToastTimer;
+
     public MainForm()
     {
         InitializeComponent();
 
+        //鼠标单击和双击区分用的Timer
         clickTimer = new Timer();
-        clickTimer.Interval = SystemInformation.DoubleClickTime; // 系统双击时间
+        clickTimer.Interval = 200; //给一个双击比较短的固定值200ms，体验会好很多，系统默认为500ms
+                             //SystemInformation.DoubleClickTime; // 系统双击时间
         clickTimer.Tick += ClickTimer_Tick;
+
+        //弹Toast信息用的Timer
+        ToastTimer = new Timer();
+        ToastTimer.Interval = 1000; // Toast显示时长
+        ToastTimer.Tick += (s, e) =>
+        {
+            ToastTimer.Stop();
+            HideToast(); // 清除提示
+        };
+
         //Player.SetPropertyString("osc", "no");
         //InitializeLogoOverlay();
         DoubleBuffered = true;     // 开启双缓冲，避免闪烁
@@ -147,8 +162,11 @@ public partial class MainForm : Form
                 }
                 lblStatusLeft.Text = $"{(bPause ? "暂停中" : "播放中")}";
                 lblStatusRight.Text = lblStatusLeft.Text;
-                ShowCursor();
-                ShowVideoOSD();
+                if (Player.Duration.TotalSeconds > 0)
+                {
+                    ShowCursor();
+                    ShowVideoOSD();
+                }
             }));
         });
     }
@@ -744,9 +762,9 @@ public partial class MainForm : Form
             _lastCursorChanged = Environment.TickCount;
         }
         else if (Environment.TickCount - _lastCursorChanged > _cursorAutohide
-            && /*Player.Duration.TotalMilliseconds > 0 &&*/ !Player.GetPropertyBool("pause") && hhzMainPage.Visible == false)
+            && /*Player.Duration.TotalMilliseconds > 0 &&*/ (!Player.GetPropertyBool("pause") || Player.Duration.TotalSeconds == 0) && hhzMainPage.Visible == false)
         {
-            if (_videoMenuLeft.Visible || _audioMenuLeft.Visible || _subMenuLeft.Visible)
+            if ((_videoMenuLeft != null && _audioMenuLeft != null && _subMenuLeft != null) && (_videoMenuLeft.Visible || _audioMenuLeft.Visible || _subMenuLeft.Visible))
                 return;
             if (btn3DLeft.Visible == true || progressBarLeft.Visible == true/*ClientRectangle.Contains(PointToClient(MousePosition)) && ActiveForm == this && !ContextMenu.IsVisible && !IsMouseInOsc()*/)
             {
@@ -1209,12 +1227,12 @@ public partial class MainForm : Form
     {
         BeginInvoke(() =>
         {
-            if (Player.Duration.TotalMilliseconds > 0)
-            {   
+            //if (Player.Duration.TotalMilliseconds > 0)
+            {
+                string currfile = Player.GetPropertyString("filename");
+                ShowToast(currfile, 2000);
                 lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
                 lblDurationRight.Text = lblDurationLeft.Text;
-                lblStatusLeft.Text = "正在播放";
-                lblStatusRight.Text = lblStatusLeft.Text;
                 BuildAllTrackMenus();
 
                 hhzMainPage.Visible = false;
@@ -1246,11 +1264,15 @@ public partial class MainForm : Form
                 {
                     btnPlayLeft.Text = "暂停";
                     btnPlayRight.Text = "暂停";
+                    lblStatusLeft.Text = "播放中";
+                    lblStatusRight.Text = lblStatusLeft.Text;
                 }
                 else
                 {
                     btnPlayLeft.Text = "播放";
                     btnPlayRight.Text = "播放";
+                    lblStatusLeft.Text = "暂停中";
+                    lblStatusRight.Text = lblStatusLeft.Text;
                 }
                 Player.Command("set pause no");
                 string path = Player.GetPropertyString("path");
@@ -1274,6 +1296,10 @@ public partial class MainForm : Form
                 //    progressBarRight.Visible = true;
                 //}
                 //UpdateProgressBar();
+                if (bPressPageDownUp)
+                {
+                    if (!Player.GetPropertyBool("pause")) Player.Command("cycle pause");
+                }
             }
         });
 
@@ -1545,6 +1571,11 @@ public partial class MainForm : Form
             lblVolumeLeft.Left = lblStatusLeft.Left + lblStatusLeft.Width;
             lblVolumeRight.Left = Width / 2 + lblVolumeLeft.Left;
 
+            lblToastLeft.Left = 0;
+            lblToastLeft.Width = Width / 2;
+            lblToastRight.Left = Width / 2;
+            lblToastRight.Width = lblToastLeft.Width;
+
             btnFullScreenLeft.Visible = false;
 
             if (hhzMainPage.Visible == false) btnBackRight.Visible = true;
@@ -1559,7 +1590,7 @@ public partial class MainForm : Form
             if (hhzMainPage.Visible == false) btnPlayRight.Visible = true;
             if (hhzMainPage.Visible == false) lblDurationRight.Visible = true;
             if (hhzMainPage.Visible == false) lblStatusRight.Visible = true;
-            if (hhzMainPage.Visible == false) lblVolumeRight.Visible = true;
+            if (hhzMainPage.Visible == false) lblVolumeRight.Visible = true;            
         }
         else
         {
@@ -1573,6 +1604,8 @@ public partial class MainForm : Form
 
             btnPlayLeft.Left = btnFullScreenLeft.Left - btnFullScreenLeft.Width - 10;
             //btnPlayRight.Left = btnFullScreenLeft.Left - Width / 2;
+            lblToastLeft.Left = 0;
+            lblToastLeft.Width = Width;
 
             btnBackRight.Visible = false;
             btn3DSubtitleModeRight.Visible = false;
@@ -1740,6 +1773,8 @@ public partial class MainForm : Form
     private bool _isReturn2D;
     private bool isAudio;
     private bool bPressEnter;
+    private DateTime _lastEscapeTime;
+    private bool bPressPageDownUp;
 
     void Set3DSubtitleMode(string mode3DSubtitle)
     {
@@ -1824,21 +1859,39 @@ public partial class MainForm : Form
             case Keys.HanjaMode:
                 break;
             case Keys.Escape:
-                if (App.Settings.Enable3DMode == false)
+                if (hhzMainPage.Visible == false)
                 {
-                    if (WindowState == FormWindowState.Normal)
+                    if (App.Settings.Enable3DMode == false)
                     {
-                        btnBack_Click(null, null);
+                        if (WindowState == FormWindowState.Normal)
+                        {
+                            btnBack_Click(null, null);
+                        }
+                        else
+                        {
+                            this.WindowState = FormWindowState.Normal;
+                            this.FormBorderStyle = FormBorderStyle.Sizable;
+                        }
                     }
                     else
                     {
-                        this.WindowState = FormWindowState.Normal;
-                        this.FormBorderStyle = FormBorderStyle.Sizable;                        
+                        btnBack_Click(null, null);
                     }
                 }
                 else
                 {
-                    btnBack_Click(null, null);
+                    //双击Escape退出程序
+                    if (_lastEscapeTime.AddMilliseconds(1000) > DateTime.Now)
+                    {
+                        // 双击处理
+                        this.Close();
+                    }
+                    else
+                    {
+                        // 第一次按Escape，记录时间
+                        _lastEscapeTime = DateTime.Now;                        
+                        ShowToast("再按一次ESC退出。。。", 1000);
+                    }
                 }
                 break;
             case Keys.IMEConvert:
@@ -1857,11 +1910,13 @@ public partial class MainForm : Form
                 //HideCursor();
                 //HideVideoOSD();
                 Player.Command("playlist-prev");   // 上一个媒体
+                if (Player.Duration.TotalSeconds == 0) bPressPageDownUp = true; /*Player.Command("pause");*/                
                 break;
             case Keys.PageDown:
                 //HideCursor();
                 //HideVideoOSD();
                 Player.Command("playlist-next");   // 下一个媒体
+                if (Player.Duration.TotalSeconds == 0) bPressPageDownUp = true;/*Player.Command("cycle pause");*/
                 break;
             case Keys.End:
                 break;
@@ -2173,5 +2228,35 @@ public partial class MainForm : Form
             default:
                 break;
         }
+    }
+    void ShowToast(string message,int showtime)
+    {
+        //启动Toast计时器并显示提示
+        ToastTimer.Stop();
+        if (showtime>0) ToastTimer.Interval = showtime;
+        ToastTimer.Start();
+        if (App.Settings.Enable3DMode)
+        {
+            lblToastLeft.Text = message;
+            lblToastLeft.Visible = true;
+            lblToastLeft.BringToFront();
+
+            lblToastRight.Text = message;
+            lblToastRight.Visible = true;
+            lblToastRight.BringToFront();
+        }
+        else
+        {
+            lblToastLeft.Text = message;
+            lblToastLeft.Visible = true;
+            lblToastLeft.BringToFront();
+        }
+    }
+    void HideToast()
+    {
+        lblToastLeft.Text = "";
+        lblToastLeft.Visible = false;
+        lblToastRight.Text = "";
+        lblToastRight.Visible = false;
     }
 }

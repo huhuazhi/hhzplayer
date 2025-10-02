@@ -12,7 +12,7 @@
 		<FileVersion>7.1.1.4</FileVersion>
 		<AssemblyVersion>7.1.1.4</AssemblyVersion>
 		<InformationalVersion>7.1.1.4</InformationalVersion>
-		<ApplicationIcon>mpv-icon.ico</ApplicationIcon>
+		<ApplicationIcon>hhzplayer.ico</ApplicationIcon>
 		<PackageIcon>hhzplayer.PNG</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="mpv-icon.ico" />
+		<Content Include="mpv-icon512x512.ico" />
 	</ItemGroup>
 
 	<ItemGroup>

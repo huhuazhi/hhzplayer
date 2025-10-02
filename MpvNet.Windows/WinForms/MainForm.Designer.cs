@@ -58,6 +58,8 @@ partial class MainForm
         lblStatusRight = new System.Windows.Forms.Label();
         lblVolumeLeft = new System.Windows.Forms.Label();
         lblVolumeRight = new System.Windows.Forms.Label();
+        lblToastRight = new System.Windows.Forms.Label();
+        lblToastLeft = new System.Windows.Forms.Label();
         ((System.ComponentModel.ISupportInitialize)btnBackLeft).BeginInit();
         ((System.ComponentModel.ISupportInitialize)btnBackRight).BeginInit();
         SuspendLayout();
@@ -413,6 +415,32 @@ partial class MainForm
         lblVolumeRight.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
         lblVolumeRight.Visible = false;
         // 
+        // lblToastRight
+        // 
+        lblToastRight.BackColor = System.Drawing.Color.Transparent;
+        lblToastRight.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+        lblToastRight.ForeColor = System.Drawing.Color.White;
+        lblToastRight.Location = new System.Drawing.Point(0, 0);
+        lblToastRight.Name = "lblToastRight";
+        lblToastRight.Size = new System.Drawing.Size(1920, 73);
+        lblToastRight.TabIndex = 34;
+        lblToastRight.Text = "Toast";
+        lblToastRight.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+        lblToastRight.Visible = false;
+        // 
+        // lblToastLeft
+        // 
+        lblToastLeft.BackColor = System.Drawing.Color.Transparent;
+        lblToastLeft.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+        lblToastLeft.ForeColor = System.Drawing.Color.White;
+        lblToastLeft.Location = new System.Drawing.Point(0, 0);
+        lblToastLeft.Name = "lblToastLeft";
+        lblToastLeft.Size = new System.Drawing.Size(1920, 73);
+        lblToastLeft.TabIndex = 35;
+        lblToastLeft.Text = "Toast";
+        lblToastLeft.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+        lblToastLeft.Visible = false;
+        // 
         // MainForm
         // 
         AllowDrop = true;
@@ -420,6 +448,8 @@ partial class MainForm
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
         BackColor = System.Drawing.Color.Black;
         ClientSize = new System.Drawing.Size(1920, 1080);
+        Controls.Add(lblToastLeft);
+        Controls.Add(lblToastRight);
         Controls.Add(lblVolumeRight);
         Controls.Add(lblVolumeLeft);
         Controls.Add(lblStatusRight);
@@ -487,4 +517,6 @@ partial class MainForm
     private System.Windows.Forms.Label lblStatusRight;
     private System.Windows.Forms.Label lblVolumeLeft;
     private System.Windows.Forms.Label lblVolumeRight;
+    private System.Windows.Forms.Label lblToastRight;
+    private System.Windows.Forms.Label lblToastLeft;
 }

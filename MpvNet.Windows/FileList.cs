@@ -59,6 +59,9 @@ namespace MpvNet.Windows
 
         public string CurrentPath { get; private set; } = string.Empty;
 
+        [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+        private static extern int StrCmpLogicalW(string psz1, string psz2);
+
         public FileList()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint |
@@ -163,12 +166,35 @@ namespace MpvNet.Windows
 
             foreach (var ext in set) EnsureIconCached(ext);
         }
+        private sealed class ExplorerNameComparer : IComparer<FileItem>
+        {
+            public static readonly ExplorerNameComparer Instance = new();
+
+            public int Compare(FileItem? a, FileItem? b)
+            {
+                if (ReferenceEquals(a, b)) return 0;
+                if (a is null) return -1;
+                if (b is null) return 1;
+
+                // “..” 固定最上
+                bool aUp = a.IsDir && a.Name == "..";
+                bool bUp = b.IsDir && b.Name == "..";
+                if (aUp || bUp) return aUp ? (bUp ? 0 : -1) : 1;
+
+                // 文件夹在前
+                if (a.IsDir != b.IsDir) return a.IsDir ? -1 : 1;
+
+                // Windows 自然排序（大小写不敏感、数字按数值）
+                return StrCmpLogicalW(a.Name, b.Name);
+            }
+        }
 
         private void LoadFilesCore(string path)
         {
             _items.Clear();
             var diRoot = new DirectoryInfo(path);
 
+            // 上一级目录
             if (diRoot.Parent != null)
             {
                 _items.Add(new FileItem
@@ -184,19 +210,20 @@ namespace MpvNet.Windows
                 });
             }
 
+            // 子文件夹
             try
             {
-                foreach (var dir in Directory.GetDirectories(path))
+                foreach (var dir in Directory.EnumerateDirectories(path))
                 {
-                    var di = new DirectoryInfo(dir);
+                    string name = Path.GetFileName(dir);
                     _items.Add(new FileItem
                     {
-                        Name = di.Name,
+                        Name = name,
                         FullPath = dir,
                         IsDir = true,
                         Size = -1,
                         Type = "文件夹",
-                        Modified = di.LastWriteTime,
+                        Modified = DateTime.MinValue,   // 不查时间，加快速度
                         Icon = s_folderIcon,
                         IconLoaded = true
                     });
@@ -204,27 +231,40 @@ namespace MpvNet.Windows
             }
             catch { }
 
+            // 文件
             try
             {
-                foreach (var file in Directory.GetFiles(path))
+                foreach (var file in Directory.EnumerateFiles(path))
                 {
-                    var fi = new FileInfo(file);
-                    string ext = fi.Extension;
+                    string name = Path.GetFileName(file);
+                    string ext = Path.GetExtension(file);
                     if (string.IsNullOrEmpty(ext)) ext = ".";
+
+                    // 图标缓存（按扩展名）
+                    var icon = GetIconFromCache(ext);
+                    if (icon == null)
+                    {
+                        EnsureIconCached(ext);
+                        icon = GetIconFromCache(ext) ?? s_defaultFileIcon;
+                    }
+
                     _items.Add(new FileItem
                     {
-                        Name = fi.Name,
+                        Name = name,
                         FullPath = file,
                         IsDir = false,
-                        Size = fi.Length,
-                        Type = string.IsNullOrEmpty(fi.Extension) ? "文件" : fi.Extension.ToUpperInvariant(),
-                        Modified = fi.LastWriteTime,
-                        Icon = s_defaultFileIcon,
-                        IconLoaded = false
+                        Size = -1,                  // 不查大小
+                        Type = string.IsNullOrEmpty(ext) ? "文件" : ext.ToUpperInvariant(),
+                        Modified = DateTime.MinValue, // 不查修改时间
+                        Icon = icon,
+                        IconLoaded = true
                     });
                 }
             }
             catch { }
+
+            // 排序：自然顺序、文件夹优先
+            _items.Sort(ExplorerNameComparer.Instance);
         }
 
         protected override void OnPaint(PaintEventArgs e)
