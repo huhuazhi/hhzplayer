@@ -543,9 +543,7 @@ public partial class MainForm : Form
             DwmSetWindowAttribute(Handle, 20, new[] { Theme.DarkMode ? 1 : 0 }, 4);  // DWMWA_USE_IMMERSIVE_DARK_MODE = 20
     }
 
-    Rectangle prebounds;
-    private bool bPlayerinited;
-    private System.Windows.Forms.Panel overlayPanel;
+    private Panel overlayPanel;
 
     void set3DFullHalf()
     {
@@ -1415,15 +1413,15 @@ public partial class MainForm : Form
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         base.OnFormClosing(e);
-        if (Player == null || !bPlayerinited)
-            return;
-        if (Player.IsQuitNeeded)
-            Player.CommandV("quit");
+        //if (Player == null || !bPlayerinited)
+        //    return;
+        //if (Player.IsQuitNeeded)
+        //    Player.CommandV("quit");
 
-        if (!Player.ShutdownAutoResetEvent.WaitOne(10000))
-            Msg.ShowError(_("Shutdown thread failed to complete within 10 seconds."));
+        //if (!Player.ShutdownAutoResetEvent.WaitOne(10000))
+        //    Msg.ShowError(_("Shutdown thread failed to complete within 10 seconds."));
 
-        Player.Destroy();
+        //Player.Destroy();
     }
 
     protected override void OnMouseDown(MouseEventArgs e)

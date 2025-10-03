@@ -112,6 +112,8 @@ public class MainPlayer : MpvClient
         SetPropertyString("idle", "yes");
         SetPropertyString("screenshot-directory", "~~desktop/");
         //SetPropertyString("osd-playing-msg", "${media-title}");
+        SetPropertyString("osd-playing-msg", "");
+
         SetPropertyString("keepaspect-window", "no");
         SetPropertyString("config-dir", ConfigFolder);
         SetPropertyString("config", "yes");
