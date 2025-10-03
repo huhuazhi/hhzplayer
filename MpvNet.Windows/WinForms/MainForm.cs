@@ -2,8 +2,6 @@
 using CommunityToolkit.Mvvm.Messaging;
 using MpvNet.MVVM;
 using MpvNet.Windows.UI;
-using MpvNet.Windows.WPF;
-using MpvNet.Windows.WPF.MsgBox;
 using MyApp;
 using System.Drawing;
 using System.Globalization;
@@ -14,7 +12,6 @@ using static MpvNet.AppSettings;
 
 using static MpvNet.Windows.Native.WinApi;
 using static MpvNet.Windows.Help.WinApiHelp;
-using System.Windows.Forms.Design;
 
 namespace MpvNet.Windows.WinForms;
 
@@ -343,6 +340,8 @@ public partial class MainForm : Form
             {
                 this.WindowState = FormWindowState.Normal;
                 this.FormBorderStyle = FormBorderStyle.Sizable;
+                Bounds = new Rectangle(App.Settings.WindowLocation.X, App.Settings.WindowLocation.Y,
+                                        App.Settings.WindowSize.Width, App.Settings.WindowSize.Height);
             }
             else
             {
@@ -626,29 +625,42 @@ public partial class MainForm : Form
                     FormBorderStyle = FormBorderStyle.Sizable;
                     break;
                 case enumFormBorderStyle.None:
-                    FormBorderStyle = FormBorderStyle.None;
+                    //if (FormBorderStyle != FormBorderStyle.None)
+                    //FormBorderStyle = FormBorderStyle.None;
                     break;
             }
             switch (App.Settings.WindowsStatus)
             {
                 case enumWindowsStatus.Normal:
                     WindowState = FormWindowState.Normal;
+                    Bounds = new Rectangle(App.Settings.WindowLocation.X, App.Settings.WindowLocation.Y,
+                       App.Settings.WindowSize.Width, App.Settings.WindowSize.Height);
                     break;
                 case enumWindowsStatus.Maximized:
-                    WindowState = FormWindowState.Maximized;
+                    if (App.Settings.FormBorderStyle != enumFormBorderStyle.None)
+                    {
+                        appScreen = Screen.FromPoint(new Point(App.Settings.WindowLocation.X + App.Settings.WindowSize.Width / 2, App.Settings.WindowLocation.Y + App.Settings.WindowSize.Height / 2));
+                        Bounds = appScreen.Bounds;
+                    }
+                    else
+                    {
+                        Bounds = new Rectangle(App.Settings.WindowLocation.X, App.Settings.WindowLocation.Y,
+                       App.Settings.WindowSize.Width, App.Settings.WindowSize.Height);
+                        FormBorderStyle = FormBorderStyle.None;
+                        WindowState = FormWindowState.Maximized;
+                    }
                     break;
                 case enumWindowsStatus.Minimized:
                     WindowState = FormWindowState.Minimized;
                     break;
             }
-            Bounds = new Rectangle(App.Settings.WindowLocation.X, App.Settings.WindowLocation.Y,
-                                   App.Settings.WindowSize.Width, App.Settings.WindowSize.Height);
             //v3DSubtitleMode.Sub2D(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
             _isReturn2D = false;
             ShowVideoOSD();
             //HideVideoUI();
         }
     }
+    Screen appScreen;
 
     private enumFormBorderStyle GetAppFormBorderStyle(FormBorderStyle formBorderStyle)
     {
@@ -729,7 +741,8 @@ public partial class MainForm : Form
     {
         if (!App.Settings.Enable3DMode)
         {
-            if (WindowState != FormWindowState.Minimized && WasShown && !_isReturn2D)
+            if (WindowState != FormWindowState.Minimized && WindowState != FormWindowState.Maximized 
+                && FormBorderStyle != FormBorderStyle.None && WasShown && !_isReturn2D)
             {
                 if (WindowState != FormWindowState.Maximized)
                 {
@@ -1297,6 +1310,7 @@ public partial class MainForm : Form
                 if (bPressPageDownUp)
                 {
                     if (!Player.GetPropertyBool("pause")) Player.Command("cycle pause");
+                    bPressPageDownUp = false;
                 }
             }
         });
