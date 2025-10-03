@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -16,10 +15,10 @@ namespace MpvNet.Windows
         private int _rowHeight = 40;
         private int _headerHeight = 60;
         private readonly string[] _columns = { "名称", "大小", "类型", "修改日期" };
-        private float[] _colWidths = { 0.50f, 0.15f, 0.15f, 0.20f }; // 4 列比例
+        private float[] _colWidths = { 0.50f, 0.15f, 0.15f, 0.20f };
 
         private int _hoverIndex = -1;
-        private int _selectedIndex = -1; // 预留（目前未使用）
+        private int _selectedIndex = -1;
 
         private int _iconSize = 32;
 
@@ -64,11 +63,6 @@ namespace MpvNet.Windows
         [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
         private static extern int StrCmpLogicalW(string psz1, string psz2);
 
-        // 在 FileList 类里加字段：
-        private Bitmap _backBuffer;
-        private Graphics _backG;
-        private bool _backBufferDirty = true;
-
         public FileList()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint |
@@ -97,9 +91,8 @@ namespace MpvNet.Windows
             set
             {
                 _rowHeight = Math.Max(value, _iconSize + 8);
-                InvalidateAllTextBitmaps(); // 行高变化 → 失效文本位图
+                InvalidateAllTextBitmaps();
                 Invalidate();
-                Update();
             }
         }
 
@@ -116,8 +109,7 @@ namespace MpvNet.Windows
             {
                 _iconSize = Math.Max(16, Math.Min(64, value));
                 if (_rowHeight < _iconSize + 8) _rowHeight = _iconSize + 8;
-                Invalidate(); // 图标大小变只需重绘
-                Update();
+                Invalidate();
             }
         }
 
@@ -129,9 +121,8 @@ namespace MpvNet.Windows
                 if (value != null && value.Length == 4)
                 {
                     _colWidths = value;
-                    InvalidateAllTextBitmaps(); // 列宽变化 → 失效文本位图
+                    InvalidateAllTextBitmaps();
                     Invalidate();
-                    Update();
                 }
             }
         }
@@ -146,8 +137,8 @@ namespace MpvNet.Windows
                 {
                     _scrollOffsetY = clamped;
                     ViewportOffsetChanged?.Invoke(this, new ViewportOffsetChangedEventArgs(_scrollOffsetY));
-                    Invalidate(); // ⭐ 不要整帧重画 BackBuffer，只刷需要的
-                    Update();
+                    Invalidate();
+                    Update(); // 同步刷新以提升双页 hover 同步
                 }
             }
         }
@@ -159,7 +150,6 @@ namespace MpvNet.Windows
 
             PrewarmIconsForDirectory(path);
 
-            // 清理旧位图缓存，避免泄漏
             DisposeAllTextBitmaps();
             _items.Clear();
 
@@ -169,7 +159,7 @@ namespace MpvNet.Windows
             BuildPathSegments(path);
             DirectoryChanged?.Invoke(this, CurrentPath);
             Invalidate();
-            Update();
+            Update(); // 同步刷新
         }
 
         private static string NormalizeRootPath(string path)
@@ -387,7 +377,6 @@ namespace MpvNet.Windows
         }
 
         // —— 文本位图缓存：名称 / 大小 / 类型 / 日期 —— 
-
         private static readonly TextFormatFlags TextFlags =
             TextFormatFlags.Left |
             TextFormatFlags.VerticalCenter |
@@ -512,38 +501,126 @@ namespace MpvNet.Windows
             return (idx >= 0 && idx < _items.Count) ? idx : -1;
         }
 
+        // 鼠标是否命中文件图标/名称区域
+        private bool HitFileContent(int index, Point pt)
+        {
+            if (index < 0 || index >= _items.Count) return false;
+
+            int colW0 = (int)(Width * _colWidths[0]);
+            int x0 = 0;
+            int rowTop = _pathBarHeight + _headerHeight + index * _rowHeight - _scrollOffsetY;
+
+            // 图标矩形
+            int iconX = x0 + 8;
+            var iconRect = new Rectangle(iconX, rowTop + (_rowHeight - _iconSize) / 2, _iconSize, _iconSize);
+
+            // 名称矩形
+            int nameLeft = x0 + 8 + _iconSize + 8;
+            var nameRect = new Rectangle(nameLeft, rowTop, colW0 - (nameLeft - x0) - 8, _rowHeight);
+
+            return iconRect.Contains(pt) || nameRect.Contains(pt);
+        }
+
+        // 面包屑命中（仅文字）
+        private bool HitBreadcrumb(Point pt, out string fullPath)
+        {
+            foreach (var seg in _pathSegments)
+            {
+                if (seg.Bounds.Contains(pt))
+                {
+                    fullPath = seg.FullPath;
+                    return true;
+                }
+            }
+            fullPath = null;
+            return false;
+        }
+
+        // —— 输入 —— 
+        private Point _mouseDownPos;
+        private int _mouseDownIndex = -1;
+        private const int ClickMoveTolerance = 5;
+
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             base.OnMouseWheel(e);
             ScrollOffset += -e.Delta;
         }
 
-        private Point _mouseDownPos;
-        private int _mouseDownIndex = -1;
-        private const int ClickMoveTolerance = 5;
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+
+            // 指针样式：仅在可点击区域显示 Hand
+            string dummy;
+            if (HitBreadcrumb(e.Location, out dummy))
+            {
+                Cursor = Cursors.Hand;
+            }
+            else
+            {
+                int idx = HitTestIndex(e.Y);
+                if (HitFileContent(idx, e.Location))
+                    Cursor = Cursors.Hand;
+                else
+                    Cursor = _dragging ? Cursors.Default : Cursors.Default;
+            }
+
+            if (_dragging)
+            {
+                int dy = e.Y - _lastMouseY;
+                _lastMouseY = e.Y;
+                ScrollOffset -= dy;
+            }
+            else
+            {
+                int idx = HitTestIndex(e.Y);
+                if (idx != _hoverIndex) SetHotIndex(idx);
+            }
+        }
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
 
-            // 面包屑点击
-            foreach (var seg in _pathSegments)
-            {
-                if (seg.Bounds.Contains(e.Location))
-                {
-                    NavigateTo(seg.FullPath);
-                    return;
-                }
-            }
-
             if (e.Button == MouseButtons.Left)
             {
+                // 面包屑
+                if (HitBreadcrumb(e.Location, out var path))
+                {
+                    NavigateTo(path);
+                    return;
+                }
+
                 _dragging = true;
                 _lastMouseY = e.Y;
                 _mouseDownPos = e.Location;
                 _mouseDownIndex = HitTestIndex(e.Y);
-                Cursor = Cursors.Hand;
+                // 不强行改光标，保持 hover 的语义
             }
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+            if (e.Button == MouseButtons.Left)
+            {
+                _dragging = false;
+
+                int upIndex = HitTestIndex(e.Y);
+                bool isClick =
+                    _mouseDownIndex >= 0 &&
+                    upIndex == _mouseDownIndex &&
+                    Math.Abs(e.X - _mouseDownPos.X) <= ClickMoveTolerance &&
+                    Math.Abs(e.Y - _mouseDownPos.Y) <= ClickMoveTolerance;
+
+                if (isClick && HitFileContent(upIndex, e.Location))
+                {
+                    OpenItem(upIndex);
+                }
+            }
+
+            _mouseDownIndex = -1;
         }
 
         private void OpenItem(int index)
@@ -561,65 +638,6 @@ namespace MpvNet.Windows
             }
         }
 
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-            base.OnMouseMove(e);
-
-            // 面包屑 hover
-            bool overBreadcrumb = false;
-            foreach (var seg in _pathSegments)
-            {
-                if (seg.Bounds.Contains(e.Location))
-                {
-                    overBreadcrumb = true;
-                    break;
-                }
-            }
-            if (overBreadcrumb)
-            {
-                Cursor = Cursors.Hand;
-                return;
-            }
-            else if (!_dragging)
-            {
-                Cursor = Cursors.Default;
-            }
-
-            if (_dragging)
-            {
-                int dy = e.Y - _lastMouseY;
-                _lastMouseY = e.Y;
-                ScrollOffset -= dy;
-            }
-            else
-            {
-                int idx = HitTestIndex(e.Y);
-                if (idx != _hoverIndex) SetHotIndex(idx);
-            }
-        }
-
-        protected override void OnMouseUp(MouseEventArgs e)
-        {
-            base.OnMouseUp(e);
-            if (e.Button == MouseButtons.Left)
-            {
-                _dragging = false;
-                Cursor = Cursors.Default;
-
-                int upIndex = HitTestIndex(e.Y);
-                bool isClick =
-                    _mouseDownIndex >= 0 &&
-                    upIndex == _mouseDownIndex &&
-                    Math.Abs(e.X - _mouseDownPos.X) <= ClickMoveTolerance &&
-                    Math.Abs(e.Y - _mouseDownPos.Y) <= ClickMoveTolerance;
-
-                if (isClick)
-                    OpenItem(upIndex);
-            }
-
-            _mouseDownIndex = -1;
-        }
-
         public void SetHotIndex(int index, bool raiseEvent = true)
         {
             if (_hoverIndex == index) return;
@@ -630,7 +648,7 @@ namespace MpvNet.Windows
 
             if (old >= 0) Invalidate(GetRowRect(old));
             if (_hoverIndex >= 0) Invalidate(GetRowRect(_hoverIndex));
-            Update();
+            Update(); // 立即刷新，减少两侧不同步感
         }
 
         private Rectangle GetRowRect(int index)
@@ -760,7 +778,7 @@ namespace MpvNet.Windows
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
-            InvalidateAllTextBitmaps(); // 宽高变化需要重建文本位图
+            InvalidateAllTextBitmaps();
         }
 
         protected override void Dispose(bool disposing)

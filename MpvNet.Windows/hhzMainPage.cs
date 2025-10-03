@@ -296,7 +296,6 @@ namespace MpvNet.Windows
             _diskListRight.Invalidate();
             _fileListLeft.Invalidate();
             _fileListRight.Invalidate();
-            Update();
         }
 
         private void UpdateLogoPosition()
