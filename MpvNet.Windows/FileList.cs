@@ -64,6 +64,11 @@ namespace MpvNet.Windows
         [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
         private static extern int StrCmpLogicalW(string psz1, string psz2);
 
+        // 在 FileList 类里加字段：
+        private Bitmap _backBuffer;
+        private Graphics _backG;
+        private bool _backBufferDirty = true;
+
         public FileList()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint |
@@ -94,13 +99,14 @@ namespace MpvNet.Windows
                 _rowHeight = Math.Max(value, _iconSize + 8);
                 InvalidateAllTextBitmaps(); // 行高变化 → 失效文本位图
                 Invalidate();
+                Update();
             }
         }
 
         public int HeaderHeight
         {
             get => _headerHeight;
-            set { _headerHeight = Math.Max(20, value); Invalidate(); }
+            set { _headerHeight = Math.Max(20, value); Invalidate(); Update(); }
         }
 
         public int IconSize
@@ -111,6 +117,7 @@ namespace MpvNet.Windows
                 _iconSize = Math.Max(16, Math.Min(64, value));
                 if (_rowHeight < _iconSize + 8) _rowHeight = _iconSize + 8;
                 Invalidate(); // 图标大小变只需重绘
+                Update();
             }
         }
 
@@ -124,6 +131,7 @@ namespace MpvNet.Windows
                     _colWidths = value;
                     InvalidateAllTextBitmaps(); // 列宽变化 → 失效文本位图
                     Invalidate();
+                    Update();
                 }
             }
         }
@@ -138,7 +146,8 @@ namespace MpvNet.Windows
                 {
                     _scrollOffsetY = clamped;
                     ViewportOffsetChanged?.Invoke(this, new ViewportOffsetChangedEventArgs(_scrollOffsetY));
-                    Invalidate();
+                    Invalidate(); // ⭐ 不要整帧重画 BackBuffer，只刷需要的
+                    Update();
                 }
             }
         }
@@ -160,6 +169,7 @@ namespace MpvNet.Windows
             BuildPathSegments(path);
             DirectoryChanged?.Invoke(this, CurrentPath);
             Invalidate();
+            Update();
         }
 
         private static string NormalizeRootPath(string path)
@@ -620,6 +630,7 @@ namespace MpvNet.Windows
 
             if (old >= 0) Invalidate(GetRowRect(old));
             if (_hoverIndex >= 0) Invalidate(GetRowRect(_hoverIndex));
+            Update();
         }
 
         private Rectangle GetRowRect(int index)

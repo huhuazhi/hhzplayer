@@ -23,7 +23,7 @@ namespace MpvNet.Windows
         public int HeaderHeight
         {
             get => _headerHeight;
-            set { _headerHeight = Math.Max(20, value); Invalidate(); ClampScroll(); }
+            set { _headerHeight = Math.Max(20, value); Invalidate(); ClampScroll(); Update(); }
         }
 
         public Color HeaderBackColor { get; set; } = Color.FromArgb(64, 80, 140, 255); // 半透明蓝
@@ -33,7 +33,7 @@ namespace MpvNet.Windows
         public int CornerRadiusTop
         {
             get => _cornerRadiusTop;
-            set { _cornerRadiusTop = Math.Max(0, value); UpdateRegion(); Invalidate(); }
+            set { _cornerRadiusTop = Math.Max(0, value); UpdateRegion(); Invalidate(); Update(); }
         }
         private int _cornerRadiusTop = 10;
 
@@ -41,7 +41,7 @@ namespace MpvNet.Windows
         public int CornerRadiusBottom
         {
             get => _cornerRadiusBottom;
-            set { _cornerRadiusBottom = Math.Max(0, value); UpdateRegion(); Invalidate(); }
+            set { _cornerRadiusBottom = Math.Max(0, value); UpdateRegion(); Invalidate(); Update(); }
         }
         private int _cornerRadiusBottom = 10;
 
@@ -50,14 +50,14 @@ namespace MpvNet.Windows
         public int RowHeight
         {
             get => _rowHeight;
-            set { _rowHeight = Math.Max(24, value); RecalcContent(); Invalidate(); }
+            set { _rowHeight = Math.Max(24, value); RecalcContent(); Invalidate(); Update(); }
         }
 
         private int _rowSpacing = 20;
         public int RowSpacing
         {
             get => _rowSpacing;
-            set { _rowSpacing = Math.Max(0, value); RecalcContent(); Invalidate(); }
+            set { _rowSpacing = Math.Max(0, value); RecalcContent(); Invalidate(); Update(); }
         }
 
         public bool ShowNotReady { get; set; } = true;
@@ -100,6 +100,7 @@ namespace MpvNet.Windows
                 if (_scrollY != old)
                 {
                     Invalidate();
+                    Update();
                     ViewportOffsetChanged?.Invoke(this, new ViewportOffsetChangedEventArgs(_scrollY));
                 }
             }
@@ -138,6 +139,7 @@ namespace MpvNet.Windows
             {
                 _hotIndex = index;
                 Invalidate();
+                Update();
                 if (raiseEvent)
                     HoverChanged?.Invoke(this, new HoverChangedEventArgs(_hotIndex));
             }
@@ -435,6 +437,7 @@ namespace MpvNet.Windows
                 _selectedIndex = index;
                 if (ensureVisible) EnsureIndexVisible(index);
                 Invalidate();
+                Update();
                 if (raiseEvent)
                     SelectionChanged?.Invoke(this, new SelectionChangedEventArgs(index, _items[index].Root));
             }
@@ -461,6 +464,7 @@ namespace MpvNet.Windows
             }
             RecalcContent();
             Invalidate();
+            Update();
         }
 
         private void RecalcContent()
@@ -476,6 +480,7 @@ namespace MpvNet.Windows
             UpdateRegion();
             ClampScroll();
             Invalidate();
+            Update();
         }
 
         private void UpdateRegion()

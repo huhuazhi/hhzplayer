@@ -41,6 +41,8 @@ namespace MpvNet.Windows
         public int vHeight;
         public delegate void FileOpenedEventHandler(HHZMainPage sender, string[] paths);
         public event FileOpenedEventHandler FileOpened;
+        private int _sharedHoverIndex = -1;
+
         public HHZMainPage()
         {
             InitializeComponent();
@@ -156,25 +158,25 @@ namespace MpvNet.Windows
                 finally { _syncingRightFileScroll = false; }
             };
 
+
             _fileListLeft.HoverChanged += (_, e) =>
             {
-                if (_syncingLeftFileHover) return;
-                if (_fileListRight.HotIndex != e.Index) // ⭐ 避免重复无效刷新
-                {
-                    try { _syncingLeftFileHover = true; _fileListRight.SetHotIndex(e.Index, raiseEvent: false); }
-                    finally { _syncingLeftFileHover = false; }
-                }
+                if (_sharedHoverIndex == e.Index) return;
+                _sharedHoverIndex = e.Index;
+                _fileListLeft.SetHotIndex(e.Index, raiseEvent: false);                
+                _fileListRight.SetHotIndex(e.Index, raiseEvent: false);                 // ⭐ 立刻处理 WM_PAINT
+                //_fileListLeft.Update(); // ⭐ 立刻处理 WM_PAINT
+                //_fileListRight.Update();
             };
 
             _fileListRight.HoverChanged += (_, e) =>
             {
-                if (_syncingRightFileHover) return;
-                if (_fileListLeft.HotIndex != e.Index) // ⭐ 避免重复无效刷新
-                {
-                    try { _syncingRightFileHover = true; _fileListLeft.SetHotIndex(e.Index, raiseEvent: false); }
-                    finally { _syncingRightFileHover = false; }
-                }
+                if (_sharedHoverIndex == e.Index) return;
+                _sharedHoverIndex = e.Index;
+                _fileListLeft.SetHotIndex(e.Index, raiseEvent: false);
+                _fileListRight.SetHotIndex(e.Index, raiseEvent: false);
             };
+
 
 
             // ③ DiskSelected：两边同时导航时，也用同一个闸门，避免触发对方的 DirectoryChanged 再回调自己
@@ -294,6 +296,7 @@ namespace MpvNet.Windows
             _diskListRight.Invalidate();
             _fileListLeft.Invalidate();
             _fileListRight.Invalidate();
+            Update();
         }
 
         private void UpdateLogoPosition()
