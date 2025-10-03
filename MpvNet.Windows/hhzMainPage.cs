@@ -326,11 +326,13 @@ namespace MpvNet.Windows
                 int textOffsetX = _hintLabelLeft.Left - (offsetX + margin);
                 _hintLabelRight.Location = new Point(halfWidth + offsetX + margin + textOffsetX - shift,
                                                      _logoPicRight.Top + (_logoPicRight.Height - _hintLabelRight.Height) / 2);
+                _logoPicRight.Visible = true;
             }
             else
             {
                 _logoPicLeft.Location = new Point(offsetX + margin, margin);
                 _hintLabelLeft.Location = new Point(_logoPicLeft.Right + 5, _logoPicLeft.Top + (_logoPicLeft.Height - _hintLabelLeft.Height) / 2);
+                _logoPicRight.Visible = false;
             }
         }
 

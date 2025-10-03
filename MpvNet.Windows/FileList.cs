@@ -801,7 +801,7 @@ namespace MpvNet.Windows
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
-            InvalidateAllTextBitmaps();
+            InvalidateAllTextBitmaps(); // 宽高变化需要重建文本位图
         }
 
         protected override void Dispose(bool disposing)
