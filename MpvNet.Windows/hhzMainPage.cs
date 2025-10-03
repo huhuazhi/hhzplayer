@@ -57,7 +57,7 @@ namespace MpvNet.Windows
             this.Dock = DockStyle.Fill;
 
             // 背景图
-            string bgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background1.jpg");
+            string bgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "background.jpg");
             if (File.Exists(bgPath)) bg = new Bitmap(bgPath);
 
             // UI
