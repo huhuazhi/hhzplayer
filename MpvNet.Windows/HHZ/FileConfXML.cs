@@ -40,8 +40,8 @@ namespace MyApp
             set { lastSubtitleTrackId = value; if (!SettingsManager.IsLoading) SettingsManager.Save(); }
         }
 
-        private string renderText = "3D渲染器";
-        [DefaultValue("3D渲染器")]
+        private string renderText = "2D渲染器";
+        [DefaultValue("2D渲染器")]
         public string RenderText
         {
             get => renderText;
@@ -70,7 +70,7 @@ namespace MyApp
             LastVideoTrackId == -1 &&
             LastAudioTrackId == -1 &&
             LastSubtitleTrackId == -1 &&
-            RenderText == "3D渲染器" &&
+            RenderText == "2D渲染器" &&
             VideoAspestW == "0" &&
             VideoAspestH == "0";
 

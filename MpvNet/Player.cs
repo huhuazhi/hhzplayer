@@ -101,10 +101,18 @@ public class MainPlayer : MpvClient
         }
 
         //SetPropertyInt("osd-duration", 2000);
-
         //SetPropertyBool("input-default-bindings", true);
         //SetPropertyBool("input-builtin-bindings", false);
         //SetPropertyBool("input-media-keys", true);
+        SetPropertyString("hwdec", "auto");
+        SetPropertyString("hwdec-interop", "all");
+        SetPropertyInt("hwdec-extra-frames", 4);
+        SetPropertyInt("video-sync", 60);
+        SetPropertyString("interpolation", "no");
+        SetPropertyInt("swapchain-depth", 2);
+        SetPropertyString("profile", "gpu-hq");
+        SetPropertyString("sub-font", "Microsoft YaHei");
+
         SetPropertyDouble("volume", App.Settings.Volume);
         SetPropertyString("cursor-autohide", "no");
         SetPropertyString("autocreate-playlist", "filter");
@@ -128,6 +136,13 @@ public class MainPlayer : MpvClient
         SetPropertyDouble("saturation", 30);
         //SetPropertyDouble("cache-secs", 30);
         SetPropertyDouble("demuxer-readahead-secs", 60);
+
+        SetPropertyString("autocreate-playlist", "same");
+        SetPropertyString("sub-stereo-duplicate", "no");
+        SetPropertyString("sub-stereo-layout", "sbs");
+        SetPropertyDouble("sub-stereo-offset-px", 0);
+        SetPropertyString("alang", "cmn,yue,zh,chi,zho");
+        SetPropertyString("slang", "cmn,yue,zh,chi,zho");        
 
         ////特外
         SetPropertyString("sub-stereo-duplicate", "yes");

@@ -304,7 +304,7 @@ public partial class MainForm : Form
             case "2D渲染器":
                 btnRenderLeft.Text = "2D渲染器";
                 Player.SetPropertyString("vo", "gpu-next");
-                Player.SetPropertyString("gpu-api", "d3d11");
+                Player.SetPropertyString("gpu-api", "auto");
                 break;
             case "3D渲染器":
                 btnRenderLeft.Text = "3D渲染器";
@@ -635,6 +635,7 @@ public partial class MainForm : Form
             {
                 case enumWindowsStatus.Normal:
                     WindowState = FormWindowState.Normal;
+                    isDefault();
                     Bounds = new Rectangle(App.Settings.WindowLocation.X, App.Settings.WindowLocation.Y,
                        App.Settings.WindowSize.Width, App.Settings.WindowSize.Height);
                     break;
@@ -662,6 +663,18 @@ public partial class MainForm : Form
             //HideVideoUI();
         }
     }
+
+    private void isDefault()
+    {
+        if (App.Settings.WindowLocation.X == 0 && App.Settings.WindowLocation.Y == 0 && App.Settings.WindowSize.Width == 0 && App.Settings.WindowSize.Height == 0)
+        {
+            App.Settings.WindowLocation.X = (int)(Screen.FromControl(this).Bounds.Width - Screen.FromControl(this).Bounds.Width * 0.8)/2;
+            App.Settings.WindowLocation.Y = (int)(Screen.FromControl(this).Bounds.Height - Screen.FromControl(this).Bounds.Height * 0.8) / 2;
+            App.Settings.WindowSize.Width = (int)(Screen.FromControl(this).Bounds.Width * 0.8);
+            App.Settings.WindowSize.Height = (int)(Screen.FromControl(this).Bounds.Height * 0.8);
+        }
+    }
+
     Screen appScreen;
 
     private enumFormBorderStyle GetAppFormBorderStyle(FormBorderStyle formBorderStyle)
