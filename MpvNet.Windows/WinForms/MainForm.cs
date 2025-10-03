@@ -49,7 +49,7 @@ public partial class MainForm : Form
 
         //鼠标单击和双击区分用的Timer
         clickTimer = new Timer();
-        clickTimer.Interval = 200; //给一个双击比较短的固定值200ms，体验会好很多，系统默认为500ms
+        clickTimer.Interval = 300; //给一个双击比较短的固定值300ms，体验会好很多,避免有用户吧系统双击事件调的过长，导致单击等待太久，系统默认为500ms
                              //SystemInformation.DoubleClickTime; // 系统双击时间
         clickTimer.Tick += ClickTimer_Tick;
 
