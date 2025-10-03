@@ -183,7 +183,7 @@ public partial class MainForm : Form
         }
 
         Controls.Add(hhzMainPage);
-        overlayPanel = new System.Windows.Forms.Panel
+        overlayPanel = new Panel
         {
             Parent = this,
             Dock = DockStyle.Fill,
@@ -1229,7 +1229,7 @@ public partial class MainForm : Form
             {
                 string currfile = Player.GetPropertyString("filename");
                 ShowToast(currfile, 2000);
-                lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
+                lblDurationLeft.Text = $"{TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
                 lblDurationRight.Text = lblDurationLeft.Text;
                 BuildAllTrackMenus();
 
@@ -1446,7 +1446,11 @@ public partial class MainForm : Form
     }
 
     protected override void OnMove(EventArgs e)
-    {        
+    {
+        if (!App.Settings.Enable3DMode)
+        {
+            SaveWindowProperties();
+        }
         base.OnMove(e);
     }
 

@@ -480,7 +480,7 @@ partial class MainForm
         KeyPreview = true;
         Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
         Name = "MainForm";
-        StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+        StartPosition = System.Windows.Forms.FormStartPosition.Manual;
         FormClosing += MainForm_FormClosing;
         KeyDown += MainForm_KeyDown;
         ((System.ComponentModel.ISupportInitialize)btnBackLeft).EndInit();
