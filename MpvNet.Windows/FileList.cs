@@ -346,26 +346,26 @@ namespace MpvNet.Windows
                     g.DrawImage(item.Icon, new Rectangle(iconX, iconY, _iconSize, _iconSize));
                 }
 
-                // —— 名称列（缓存位图）——
+                // —— 名称列（基于 rowTop） ——
                 int nameLeft = x0 + 8 + _iconSize + 8;
-                var nameRect = new Rectangle(nameLeft, visRow.Top, colW0 - (nameLeft - x0) - 8, visRow.Height);
+                var nameRect = new Rectangle(nameLeft, rowTop, colW0 - (nameLeft - x0) - 8, _rowHeight);
                 EnsureNameBmp(item, nameRect.Width, nameRect.Height);
                 if (item.NameBmp != null) g.DrawImageUnscaled(item.NameBmp, nameRect.Left, nameRect.Top);
 
-                // —— 大小列（缓存位图）——
+                // —— 大小列（基于 rowTop） ——
                 string sizeText = item.Size < 0 ? "" : FormatSize(item.Size);
-                var sizeRect = new Rectangle(x1 + 6, visRow.Top, colW1 - 12, visRow.Height);
+                var sizeRect = new Rectangle(x1 + 6, rowTop, colW1 - 12, _rowHeight);
                 EnsureSizeBmp(item, sizeText, sizeRect.Width, sizeRect.Height);
                 if (item.SizeBmp != null) g.DrawImageUnscaled(item.SizeBmp, sizeRect.Left, sizeRect.Top);
 
-                // —— 类型列（缓存位图）——
-                var typeRect = new Rectangle(x2 + 6, visRow.Top, colW2 - 12, visRow.Height);
+                // —— 类型列（基于 rowTop） ——
+                var typeRect = new Rectangle(x2 + 6, rowTop, colW2 - 12, _rowHeight);
                 EnsureTypeBmp(item, item.Type, typeRect.Width, typeRect.Height);
                 if (item.TypeBmp != null) g.DrawImageUnscaled(item.TypeBmp, typeRect.Left, typeRect.Top);
 
-                // —— 日期列（缓存位图）——
+                // —— 日期列（基于 rowTop） ——
                 string dateText = item.Modified == DateTime.MinValue ? "" : item.Modified.ToString("yyyy-MM-dd HH:mm");
-                var dateRect = new Rectangle(x3 + 6, visRow.Top, colW3 - 12, visRow.Height);
+                var dateRect = new Rectangle(x3 + 6, rowTop, colW3 - 12, _rowHeight);
                 EnsureDateBmp(item, dateText, dateRect.Width, dateRect.Height);
                 if (item.DateBmp != null) g.DrawImageUnscaled(item.DateBmp, dateRect.Left, dateRect.Top);
             }
@@ -430,6 +430,7 @@ namespace MpvNet.Windows
         }
 
         // —— 面包屑 —— 
+        // —— 面包屑 —— 
         private void DrawPathBar(Graphics g, ref int y)
         {
             _pathSegments.Clear();
@@ -444,6 +445,8 @@ namespace MpvNet.Windows
             bool hasDrive = parts.Length > 0 && parts[0].EndsWith(":");
 
             int x = 8;
+            int baseY = y; // ⭐固定在顶部，不受滚动影响
+
             for (int i = 0; i < parts.Length; i++)
             {
                 string segLabel = parts[i];
@@ -471,7 +474,7 @@ namespace MpvNet.Windows
                 }
 
                 Size textSize = TextRenderer.MeasureText(segLabel, _pathFont);
-                var rect = new Rectangle(x, y + 5, textSize.Width, _pathBarHeight - 10);
+                var rect = new Rectangle(x, baseY + 5, textSize.Width, _pathBarHeight - 10);
 
                 TextRenderer.DrawText(g, segLabel, _pathFont, rect, Color.LightBlue,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
@@ -482,7 +485,7 @@ namespace MpvNet.Windows
                 if (i < parts.Length - 1)
                 {
                     TextRenderer.DrawText(g, ">", _itemFont,
-                        new Rectangle(x, y, 20, _pathBarHeight),
+                        new Rectangle(x, baseY, 20, _pathBarHeight),
                         Color.White,
                         TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
                     x += 40;
@@ -551,32 +554,52 @@ namespace MpvNet.Windows
         {
             base.OnMouseMove(e);
 
-            // 指针样式：仅在可点击区域显示 Hand
-            string dummy;
-            if (HitBreadcrumb(e.Location, out dummy))
-            {
-                Cursor = Cursors.Hand;
-            }
-            else
-            {
-                int idx = HitTestIndex(e.Y);
-                if (HitFileContent(idx, e.Location))
-                    Cursor = Cursors.Hand;
-                else
-                    Cursor = _dragging ? Cursors.Default : Cursors.Default;
-            }
-
+            // 拖拽滚动优先
             if (_dragging)
             {
                 int dy = e.Y - _lastMouseY;
                 _lastMouseY = e.Y;
                 ScrollOffset -= dy;
+                Cursor = Cursors.Hand;   // ⭐ 拖动时保持小手
+                return;
             }
-            else
+
+            // ① 检测面包屑
+            foreach (var seg in _pathSegments)
             {
-                int idx = HitTestIndex(e.Y);
-                if (idx != _hoverIndex) SetHotIndex(idx);
+                if (seg.Bounds.Contains(e.Location))
+                {
+                    Cursor = Cursors.Hand;
+                    return;
+                }
             }
+
+            // ② 文件区 hover
+            int idx = HitTestIndex(e.Y);
+            if (idx != _hoverIndex) SetHotIndex(idx);
+
+            if (idx >= 0 && idx < _items.Count)
+            {
+                int colW0 = (int)(Width * _colWidths[0]);
+                int x0 = 0;
+                int rowTop = _pathBarHeight + _headerHeight + idx * _rowHeight - _scrollOffsetY;
+
+                // 图标矩形
+                var iconRect = new Rectangle(x0 + 8, rowTop + (_rowHeight - _iconSize) / 2, _iconSize, _iconSize);
+
+                // 名称矩形
+                int nameLeft = x0 + 8 + _iconSize + 8;
+                var nameRect = new Rectangle(nameLeft, rowTop, colW0 - (nameLeft - x0) - 8, _rowHeight);
+
+                if (iconRect.Contains(e.Location) || nameRect.Contains(e.Location))
+                {
+                    Cursor = Cursors.Hand; // ⭐ 文件名/图标上是小手
+                    return;
+                }
+            }
+
+            // ③ 其他情况 → 默认箭头
+            Cursor = Cursors.Default;
         }
 
         protected override void OnMouseDown(MouseEventArgs e)

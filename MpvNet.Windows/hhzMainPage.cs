@@ -199,7 +199,23 @@ namespace MpvNet.Windows
             _fileListRight.FileOpened += _fileListLeft_FileOpened;
 
             // 布局
-            this.Resize += (_, __) => { UpdateLogoPosition(); UpdateBoundsLayout(); };
+            this.Resize += (_, __) =>
+            {
+                UpdateLogoPosition();
+                UpdateBoundsLayout(); // 先完成可见性/Bounds 变更
+
+                // 仅在 3D 模式且右侧可见时，同步滚动位置
+                if (App.Settings.Enable3DMode && _fileListRight.Visible)
+                {
+                    // 先让右侧绘一帧，内部会计算 _maxScroll
+                    _fileListRight.Invalidate();
+                    _fileListRight.Update();
+
+                    // 再拷贝左侧的滚动值（这时不会被 0 clamp）
+                    _fileListRight.ScrollOffset = _fileListLeft.ScrollOffset;
+                }
+            };
+
             UpdateLogoPosition();
             UpdateBoundsLayout();
 
@@ -233,44 +249,34 @@ namespace MpvNet.Windows
             int w = this.ClientSize.Width, h = this.ClientSize.Height;
             if (w <= 0 || h <= 0) return;
 
-            //文件列表右部、底部留白
-            int bottomGap = (int)Math.Round(h * _fileListBottomGapRatio);
+            bool is3D = App.Settings.Enable3DMode;
 
-            if (App.Settings.Enable3DMode)
+            if (is3D)
             {
-                var leftHost = new Rectangle(0/*5*/, 0, w / 2, h);
-                var rightHost = new Rectangle(w / 2/* - 5*/, 0, w - w / 2, h);
+                var leftHost = new Rectangle(0, 0, w / 2, h);
+                var rightHost = new Rectangle(w / 2, 0, w - w / 2, h);
 
                 _diskListLeft.Bounds = CalcBlueFrame(leftHost);
                 _diskListRight.Bounds = CalcBlueFrame(rightHost);
 
                 var leftFileRect = new Rectangle(
-                    _diskListLeft.Right + 20/* + 5*/,
+                    _diskListLeft.Right + 20,
                     _diskListLeft.Top,
-                    leftHost.Right - _diskListLeft.Right - bottomGap,
-                    h - _diskListLeft.Top - bottomGap
+                    leftHost.Right - _diskListLeft.Right - 50,
+                    h - _diskListLeft.Top - 50
                 );
-
                 var rightFileRect = new Rectangle(
-                    _diskListRight.Right + 20/* - 5*/,
+                    _diskListRight.Right + 20,
                     _diskListRight.Top,
-                    rightHost.Right - _diskListRight.Right - bottomGap,
-                    h - _diskListRight.Top - bottomGap
+                    rightHost.Right - _diskListRight.Right - 50,
+                    h - _diskListRight.Top - 50
                 );
 
                 _fileListLeft.Bounds = leftFileRect;
                 _fileListRight.Bounds = rightFileRect;
-                //_fileListLeft.Bounds = rightFileRect;
-                //_fileListRight.Bounds = leftFileRect;
 
-
-                _logoPicLeft.Visible = _logoPicRight.Visible = true;
-                _hintLabelLeft.Visible = _hintLabelRight.Visible = true;
-
-                _diskListLeft.Visible = true;
-                _diskListRight.Visible = true;
-                _fileListLeft.Visible = true;
-                _fileListRight.Visible = true;
+                _fileListLeft.Visible = _fileListRight.Visible = true;
+                _diskListLeft.Visible = _diskListRight.Visible = true;
             }
             else
             {
@@ -281,22 +287,18 @@ namespace MpvNet.Windows
                     _diskListLeft.Right + 20,
                     _diskListLeft.Top,
                     fullHost.Right - _diskListLeft.Right - 100,
-                    h - _diskListLeft.Top - bottomGap
+                    h - _diskListLeft.Top - 50
                 );
+
                 _fileListLeft.Bounds = fileRect;
+                _fileListLeft.Visible = true;
+                _diskListLeft.Visible = true;
 
-                _logoPicLeft.Visible = _hintLabelLeft.Visible = true;
-                _logoPicRight.Visible = _hintLabelRight.Visible = false;
-
-                _diskListLeft.Visible = _fileListLeft.Visible = true;
-                _diskListRight.Visible = _fileListRight.Visible = false;
+                _fileListRight.Visible = false;
+                _diskListRight.Visible = false;
             }
-
-            _diskListLeft.Invalidate();
-            _diskListRight.Invalidate();
-            _fileListLeft.Invalidate();
-            _fileListRight.Invalidate();
         }
+
 
         private void UpdateLogoPosition()
         {
