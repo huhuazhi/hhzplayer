@@ -15,7 +15,7 @@ namespace MpvNet.Windows
         private int _rowHeight = 40;
         private int _headerHeight = 60;
         private readonly string[] _columns = { "名称", "大小", "类型", "修改日期" };
-        private float[] _colWidths = { 0.50f, 0.15f, 0.15f, 0.20f };
+        private float[] _colWidths = { 0.65f, 0.10f, 0.10f, 0.15f };
 
         private int _hoverIndex = -1;
         private int _selectedIndex = -1;
@@ -63,6 +63,15 @@ namespace MpvNet.Windows
         [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
         private static extern int StrCmpLogicalW(string psz1, string psz2);
 
+        // —— ToolTip 延迟显示 ——
+        private ToolTip _toolTip;
+        private Timer _tipTimer;
+        private int _tipIndex = -1;
+        private Rectangle _tipNameRect = Rectangle.Empty;
+        private bool _tipVisible = false;
+        private Point _tipMousePoint;
+        private int TipDelayTime = 300; //Tip延迟1000ms
+
         public FileList()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint |
@@ -83,6 +92,26 @@ namespace MpvNet.Windows
 
             TabStop = true;
             MouseEnter += (_, __) => Focus();
+
+            _toolTip = new ToolTip
+            {
+                InitialDelay = 0,       // 我们用 Timer 自己做 2 秒延迟
+                ReshowDelay = 200,
+                AutoPopDelay = 5000,
+                ShowAlways = true
+            };
+
+            _tipTimer = new Timer { Interval = TipDelayTime }; // 2 秒后显示
+            _tipTimer.Tick += (s, e) =>
+            {
+                _tipTimer.Stop();
+                if (_tipIndex >= 0 && _tipNameRect.Contains(PointToClient(MousePosition)))
+                {
+                    var item = _items[_tipIndex];
+                    _toolTip.Show(item.Name ?? string.Empty, this, _tipMousePoint + new Size(38, 18), _toolTip.AutoPopDelay);
+                    _tipVisible = true;
+                }
+            };
         }
 
         public int RowHeight
@@ -231,6 +260,11 @@ namespace MpvNet.Windows
                 foreach (var dir in Directory.GetDirectories(path))
                 {
                     var di = new DirectoryInfo(dir);
+
+                    // ⭐ 跳过隐藏或系统文件夹
+                    if ((di.Attributes & (FileAttributes.Hidden | FileAttributes.System)) != 0)
+                        continue;
+
                     _items.Add(new FileItem
                     {
                         Name = di.Name,
@@ -251,6 +285,16 @@ namespace MpvNet.Windows
                 foreach (var file in Directory.GetFiles(path))
                 {
                     var fi = new FileInfo(file);
+
+                    // ⭐ 跳过隐藏或系统文件
+                    if ((fi.Attributes & (FileAttributes.Hidden | FileAttributes.System)) != 0)
+                        continue;
+
+                    // ⭐ 另外再排除 Thumbs.db、desktop.ini 这种特殊名字
+                    string nameLower = fi.Name.ToLowerInvariant();
+                    if (nameLower == "thumbs.db" || nameLower == "desktop.ini")
+                        continue;
+
                     string ext = fi.Extension;
                     if (string.IsNullOrEmpty(ext)) ext = ".";
                     _items.Add(new FileItem
@@ -554,52 +598,135 @@ namespace MpvNet.Windows
         {
             base.OnMouseMove(e);
 
-            // 拖拽滚动优先
+            int headerTop = _pathBarHeight + _headerHeight;
+
+            // —— 正在拖拽：滚动 + 任何提示隐藏 —— 
             if (_dragging)
             {
                 int dy = e.Y - _lastMouseY;
                 _lastMouseY = e.Y;
                 ScrollOffset -= dy;
-                Cursor = Cursors.Hand;   // ⭐ 拖动时保持小手
+
+                if (_tipVisible) { _toolTip.Hide(this); _tipVisible = false; }
+                _tipTimer.Stop();
+                _tipIndex = -1;
+                _tipNameRect = Rectangle.Empty;
                 return;
             }
 
-            // ① 检测面包屑
+            // —— 面包屑 hover：小手；清除列表 hover 与 tip —— 
             foreach (var seg in _pathSegments)
             {
                 if (seg.Bounds.Contains(e.Location))
                 {
                     Cursor = Cursors.Hand;
+
+                    if (_hoverIndex != -1) SetHotIndex(-1, true);
+                    if (_tipVisible) { _toolTip.Hide(this); _tipVisible = false; }
+                    _tipTimer.Stop();
+                    _tipIndex = -1;
+                    _tipNameRect = Rectangle.Empty;
                     return;
                 }
             }
 
-            // ② 文件区 hover
+            // —— Header / PathBar 区域：箭头指针；不触发选择，不显示 tip —— 
+            if (e.Y < headerTop)
+            {
+                Cursor = Cursors.Default;
+
+                if (_hoverIndex != -1) SetHotIndex(-1, true);
+                if (_tipVisible) { _toolTip.Hide(this); _tipVisible = false; }
+                _tipTimer.Stop();
+                _tipIndex = -1;
+                _tipNameRect = Rectangle.Empty;
+                return;
+            }
+
+            // —— 列表区域 —— 
             int idx = HitTestIndex(e.Y);
             if (idx != _hoverIndex) SetHotIndex(idx);
 
+            Cursor = Cursors.Default;
+
             if (idx >= 0 && idx < _items.Count)
             {
+                // 计算“名称列/图标”区域，决定鼠标形状与是否启用 tip
                 int colW0 = (int)(Width * _colWidths[0]);
                 int x0 = 0;
-                int rowTop = _pathBarHeight + _headerHeight + idx * _rowHeight - _scrollOffsetY;
+                int rowTop = headerTop + idx * _rowHeight - _scrollOffsetY;
 
-                // 图标矩形
-                var iconRect = new Rectangle(x0 + 8, rowTop + (_rowHeight - _iconSize) / 2, _iconSize, _iconSize);
+                // 图标区域
+                int iconX = x0 + 8;
+                Rectangle iconRect = new Rectangle(
+                    iconX,
+                    rowTop + (_rowHeight - _iconSize) / 2,
+                    _iconSize,
+                    _iconSize
+                );
 
-                // 名称矩形
+                // 名称文本区域（与绘制时一致）
                 int nameLeft = x0 + 8 + _iconSize + 8;
-                var nameRect = new Rectangle(nameLeft, rowTop, colW0 - (nameLeft - x0) - 8, _rowHeight);
+                Rectangle nameRect = new Rectangle(
+                    nameLeft,
+                    rowTop,
+                    Math.Max(1, colW0 - (nameLeft - x0) - 8),
+                    _rowHeight
+                );
 
-                if (iconRect.Contains(e.Location) || nameRect.Contains(e.Location))
+                bool overIconOrName = iconRect.Contains(e.Location) || nameRect.Contains(e.Location);
+                Cursor = overIconOrName ? Cursors.Hand : Cursors.Default;
+
+                // —— 仅当鼠标在“名称列”内，且文本被截断时，启动 2 秒 tip —— 
+                if (nameRect.Contains(e.Location))
                 {
-                    Cursor = Cursors.Hand; // ⭐ 文件名/图标上是小手
-                    return;
+                    var item = _items[idx];
+
+                    // 估算是否被截断（宽度大于可见宽度）
+                    Size textSize = TextRenderer.MeasureText(
+                        item.Name ?? string.Empty,
+                        _itemFont,
+                        new Size(int.MaxValue, _rowHeight),
+                        TextFormatFlags.SingleLine | TextFormatFlags.NoPadding
+                    );
+
+                    bool truncated = textSize.Width > nameRect.Width;
+
+                    if (truncated)
+                    {
+                        // 若切换到新行/新位置，重启 2 秒计时；保持在同一行则不打断计时
+                        bool sameTarget = (_tipIndex == idx && nameRect == _tipNameRect && _tipVisible);
+                        if (!sameTarget)
+                        {
+                            if (_tipVisible) { _toolTip.Hide(this); _tipVisible = false; }
+                            _tipTimer.Stop();
+
+                            _tipIndex = idx;
+                            _tipNameRect = nameRect;
+                            _tipMousePoint = e.Location; // 记住当前位置，2 秒后在附近显示
+
+                            _tipTimer.Start();
+                        }
+
+                        return; // 在名称列且可能会显示 tip，提前返回
+                    }
                 }
+
+                // 否则离开名称列或未截断：清理 tip
+                if (_tipVisible) { _toolTip.Hide(this); _tipVisible = false; }
+                _tipTimer.Stop();
+                _tipIndex = -1;
+                _tipNameRect = Rectangle.Empty;
+                return;
             }
 
-            // ③ 其他情况 → 默认箭头
+            // 命中不到任何行：清理 hover / tip，恢复箭头
             Cursor = Cursors.Default;
+            if (_hoverIndex != -1) SetHotIndex(-1, true);
+            if (_tipVisible) { _toolTip.Hide(this); _tipVisible = false; }
+            _tipTimer.Stop();
+            _tipIndex = -1;
+            _tipNameRect = Rectangle.Empty;
         }
 
         protected override void OnMouseDown(MouseEventArgs e)

@@ -36,7 +36,7 @@ public partial class MainForm : Form
     const string CMD_sub_stereo_on = "sub-stereo-on";
 
     // 定义在 Form 类里
-    private Timer clickTimer;
+    //private Timer clickTimer;
     private bool isDoubleClick = false;
 
     private Timer ToastTimer;
@@ -46,10 +46,10 @@ public partial class MainForm : Form
         InitializeComponent();
 
         //鼠标单击和双击区分用的Timer
-        clickTimer = new Timer();
-        clickTimer.Interval = 300; //给一个双击比较短的固定值300ms，体验会好很多,避免有用户吧系统双击事件调的过长，导致单击等待太久，系统默认为500ms
+        //clickTimer = new Timer();
+        //clickTimer.Interval = 300; //给一个双击比较短的固定值300ms，体验会好很多,避免有用户吧系统双击事件调的过长，导致单击等待太久，系统默认为500ms
                              //SystemInformation.DoubleClickTime; // 系统双击时间
-        clickTimer.Tick += ClickTimer_Tick;
+        //clickTimer.Tick += ClickTimer_Tick;
 
         //弹Toast信息用的Timer
         ToastTimer = new Timer();
@@ -107,12 +107,12 @@ public partial class MainForm : Form
     // 定时器 Tick
     private void ClickTimer_Tick(object sender, EventArgs e)
     {
-        clickTimer.Stop();
+        //clickTimer.Stop();
 
-        if (!isDoubleClick)
-        {
-            BtnPlay_Click(null, null);
-        }
+        //if (!isDoubleClick)
+        //{
+        //    BtnPlay_Click(null, null);
+        //}
     }
 
     double timepos;
@@ -425,9 +425,9 @@ public partial class MainForm : Form
     {
         if (e ==null || e.Button == MouseButtons.Left)
         {
-            isDoubleClick = true;            
-            clickTimer.Stop(); //双击发生，取消单击逻辑  // 👉 在这里写双击逻辑
-            bPressEnter = false;
+            //isDoubleClick = true;            
+            //clickTimer.Stop(); //双击发生，取消单击逻辑  // 👉 在这里写双击逻辑
+            //bPressEnter = false;
             if (!App.Settings.Enable3DMode && (e ==null || e.Button == MouseButtons.Left))
             {
                 if (this.FormBorderStyle == FormBorderStyle.None)
@@ -1869,8 +1869,6 @@ public partial class MainForm : Form
                 break;
             case Keys.XButton2:
                 break;
-            case Keys.Back:
-                break;
             case Keys.Tab:
                 break;
             case Keys.LineFeed:
@@ -1902,6 +1900,7 @@ public partial class MainForm : Form
                 break;
             case Keys.HanjaMode:
                 break;
+            case Keys.Back:
             case Keys.Escape:
                 if (hhzMainPage.Visible == false)
                 {

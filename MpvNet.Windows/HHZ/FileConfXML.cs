@@ -122,26 +122,25 @@ namespace MyApp
             }
             return currentSettings;
         }
-
-        public static void Save(/*string FilePath = null*/)
+        public static void Save()
         {
-            //if (!string.IsNullOrEmpty(FilePath)) filePath = FilePath;
-            /*if (string.IsNullOrEmpty(filePath)) throw new InvalidOperationException("保存失败：文件路径为空。");*/
-
             currentSettings ??= new hhzFileSettings();
 
-            // ✅ 如果全部是默认值：删除配置文件并返回
+            if (string.IsNullOrWhiteSpace(filePath))
+                return;
+
             if (currentSettings.IsAllDefault)
             {
                 if (File.Exists(filePath))
                 {
-                    try { File.Delete(filePath); } catch { /* 忽略删除失败 */ }
+                    try { File.Delete(filePath); } catch { }
                 }
                 return;
             }
 
             var dir = Path.GetDirectoryName(Path.GetFullPath(filePath));
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
 
             try
             {
@@ -149,7 +148,17 @@ namespace MyApp
                 var serializer = new XmlSerializer(typeof(hhzFileSettings));
                 serializer.Serialize(stream, currentSettings);
             }
-            catch { /* 忽略写入异常，保留你的风格 */ }
+            catch { return; }
+
+            try
+            {
+                // ⭐ 设置隐藏属性
+                File.SetAttributes(filePath, FileAttributes.Hidden);
+            }
+            catch
+            {
+                // 忽略设置失败
+            }
         }
 
         public static void ResetToDefaults() => currentSettings = new hhzFileSettings();
