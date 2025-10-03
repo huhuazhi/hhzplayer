@@ -413,12 +413,12 @@ public partial class MainForm : Form
 
     private void OverlayPanel_MouseClick(object? sender, MouseEventArgs e)
     {
-        if (e.Button == MouseButtons.Left)
-        {
-            isDoubleClick = false; // 重置状态
-            clickTimer.Stop();
-            clickTimer.Start(); // 启动延时
-        }
+        //if (e.Button == MouseButtons.Left)
+        //{
+        //    isDoubleClick = false; // 重置状态
+        //    clickTimer.Stop();
+        //    clickTimer.Start(); // 启动延时
+        //}
     }
 
     private void OverlayPanel_MouseDoubleClick(object? sender, MouseEventArgs e)
