@@ -79,7 +79,7 @@ public class AppClass
 
     public static string About => "Copyright (C) 2000-2024 mpv.net/mpv/mplayer\n" +
         $"{AppInfo.Product} v{AppInfo.Version}" + GetLastWriteTime(Environment.ProcessPath!) + "\n" +
-        $"{Player.GetPropertyString("mpv-version")}" + GetLastWriteTime(Folder.Startup + "libmpv-2.dll") + "\n" +
+        $"{Player.GetPropertyString("mpv-version")}" + GetLastWriteTime(Folder.Startup + "hhzlib.dll") + "\n" +
         $"ffmpeg {Player.GetPropertyString("ffmpeg-version")}\n" +
         $"MediaInfo v{FileVersionInfo.GetVersionInfo(Folder.Startup + "MediaInfo.dll").FileVersion}" +
         $"{GetLastWriteTime(Folder.Startup + "MediaInfo.dll")}" + "\n" + "GPL v2 License";

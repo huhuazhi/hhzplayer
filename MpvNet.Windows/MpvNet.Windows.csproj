@@ -69,7 +69,7 @@
 	  <None Update="catalog.png">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="libmpv-2.dll">
+	  <None Update="hhzlib.dll">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="MediaInfo.dll">

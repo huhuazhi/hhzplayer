@@ -33,7 +33,7 @@ public partial class MainForm : Form
 
     //WpfControls.MenuItem? _fullScreenUIMemuItem;
     /// <summary>
-    /// 用于控制是否开启3D字幕的命令（在libmpv-2.dll 线路B的源码里新增）
+    /// 用于控制是否开启3D字幕的命令（在hhzlib.dll 线路B的源码里新增）
     /// </summary>
     const string CMD_sub_stereo_on = "sub-stereo-on";
 

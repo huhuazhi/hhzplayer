@@ -10,70 +10,70 @@ namespace MpvNet.Native;
 
 public static class LibMpv
 {
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern nint mpv_create();
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern nint mpv_create_client(nint mpvHandle, [MarshalAs(UnmanagedType.LPUTF8Str)] string command);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_initialize(nint mpvHandle);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern void mpv_destroy(nint mpvHandle);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_command(nint mpvHandle, nint strings);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_command_string(nint mpvHandle, [MarshalAs(UnmanagedType.LPUTF8Str)] string command);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_command_ret(nint mpvHandle, nint strings, nint node);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern void mpv_free_node_contents(nint node);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern nint mpv_error_string(mpv_error error);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_request_log_messages(nint mpvHandle, [MarshalAs(UnmanagedType.LPUTF8Str)] string min_level);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern int mpv_set_option(nint mpvHandle, byte[] name, mpv_format format, ref long data);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern int mpv_set_option_string(nint mpvHandle, byte[] name, byte[] value);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_get_property(nint mpvHandle, byte[] name, mpv_format format, out nint data);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_get_property(nint mpvHandle, byte[] name, mpv_format format, out double data);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_set_property(nint mpvHandle, byte[] name, mpv_format format, ref byte[] data);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_set_property(nint mpvHandle, byte[] name, mpv_format format, ref long data);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_set_property(nint mpvHandle, byte[] name, mpv_format format, ref double data);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_observe_property(nint mpvHandle, ulong reply_userdata, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, mpv_format format);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern int mpv_unobserve_property(nint mpvHandle, ulong registered_reply_userdata);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern void mpv_free(nint data);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern nint mpv_wait_event(nint mpvHandle, double timeout);
 
-    [DllImport("libmpv-2.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("hhzlib.dll", CallingConvention = CallingConvention.Cdecl)]
     public static extern mpv_error mpv_request_event(nint mpvHandle, mpv_event_id id, int enable);
 
     public enum mpv_error
