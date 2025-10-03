@@ -1,7 +1,7 @@
 ﻿using System;
+using System.ComponentModel; // << 新增
 using System.IO;
 using System.Xml.Serialization;
-using System.ComponentModel; // << 新增
 
 namespace MyApp
 {
@@ -95,14 +95,31 @@ namespace MyApp
                 currentSettings = new hhzFileSettings();
                 return null; // 按你原意：没有文件时返回 null
             }
-
+            else
+            {
+                var fi = new FileInfo(filePath);
+                if (fi.Length == 0)
+                {
+                    currentSettings = new hhzFileSettings();
+                    return null;
+                }
+            }
             using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var serializer = new XmlSerializer(typeof(hhzFileSettings));
 
             IsLoading = true;
-            try { currentSettings = (hhzFileSettings)serializer.Deserialize(stream); }
-            finally { IsLoading = false; }
-
+            try 
+            {
+                currentSettings = (hhzFileSettings)serializer.Deserialize(stream);
+            }
+            catch
+            {
+                currentSettings = new hhzFileSettings();
+            }
+            finally
+            {
+                IsLoading = false;
+            }
             return currentSettings;
         }
 

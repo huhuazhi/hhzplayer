@@ -68,7 +68,7 @@ public class MainPlayer : MpvClient
 
     public void Init(IntPtr formHandle, bool processCommandLine)
     {
-        App.ApplyShowMenuFix();
+        //App.ApplyShowMenuFix();
 
         MainHandle = mpv_create();
         Handle = MainHandle;
@@ -126,7 +126,8 @@ public class MainPlayer : MpvClient
         SetPropertyDouble("contrast", 10);
         SetPropertyDouble("brightness", -3);
         SetPropertyDouble("saturation", 30);
-
+        //SetPropertyDouble("cache-secs", 30);
+        SetPropertyDouble("demuxer-readahead-secs", 60);
 
         ////特外
         SetPropertyString("sub-stereo-duplicate", "yes");

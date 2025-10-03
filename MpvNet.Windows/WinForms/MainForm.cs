@@ -6,12 +6,13 @@ using MyApp;
 using System.Drawing;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Text.Json;
 using System.Windows.Forms;
 using static MpvNet.AppSettings;
-
-using static MpvNet.Windows.Native.WinApi;
 using static MpvNet.Windows.Help.WinApiHelp;
+using static MpvNet.Windows.Native.WinApi;
+using static System.Windows.Forms.AxHost;
 
 namespace MpvNet.Windows.WinForms;
 
@@ -115,7 +116,6 @@ public partial class MainForm : Form
     }
 
     double timepos;
-
     private void InitPlayerEvents()
     {
         Player.FileLoaded += Player_FileLoaded;
@@ -130,7 +130,6 @@ public partial class MainForm : Form
                 {
                     lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
                     lblDurationRight.Text = lblDurationLeft.Text;
-
                     //Debug.Print($"进度: {value:F1} 秒");
                     SetProgressBarMax(Player.Duration.TotalSeconds);
                     if (value <= progressBarLeft.Maximum)
@@ -480,9 +479,12 @@ public partial class MainForm : Form
     {
         if (paths.Length > 0)
         {
+            bFileloaded = false;
             progressBarLeft.Value = 0;
             progressBarRight.Value = 0;
 
+            lblDurationLeft.Text = "00:00:00 / 00:00:00";
+            lblDurationRight.Text = lblDurationLeft.Text;
             lblStatusLeft.Text = "正在加载...";
             lblStatusRight.Text = lblStatusLeft.Text;
 
@@ -645,7 +647,7 @@ public partial class MainForm : Form
                     else
                     {
                         Bounds = new Rectangle(App.Settings.WindowLocation.X, App.Settings.WindowLocation.Y,
-                       App.Settings.WindowSize.Width, App.Settings.WindowSize.Height);
+                                            App.Settings.WindowSize.Width, App.Settings.WindowSize.Height);
                         FormBorderStyle = FormBorderStyle.None;
                         WindowState = FormWindowState.Maximized;
                     }
@@ -766,14 +768,36 @@ public partial class MainForm : Form
     {
         //Debug.Print($"{DateTime.Now.ToString()}-CursorPositionDiff: {_lastCursorPosition != MousePosition}");
         //Debug.Print($"CursorTimer:{Environment.TickCount - _lastCursorChanged > _cursorAutohide} ActiveForm:{ActiveForm == this} Duration:{Player.Duration.TotalMilliseconds > 0} Playing:{!Player.GetPropertyBool("pause")} MainPage:{hhzMainPage.Visible == false} MouseInWindws:{ClientRectangle.Contains(PointToClient(MousePosition))}" );
+        //string state = Player.GetPropertyString("cache-buffering-state");
+        //string state = Player.GetPropertyString("demuxer-cache-state");
+        strstate = Player.GetPropertyString("demuxer-cache-state");
+        if (strstate != "" )        {
+            var state = DemuxerCacheParser.Parse(Player.GetPropertyString("demuxer-cache-state"));
+            if (Player.Paused)
+            {
+                StreamingContextStates = "暂停中...";
+            }
+            else
+            {
+                StreamingContextStates = "播放中...";
+            }
+            if (state.Underrun)
+            {
+                StreamingContextStates += "缓存不足";
+            }
+            else
+            {
+                StreamingContextStates += $"缓存:{state.CacheDuration:F2}秒-{(state.TotalBytes / 1024.0 / 1024 / state.CacheDuration):F2} MB/s";
+            }
 
+            lblStatusLeft.Text = StreamingContextStates;
+        }
         if (_lastCursorPosition != MousePosition && ClientRectangle.Contains(PointToClient(MousePosition))/*IsCursorPosDifferent(_lastCursorPosition)*/)
         {
             _lastCursorPosition = MousePosition;
             _lastCursorChanged = Environment.TickCount;
         }
-        else if (Environment.TickCount - _lastCursorChanged > _cursorAutohide
-            && /*Player.Duration.TotalMilliseconds > 0 &&*/ (!Player.GetPropertyBool("pause") || Player.Duration.TotalSeconds == 0) && hhzMainPage.Visible == false)
+        else if (Environment.TickCount - _lastCursorChanged > _cursorAutohide && lblStatusLeft.Text.Substring(0, 2) != "正在" && (!Player.GetPropertyBool("pause") || Player.Duration.TotalSeconds == 0) && hhzMainPage.Visible == false)
         {
             if ((_videoMenuLeft != null && _audioMenuLeft != null && _subMenuLeft != null) && (_videoMenuLeft.Visible || _audioMenuLeft.Visible || _subMenuLeft.Visible))
                 return;
@@ -1313,6 +1337,7 @@ public partial class MainForm : Form
                     bPressPageDownUp = false;
                 }
             }
+            bFileloaded = true;
         });
 
         string path = Player.GetPropertyString("path");
@@ -1791,6 +1816,9 @@ public partial class MainForm : Form
     private bool bPressEnter;
     private DateTime _lastEscapeTime;
     private bool bPressPageDownUp;
+    private bool bFileloaded;
+    private string StreamingContextStates;
+    private string strstate;
 
     void Set3DSubtitleMode(string mode3DSubtitle)
     {
