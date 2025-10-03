@@ -249,9 +249,9 @@ namespace MpvNet.Windows
             int w = this.ClientSize.Width, h = this.ClientSize.Height;
             if (w <= 0 || h <= 0) return;
 
-            bool is3D = App.Settings.Enable3DMode;
+            int bottomGap = (int)Math.Round(h * _fileListBottomGapRatio);
 
-            if (is3D)
+            if (App.Settings.Enable3DMode)
             {
                 var leftHost = new Rectangle(0, 0, w / 2, h);
                 var rightHost = new Rectangle(w / 2, 0, w - w / 2, h);
@@ -259,18 +259,20 @@ namespace MpvNet.Windows
                 _diskListLeft.Bounds = CalcBlueFrame(leftHost);
                 _diskListRight.Bounds = CalcBlueFrame(rightHost);
 
+
+
                 var leftFileRect = new Rectangle(
                     _diskListLeft.Right + 20,
                     _diskListLeft.Top,
-                    leftHost.Right - _diskListLeft.Right - 50,
-                    h - _diskListLeft.Top - 50
+                    leftHost.Right - _diskListLeft.Right - bottomGap,
+                    h - _diskListLeft.Top - bottomGap
                 );
                 var rightFileRect = new Rectangle(
                     _diskListRight.Right + 20,
                     _diskListRight.Top,
-                    rightHost.Right - _diskListRight.Right - 50,
-                    h - _diskListRight.Top - 50
-                );
+                    rightHost.Right - _diskListRight.Right - bottomGap,
+                    h - _diskListRight.Top - bottomGap
+                );                
 
                 _fileListLeft.Bounds = leftFileRect;
                 _fileListRight.Bounds = rightFileRect;
@@ -286,8 +288,8 @@ namespace MpvNet.Windows
                 var fileRect = new Rectangle(
                     _diskListLeft.Right + 20,
                     _diskListLeft.Top,
-                    fullHost.Right - _diskListLeft.Right - 100,
-                    h - _diskListLeft.Top - 50
+                    fullHost.Right - _diskListLeft.Right - bottomGap,
+                    h - _diskListLeft.Top - bottomGap
                 );
 
                 _fileListLeft.Bounds = fileRect;
