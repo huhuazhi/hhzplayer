@@ -21,7 +21,7 @@ static class Program
             Translator.Current = new WpfTranslator();
 
             //Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+            //Application.SetCompatibleTextRenderingDefault(false);
 
             AppDomain.CurrentDomain.UnhandledException += (sender, e) => Terminal.WriteError(e.ExceptionObject);
             Application.ThreadException += (sender, e) => Terminal.WriteError(e.Exception);

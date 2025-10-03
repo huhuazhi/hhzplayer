@@ -70,7 +70,7 @@ public partial class MainForm : Form
               ControlStyles.OptimizedDoubleBuffer, true);
         this.UpdateStyles();
 
-        //UpdateDarkMode();
+        UpdateDarkMode();
         InitializehhzOverlay();
         InitPlayerEvents();
 
@@ -750,11 +750,11 @@ public partial class MainForm : Form
     {
         base.OnActivated(e);
     }
-
+    
     void CursorTimer_Tick(object sender, EventArgs e)
     {
         //Debug.Print($"{DateTime.Now.ToString()}-CursorPositionDiff: {_lastCursorPosition != MousePosition}");
-        Debug.Print($"CursorTimer:{Environment.TickCount - _lastCursorChanged > _cursorAutohide} ActiveForm:{ActiveForm == this} Duration:{Player.Duration.TotalMilliseconds > 0} Playing:{!Player.GetPropertyBool("pause")} MainPage:{hhzMainPage.Visible == false} MouseInWindws:{ClientRectangle.Contains(PointToClient(MousePosition))}" );
+        //Debug.Print($"CursorTimer:{Environment.TickCount - _lastCursorChanged > _cursorAutohide} ActiveForm:{ActiveForm == this} Duration:{Player.Duration.TotalMilliseconds > 0} Playing:{!Player.GetPropertyBool("pause")} MainPage:{hhzMainPage.Visible == false} MouseInWindws:{ClientRectangle.Contains(PointToClient(MousePosition))}" );
 
         if (_lastCursorPosition != MousePosition && ClientRectangle.Contains(PointToClient(MousePosition))/*IsCursorPosDifferent(_lastCursorPosition)*/)
         {
@@ -1380,11 +1380,11 @@ public partial class MainForm : Form
         if (WindowState == FormWindowState.Maximized)
             Player.SetPropertyBool("window-maximized", true);
 
-        WpfApplication.Init();
-        Theme.UpdateWpfColors();
-        MessageBoxEx.MessageForeground = Theme.Current?.GetBrush("heading");
-        MessageBoxEx.MessageBackground = Theme.Current?.GetBrush("background");
-        MessageBoxEx.ButtonBackground = Theme.Current?.GetBrush("highlight");
+        //WpfApplication.Init();
+        //Theme.UpdateWpfColors();
+        //MessageBoxEx.MessageForeground = Theme.Current?.GetBrush("heading");
+        //MessageBoxEx.MessageBackground = Theme.Current?.GetBrush("background");
+        //MessageBoxEx.ButtonBackground = Theme.Current?.GetBrush("highlight");
         //InitAndBuildContextMenu();
         Cursor.Position = new Point(Cursor.Position.X + 1, Cursor.Position.Y);
         GlobalHotkey.RegisterGlobalHotkeys(Handle);
@@ -1493,8 +1493,8 @@ public partial class MainForm : Form
 
     private void ShowProgressBar()
     {
-        Player.SetPropertyString("osc", "no");
-        Player.SetPropertyDouble("osd-level", 0);
+        //Player.SetPropertyString("osc", "no");
+        //Player.SetPropertyDouble("osd-level", 0);
         if (App.Settings.Enable3DMode)
         {
             progressBarRight.Visible = true;
@@ -1530,7 +1530,7 @@ public partial class MainForm : Form
 
     void ShowVideoOSD()
     {
-        Debug.Print($"{DateTime.Now.ToString()}-progressBarRight.visible={progressBarRight.Visible}");
+        //Debug.Print($"{DateTime.Now.ToString()}-progressBarRight.visible={progressBarRight.Visible}");
         if (hhzMainPage.Visible == false) btnBackLeft.Visible = true;
         if (!isAudio && hhzMainPage.Visible == false) btn3DSubtitleModeLeft.Visible = true;
         btn3DLeft.Visible = true;

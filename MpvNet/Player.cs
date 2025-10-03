@@ -117,7 +117,7 @@ public class MainPlayer : MpvClient
         SetPropertyString("config", "yes");
 
         SetPropertyString("osc", "no");
-        SetPropertyDouble("osd-level", 0);
+        //SetPropertyDouble("osd-level", 0);
         SetPropertyString("osd-bar", "no");
         SetPropertyString("sub-codepage", "gbk");
 
