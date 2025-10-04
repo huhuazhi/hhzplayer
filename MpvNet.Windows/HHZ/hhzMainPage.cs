@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.Windows.Forms;
 using FFmpeg.AutoGen;
+using MpvNet.Windows.HHZ;
 
 namespace MpvNet.Windows
 {

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 
-namespace MpvNet.Windows
+namespace MpvNet.Windows.HHZ
 {
     /// <summary>
     /// 透明背景自绘磁盘列表：上部圆角标题栏 + 两排文字 + 进度条 + 系统图标
@@ -190,16 +190,16 @@ namespace MpvNet.Windows
                 _paintingBack = true;
 
                 // 确保背景绘制遵循控件的圆角 Region（如果已设置）
-                if (this.Region != null)
-                    e.Graphics.SetClip(this.Region, CombineMode.Replace);
+                if (Region != null)
+                    e.Graphics.SetClip(Region, CombineMode.Replace);
 
                 Rectangle rectInParent = new Rectangle(Left, Top, Width, Height);
                 var g = e.Graphics;
                 var state = g.Save();
                 g.TranslateTransform(-rectInParent.X, -rectInParent.Y);
                 using var pe = new PaintEventArgs(g, rectInParent);
-                this.InvokePaintBackground(Parent, pe);
-                this.InvokePaint(Parent, pe);
+                InvokePaintBackground(Parent, pe);
+                InvokePaint(Parent, pe);
                 g.Restore(state);
             }
             finally { _paintingBack = false; }
@@ -220,13 +220,13 @@ namespace MpvNet.Windows
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+            g.SmoothingMode = SmoothingMode.HighQuality;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
             // 让整体仍遵循圆角 Region
-            if (this.Region != null)
-                g.SetClip(this.Region, System.Drawing.Drawing2D.CombineMode.Replace);
+            if (Region != null)
+                g.SetClip(Region, CombineMode.Replace);
 
             // ★ 新：内矩形（扣除边框的内容区）
             Rectangle inner = GetInnerRect();
@@ -324,7 +324,7 @@ namespace MpvNet.Windows
             // —— 最后：画外圈蓝色圆角边框（仍然在控件最外）——
             using (var pen = new Pen(Color.FromArgb(180, 80, 140, 255), _borderWidth))
             {
-                pen.Alignment = System.Drawing.Drawing2D.PenAlignment.Inset;
+                pen.Alignment = PenAlignment.Inset;
                 var outerRect = new Rectangle(0, 0, ClientSize.Width - 1, ClientSize.Height - 1);
 
                 using (var path = CreateRoundedRectPath(
@@ -425,7 +425,7 @@ namespace MpvNet.Windows
             int stride = RowHeight + RowSpacing;
             int idx = y / stride;
             int topOfRow = idx * stride;
-            if (idx >= 0 && idx < _items.Count && (y - topOfRow) < RowHeight) return idx;
+            if (idx >= 0 && idx < _items.Count && y - topOfRow < RowHeight) return idx;
             return -1;
         }
 
@@ -487,7 +487,7 @@ namespace MpvNet.Windows
         {
             if (ClientSize.Width <= 0 || ClientSize.Height <= 0)
             {
-                this.Region = null;
+                Region = null;
                 return;
             }
 
@@ -496,7 +496,7 @@ namespace MpvNet.Windows
                                                     CornerRadiusBottom, CornerRadiusBottom))
             {
                 // 设置 Region 使控件四角都遵循圆角，命中与绘制统一
-                this.Region = new Region(path);
+                Region = new Region(path);
             }
         }
 
@@ -505,7 +505,7 @@ namespace MpvNet.Windows
             int viewportTop = ShowHeader ? HeaderHeight : 0;
             int viewportHeight = Math.Max(0, ClientSize.Height - viewportTop);
             int min = Math.Min(0, viewportHeight - _contentHeight);
-            _scrollY = (_contentHeight <= viewportHeight) ? 0 : Math.Max(min, Math.Min(0, _scrollY));
+            _scrollY = _contentHeight <= viewportHeight ? 0 : Math.Max(min, Math.Min(0, _scrollY));
         }
 
         private static bool SafeIsReady(DriveInfo d) { try { return d.IsReady; } catch { return false; } }
@@ -531,8 +531,8 @@ namespace MpvNet.Windows
             }
             catch { }
             it.Line1 = $"{vol} ({it.Root.TrimEnd('\\')})".Trim();
-            it.Usage01 = (total > 0) ? (float)used / total : 0f;
-            it.Line2 = (total > 0) ? $"{Fmt(free)} 可用, 共 {Fmt(total)}" : "不可用";
+            it.Usage01 = total > 0 ? (float)used / total : 0f;
+            it.Line2 = total > 0 ? $"{Fmt(free)} 可用, 共 {Fmt(total)}" : "不可用";
             GetDriveIcon(it.Root); // 预热
             return it;
         }
@@ -547,7 +547,7 @@ namespace MpvNet.Windows
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         private struct SHFILEINFO
         {
-            public IntPtr hIcon;
+            public nint hIcon;
             public int iIcon;
             public uint dwAttributes;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string szDisplayName;
@@ -555,11 +555,11 @@ namespace MpvNet.Windows
         }
 
         [DllImport("shell32.dll", CharSet = CharSet.Auto)]
-        private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes,
+        private static extern nint SHGetFileInfo(string pszPath, uint dwFileAttributes,
             out SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
 
         [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool DestroyIcon(IntPtr hIcon);
+        private static extern bool DestroyIcon(nint hIcon);
 
         private const uint SHGFI_ICON = 0x000000100;
         private const uint SHGFI_LARGEICON = 0x000000000;
@@ -571,7 +571,7 @@ namespace MpvNet.Windows
 
             SHFILEINFO shinfo;
             SHGetFileInfo(driveRoot, 0, out shinfo, (uint)Marshal.SizeOf(typeof(SHFILEINFO)), SHGFI_ICON | SHGFI_LARGEICON);
-            if (shinfo.hIcon != IntPtr.Zero)
+            if (shinfo.hIcon != nint.Zero)
             {
                 try
                 {

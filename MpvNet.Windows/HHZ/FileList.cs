@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MpvNet.Windows
+namespace MpvNet.Windows.HHZ
 {
     public class FileList : Control
     {
@@ -71,6 +72,121 @@ namespace MpvNet.Windows
         private bool _tipVisible = false;
         private Point _tipMousePoint;
         private int TipDelayTime = 300; //Tip延迟1000ms
+
+        #region Shell 右键菜单支持
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        private static extern int SHParseDisplayName(
+            string name, IntPtr bindingContext,
+            out IntPtr pidl, uint sfgaoIn, out uint psfgaoOut);
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        private static extern int SHBindToParent(
+            IntPtr pidl, ref Guid riid, out IShellFolder ppv, out IntPtr ppidlLast);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool GetCursorPos(out POINT lpPoint);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
+        [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("000214E6-0000-0000-C000-000000000046")]
+        private interface IShellFolder
+        {
+            [PreserveSig]
+            int ParseDisplayName(IntPtr hwnd, IntPtr pbc,
+                [MarshalAs(UnmanagedType.LPWStr)] string pszDisplayName,
+                ref uint pchEaten, out IntPtr ppidl, ref uint pdwAttributes);
+            [PreserveSig] int EnumObjects(IntPtr hwnd, int grfFlags, out IntPtr ppenumIDList);
+            [PreserveSig] int BindToObject(IntPtr pidl, IntPtr pbc, ref Guid riid, out IntPtr ppv);
+            [PreserveSig] int BindToStorage(IntPtr pidl, IntPtr pbc, ref Guid riid, out IntPtr ppv);
+            [PreserveSig] int CompareIDs(IntPtr lParam, IntPtr pidl1, IntPtr pidl2);
+            [PreserveSig] int CreateViewObject(IntPtr hwndOwner, ref Guid riid, out IntPtr ppv);
+            [PreserveSig] int GetAttributesOf(int cidl, [MarshalAs(UnmanagedType.LPArray)] IntPtr[] apidl, ref uint rgfInOut);
+            [PreserveSig]
+            int GetUIObjectOf(IntPtr hwndOwner, int cidl,
+                [MarshalAs(UnmanagedType.LPArray)] IntPtr[] apidl, ref Guid riid, IntPtr rgfReserved, out IntPtr ppv);
+            [PreserveSig] int GetDisplayNameOf(IntPtr pidl, uint uFlags, IntPtr pName);
+            [PreserveSig] int SetNameOf(IntPtr hwnd, IntPtr pidl, [MarshalAs(UnmanagedType.LPWStr)] string pszName, uint uFlags, out IntPtr ppidlOut);
+        }
+
+        [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("000214E4-0000-0000-C000-000000000046")]
+        private interface IContextMenu
+        {
+            [PreserveSig] int QueryContextMenu(IntPtr hMenu, uint indexMenu, uint idCmdFirst, uint idCmdLast, uint uFlags);
+            [PreserveSig] void InvokeCommand(ref CMINVOKECOMMANDINFOEX pici);
+            [PreserveSig] void GetCommandString(uint idcmd, uint uflags, uint reserved, [MarshalAs(UnmanagedType.LPStr)] StringBuilder commandstring, int cch);
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        private struct CMINVOKECOMMANDINFOEX
+        {
+            public int cbSize;
+            public int fMask;
+            public IntPtr hwnd;
+            public IntPtr lpVerb;
+            public IntPtr lpParameters;
+            public IntPtr lpDirectory;
+            public int nShow;
+            public int dwHotKey;
+            public IntPtr hIcon;
+            public IntPtr lpTitle;
+            public IntPtr lpVerbW;
+            public IntPtr lpParametersW;
+            public IntPtr lpDirectoryW;
+            public IntPtr lpTitleW;
+            public POINT ptInvoke;
+        }
+
+        private void ShowFileContextMenu(string filePath)
+        {
+            try
+            {
+                // 1️⃣ 获取文件 PIDL
+                uint dummy;
+                SHParseDisplayName(filePath, IntPtr.Zero, out var pidl, 0, out dummy);
+
+
+                // 2️⃣ 获取父目录对象
+                Guid iidShellFolder = typeof(IShellFolder).GUID;
+                SHBindToParent(pidl, ref iidShellFolder, out var folder, out var childPidl);
+
+                // 3️⃣ 获取 IContextMenu 接口
+                Guid iidContextMenu = typeof(IContextMenu).GUID;
+                folder.GetUIObjectOf(IntPtr.Zero, 1, new IntPtr[] { childPidl }, ref iidContextMenu, IntPtr.Zero, out var contextMenuPtr);
+                var contextMenu = (IContextMenu)Marshal.GetTypedObjectForIUnknown(contextMenuPtr, typeof(IContextMenu));
+
+                // 4️⃣ 创建菜单
+                IntPtr hMenu = User32.CreatePopupMenu();
+                contextMenu.QueryContextMenu(hMenu, 0, 1, 0x7FFF, 0x0000);
+
+                GetCursorPos(out POINT pt);
+                User32.TrackPopupMenu(hMenu, 0, pt.X, pt.Y, 0, Handle, IntPtr.Zero);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("显示右键菜单失败：" + ex.Message);
+            }
+        }
+
+        private static class User32
+        {
+            [DllImport("user32.dll")]
+            public static extern IntPtr CreatePopupMenu();
+
+            [DllImport("user32.dll")]
+            public static extern bool DestroyMenu(IntPtr hMenu);
+
+            [DllImport("user32.dll")]
+            public static extern int TrackPopupMenu(IntPtr hMenu, uint uFlags, int x, int y, int nReserved, IntPtr hwnd, IntPtr prcRect);
+        }
+
+        #endregion
+
 
         public FileList()
         {
@@ -228,7 +344,7 @@ namespace MpvNet.Windows
 
                 bool aUp = a.IsDir && a.Name == "..";
                 bool bUp = b.IsDir && b.Name == "..";
-                if (aUp || bUp) return aUp ? (bUp ? 0 : -1) : 1;
+                if (aUp || bUp) return aUp ? bUp ? 0 : -1 : 1;
 
                 if (a.IsDir != b.IsDir) return a.IsDir ? -1 : 1;
 
@@ -545,7 +661,7 @@ namespace MpvNet.Windows
             int contentY = mouseY - headerTop + _scrollOffsetY;
             if (contentY < 0) return -1;
             int idx = contentY / _rowHeight;
-            return (idx >= 0 && idx < _items.Count) ? idx : -1;
+            return idx >= 0 && idx < _items.Count ? idx : -1;
         }
 
         // 鼠标是否命中文件图标/名称区域
@@ -695,7 +811,7 @@ namespace MpvNet.Windows
                     if (truncated)
                     {
                         // 若切换到新行/新位置，重启 2 秒计时；保持在同一行则不打断计时
-                        bool sameTarget = (_tipIndex == idx && nameRect == _tipNameRect && _tipVisible);
+                        bool sameTarget = _tipIndex == idx && nameRect == _tipNameRect && _tipVisible;
                         if (!sameTarget)
                         {
                             if (_tipVisible) { _toolTip.Hide(this); _tipVisible = false; }
@@ -753,6 +869,7 @@ namespace MpvNet.Windows
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
+            
             if (e.Button == MouseButtons.Left)
             {
                 _dragging = false;
@@ -829,14 +946,6 @@ namespace MpvNet.Windows
             }
         }
 
-        private static Bitmap GetIconFromCache(string ext)
-        {
-            lock (s_iconLock)
-            {
-                return s_iconByExt.TryGetValue(ext, out var bmp) ? bmp : null;
-            }
-        }
-
         private static void EnsureIconCached(string ext)
         {
             if (string.IsNullOrEmpty(ext)) ext = ".";
@@ -857,8 +966,8 @@ namespace MpvNet.Windows
         {
             SHFILEINFO sh = new();
             uint flags = SHGFI_ICON | SHGFI_LARGEICON | SHGFI_USEFILEATTRIBUTES;
-            IntPtr h = SHGetFileInfo(pathOrExt, attrs, ref sh, (uint)Marshal.SizeOf<SHFILEINFO>(), flags);
-            if (sh.hIcon != IntPtr.Zero)
+            nint h = SHGetFileInfo(pathOrExt, attrs, ref sh, (uint)Marshal.SizeOf<SHFILEINFO>(), flags);
+            if (sh.hIcon != nint.Zero)
             {
                 try
                 {
@@ -876,7 +985,7 @@ namespace MpvNet.Windows
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct SHFILEINFO
         {
-            public IntPtr hIcon;
+            public nint hIcon;
             public int iIcon;
             public uint dwAttributes;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string szDisplayName;
@@ -884,10 +993,10 @@ namespace MpvNet.Windows
         }
 
         [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-        private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
+        private static extern nint SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
 
         [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool DestroyIcon(IntPtr hIcon);
+        private static extern bool DestroyIcon(nint hIcon);
 
         private const uint SHGFI_ICON = 0x000000100;
         private const uint SHGFI_LARGEICON = 0x000000000;

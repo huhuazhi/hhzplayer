@@ -88,11 +88,11 @@ public class MainPlayer : MpvClient
         if (MainHandle == IntPtr.Zero)
             throw new Exception("error mpv_create");
 
-        if (App.IsTerminalAttached)
-        {
-            SetPropertyString("terminal", "yes");
-            SetPropertyString("input-terminal", "yes");
-        }
+        //if (App.IsTerminalAttached)
+        //{
+        //    SetPropertyString("terminal", "yes");
+        //    SetPropertyString("input-terminal", "yes");
+        //}
 
         if (formHandle != IntPtr.Zero)
         {
@@ -107,7 +107,7 @@ public class MainPlayer : MpvClient
         SetPropertyString("hwdec", "auto");
         SetPropertyString("hwdec-interop", "all");
         SetPropertyInt("hwdec-extra-frames", 4);
-        SetPropertyInt("video-sync", 60);
+        //SetPropertyInt("video-sync", 60);
         SetPropertyString("interpolation", "no");
         SetPropertyInt("swapchain-depth", 2);
         SetPropertyString("profile", "gpu-hq");
@@ -149,24 +149,24 @@ public class MainPlayer : MpvClient
         SetPropertyString("sub-stereo-layout", "sbs");
         SetPropertyLong("sub-stereo-offset-px", 0);
 
-        UsedInputConfContent = App.InputConf.GetContent();
+        //UsedInputConfContent = App.InputConf.GetContent();
 
-        if (!string.IsNullOrEmpty(UsedInputConfContent))
-            SetPropertyString("input-conf", @"memory://" + UsedInputConfContent);
+        //if (!string.IsNullOrEmpty(UsedInputConfContent))
+        //    SetPropertyString("input-conf", @"memory://" + UsedInputConfContent);
 
         if (processCommandLine)
             CommandLine.ProcessCommandLineArgsPreInit();
 
-        if (CommandLine.Contains("config-dir"))
-        {
-            string configDir = CommandLine.GetValue("config-dir");
-            string fullPath = System.IO.Path.GetFullPath(configDir);
-            App.InputConf.Path = fullPath.AddSep() + "input.conf";
-            string content = App.InputConf.GetContent();
+        //if (CommandLine.Contains("config-dir"))
+        //{
+        //    string configDir = CommandLine.GetValue("config-dir");
+        //    string fullPath = System.IO.Path.GetFullPath(configDir);
+        //    App.InputConf.Path = fullPath.AddSep() + "input.conf";
+        //    string content = App.InputConf.GetContent();
 
-            if (!string.IsNullOrEmpty(content))
-                SetPropertyString("input-conf", @"memory://" + content);
-        }
+        //    if (!string.IsNullOrEmpty(content))
+        //        SetPropertyString("input-conf", @"memory://" + content);
+        //}
 
         //Environment.SetEnvironmentVariable("MPVNET_VERSION", AppInfo.Version.ToString());  // deprecated
 
@@ -178,7 +178,7 @@ public class MainPlayer : MpvClient
         string idle = GetPropertyString("idle");
         App.Exit = idle == "no" || idle == "once";
 
-        Handle = mpv_create_client(MainHandle, "mpvnet");
+        Handle = mpv_create_client(MainHandle, "hhzplayer");
 
         if (Handle == IntPtr.Zero)
             throw new Exception("mpv_create_client error");

@@ -48,7 +48,7 @@ public partial class MainForm : Form
         //鼠标单击和双击区分用的Timer
         //clickTimer = new Timer();
         //clickTimer.Interval = 300; //给一个双击比较短的固定值300ms，体验会好很多,避免有用户吧系统双击事件调的过长，导致单击等待太久，系统默认为500ms
-                             //SystemInformation.DoubleClickTime; // 系统双击时间
+        //SystemInformation.DoubleClickTime; // 系统双击时间
         //clickTimer.Tick += ClickTimer_Tick;
 
         //弹Toast信息用的Timer
@@ -100,7 +100,8 @@ public partial class MainForm : Form
                 btn3DLeft.Visible = false;
                 btnFullScreenLeft.Visible = false;
             }
-            Player.LoadFiles([.. files], true, false);
+            HhzMainPage_FileOpened(null, [.. files]);
+            //Player.LoadFiles([.. files], true, false);
         }
     }
 
@@ -243,7 +244,7 @@ public partial class MainForm : Form
         if (App.Settings.Enable3DMode)
         {
             btn3DLeft.Visible = true;
-            btn3DRight.Visible = true;            
+            btn3DRight.Visible = true;
         }
         else
         {
@@ -303,7 +304,7 @@ public partial class MainForm : Form
         {
             case "2D渲染器":
                 btnRenderLeft.Text = "2D渲染器";
-                Player.SetPropertyString("vo", "gpu-next");
+                Player.SetPropertyString("vo", "gpu");
                 Player.SetPropertyString("gpu-api", "auto");
                 break;
             case "3D渲染器":
@@ -319,16 +320,17 @@ public partial class MainForm : Form
     private void BtnRender_Click(object? sender, EventArgs e)
     {
         //Player.SetPropertyString("video-aspect-override", "32:9");
-        if (btnRenderLeft.Text == "3D渲染器")
+        if (SettingsManager.Current.RenderText == "3D渲染器")
         {
-            btnRenderLeft.Text = "2D渲染器";
+            SettingsManager.Current.RenderText = "2D渲染器";
         }
         else
         {
-            btnRenderLeft.Text = "3D渲染器";
+            SettingsManager.Current.RenderText = "3D渲染器";
         }
-        SettingsManager.Current.RenderText = btnRenderLeft.Text;
-        setRender(SettingsManager.Current.RenderText);        
+        btnRenderLeft.Text = SettingsManager.Current.RenderText;
+        btnRenderRight.Text = SettingsManager.Current.RenderText;
+        setRender(SettingsManager.Current.RenderText);
     }
 
     private void BtnFullScreen_Click(object? sender, EventArgs e)
@@ -423,12 +425,12 @@ public partial class MainForm : Form
 
     private void OverlayPanel_MouseDoubleClick(object? sender, MouseEventArgs e)
     {
-        if (e ==null || e.Button == MouseButtons.Left)
+        if (e == null || e.Button == MouseButtons.Left)
         {
             //isDoubleClick = true;            
             //clickTimer.Stop(); //双击发生，取消单击逻辑  // 👉 在这里写双击逻辑
             //bPressEnter = false;
-            if (!App.Settings.Enable3DMode && (e ==null || e.Button == MouseButtons.Left))
+            if (!App.Settings.Enable3DMode && (e == null || e.Button == MouseButtons.Left))
             {
                 if (this.FormBorderStyle == FormBorderStyle.None)
                 {
@@ -473,7 +475,7 @@ public partial class MainForm : Form
             ReleaseCapture();
             PostMessage(Handle, WM_NCLBUTTONDOWN, HTCAPTION, IntPtr.Zero);
         }
-    }    
+    }
 
     private void HhzMainPage_FileOpened(HHZMainPage sender, string[] paths)
     {
@@ -496,22 +498,12 @@ public partial class MainForm : Form
             SettingsManager.Load(newPath);
             Set3DSubtitleMode(SettingsManager.Current.SubtitleMode);
             setRender(SettingsManager.Current.RenderText);
-            if (App.Settings.Enable3DMode)
-            {
-                btn3DLeft.Visible = false;
-                btn3DRight.Visible = false;
-            }
-            else
-            {
-                btn3DLeft.Visible = false;
-                btnFullScreenLeft.Visible = false;
-            }
             Player.LoadFiles(paths, true, false);
             if (SettingsManager.Current.LastVideoTrackId != -1) Player.SetPropertyString("vid", SettingsManager.Current.LastVideoTrackId.ToString());
             if (SettingsManager.Current.LastAudioTrackId != -1) Player.SetPropertyString("aid", SettingsManager.Current.LastAudioTrackId.ToString());
             if (SettingsManager.Current.LastSubtitleTrackId != -1) Player.SetPropertyString("sid", SettingsManager.Current.LastSubtitleTrackId.ToString());
             if (SettingsManager.Current.VideoAspestW != "0" && SettingsManager.Current.VideoAspestH != "0") Player.SetPropertyString("video-aspect-override", $"{SettingsManager.Current.VideoAspestW}:{SettingsManager.Current.VideoAspestH}");
-            if (FileTypes.IsAudio(Path.GetExtension(paths[0]).Replace(".",""))/*Player.Path.Ext())*/) //音频格式
+            if (FileTypes.IsAudio(Path.GetExtension(paths[0]).Replace(".", ""))/*Player.Path.Ext())*/) //音频格式
             {
                 isAudio = true;
                 overlayPanel.BackgroundImage = LoadMyLogo();
@@ -526,6 +518,16 @@ public partial class MainForm : Form
             {
                 isAudio = false;
                 overlayPanel.BackgroundImage = null;
+            }
+            if (App.Settings.Enable3DMode)
+            {
+                btn3DLeft.Visible = false;
+                btn3DRight.Visible = false;
+            }
+            else
+            {
+                btn3DLeft.Visible = false;
+                btnFullScreenLeft.Visible = false;
             }
         }
     }
@@ -668,7 +670,7 @@ public partial class MainForm : Form
     {
         if (App.Settings.WindowLocation.X == 0 && App.Settings.WindowLocation.Y == 0 && App.Settings.WindowSize.Width == 0 && App.Settings.WindowSize.Height == 0)
         {
-            App.Settings.WindowLocation.X = (int)(Screen.FromControl(this).Bounds.Width - Screen.FromControl(this).Bounds.Width * 0.8)/2;
+            App.Settings.WindowLocation.X = (int)(Screen.FromControl(this).Bounds.Width - Screen.FromControl(this).Bounds.Width * 0.8) / 2;
             App.Settings.WindowLocation.Y = (int)(Screen.FromControl(this).Bounds.Height - Screen.FromControl(this).Bounds.Height * 0.8) / 2;
             App.Settings.WindowSize.Width = (int)(Screen.FromControl(this).Bounds.Width * 0.8);
             App.Settings.WindowSize.Height = (int)(Screen.FromControl(this).Bounds.Height * 0.8);
@@ -679,7 +681,8 @@ public partial class MainForm : Form
 
     private enumFormBorderStyle GetAppFormBorderStyle(FormBorderStyle formBorderStyle)
     {
-        switch (formBorderStyle) {
+        switch (formBorderStyle)
+        {
             case FormBorderStyle.None:
                 return enumFormBorderStyle.None;
             case FormBorderStyle.Sizable:
@@ -756,7 +759,7 @@ public partial class MainForm : Form
     {
         if (!App.Settings.Enable3DMode)
         {
-            if (WindowState != FormWindowState.Minimized && WindowState != FormWindowState.Maximized 
+            if (WindowState != FormWindowState.Minimized && WindowState != FormWindowState.Maximized
                 && FormBorderStyle != FormBorderStyle.None && WasShown && !_isReturn2D)
             {
                 if (WindowState != FormWindowState.Maximized)
@@ -776,7 +779,7 @@ public partial class MainForm : Form
     {
         base.OnActivated(e);
     }
-    
+
     void CursorTimer_Tick(object sender, EventArgs e)
     {
         //Debug.Print($"{DateTime.Now.ToString()}-CursorPositionDiff: {_lastCursorPosition != MousePosition}");
@@ -784,7 +787,8 @@ public partial class MainForm : Form
         //string state = Player.GetPropertyString("cache-buffering-state");
         //string state = Player.GetPropertyString("demuxer-cache-state");
         strstate = Player.GetPropertyString("demuxer-cache-state");
-        if (strstate != "" )        {
+        if (strstate != "")
+        {
             var state = DemuxerCacheParser.Parse(Player.GetPropertyString("demuxer-cache-state"));
             if (Player.Paused)
             {
@@ -802,8 +806,8 @@ public partial class MainForm : Form
             {
                 StreamingContextStates += $"缓存:{state.CacheDuration:F2}秒-{(state.TotalBytes / 1024.0 / 1024 / state.CacheDuration):F2} MB/s";
             }
-
             lblStatusLeft.Text = StreamingContextStates;
+            lblStatusRight.Text = lblStatusLeft.Text;
         }
         if (_lastCursorPosition != MousePosition && ClientRectangle.Contains(PointToClient(MousePosition))/*IsCursorPosDifferent(_lastCursorPosition)*/)
         {
@@ -813,6 +817,8 @@ public partial class MainForm : Form
         else if (Environment.TickCount - _lastCursorChanged > _cursorAutohide && lblStatusLeft.Text.Substring(0, 2) != "正在" && (!Player.GetPropertyBool("pause") || Player.Duration.TotalSeconds == 0) && hhzMainPage.Visible == false)
         {
             if ((_videoMenuLeft != null && _audioMenuLeft != null && _subMenuLeft != null) && (_videoMenuLeft.Visible || _audioMenuLeft.Visible || _subMenuLeft.Visible))
+                return;
+            if (chkTestModeLeft.Checked || chkTestModeRight.Checked)
                 return;
             if (btn3DLeft.Visible == true || progressBarLeft.Visible == true/*ClientRectangle.Contains(PointToClient(MousePosition)) && ActiveForm == this && !ContextMenu.IsVisible && !IsMouseInOsc()*/)
             {
@@ -923,7 +929,7 @@ public partial class MainForm : Form
             {
                 switch (type)
                 {
-                    case "video": 
+                    case "video":
                         Player.SetPropertyString("vid", id.ToString());
                         SettingsManager.Current.LastVideoTrackId = id;
                         break;
@@ -996,13 +1002,13 @@ public partial class MainForm : Form
             Checked = false,
             CheckOnClick = false
         };
-        defVidl.Click += (_, __) => {SettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
+        defVidl.Click += (_, __) => { SettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
         _videoMenuLeft.Items.Add(defVidl);
-        defVidr.Click += (_, __) => {SettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
+        defVidr.Click += (_, __) => { SettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
         _videoMenuRight.Items.Add(defVidr);
 
         _videoMenuLeft.Items.Add(new ToolStripSeparator());
-        _videoMenuRight.Items.Add(new ToolStripSeparator());        
+        _videoMenuRight.Items.Add(new ToolStripSeparator());
         var Videoaspectl = new ToolStripMenuItem("强制播放比例")
         {
             Checked = curVid == "no",
@@ -1049,7 +1055,7 @@ public partial class MainForm : Form
         };
         defAidl.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };
         _audioMenuLeft.Items.Add(defAidl);
-        defAidr.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };        
+        defAidr.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };
         _audioMenuRight.Items.Add(defAidr);
 
         _subMenuLeft.Items.Add(new ToolStripSeparator());
@@ -1081,7 +1087,7 @@ public partial class MainForm : Form
         };
         defSubl.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };
         _subMenuLeft.Items.Add(defSubl);
-        defSubr.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };        
+        defSubr.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };
         _subMenuRight.Items.Add(defSubr);
     }
 
@@ -1519,7 +1525,7 @@ public partial class MainForm : Form
             lblVolumeRight.ForeColor = Color.Red;
         }
         else if (App.Settings.Volume != 0)
-        {            
+        {
             lblVolumeLeft.ForeColor = Color.White;
             lblVolumeRight.ForeColor = Color.White;
         }
@@ -1579,7 +1585,7 @@ public partial class MainForm : Form
         overlayPanel.Cursor = Cursors.Default;
         //Cursor.Show();
         _lastCursorPosition = MousePosition;
-        _lastCursorChanged = Environment.TickCount;        
+        _lastCursorChanged = Environment.TickCount;
     }
 
     void ShowVideoOSD()
@@ -1597,13 +1603,14 @@ public partial class MainForm : Form
         if (hhzMainPage.Visible == false) lblDurationLeft.Visible = true;
         if (hhzMainPage.Visible == false) lblStatusLeft.Visible = true;
         if (hhzMainPage.Visible == false) lblVolumeLeft.Visible = true;
+        if (hhzMainPage.Visible == false && bTestMode) panelTestLeft.Visible = true;
 
         if (App.Settings.Enable3DMode)
         {
-            btnBackRight.Left = Width / 2 + btnBackLeft.Left;
-            btn3DRight.Left = Width / 2 + btn3DLeft.Left;
             btn3DLeft.Text = "3D模式";
             btn3DRight.Text = "3D模式";
+            btnBackRight.Left = Width / 2 + btnBackLeft.Left;
+            btn3DRight.Left = Width / 2 + btn3DLeft.Left;
             btn3DSubtitleModeRight.Left = Width / 2 + btn3DSubtitleModeLeft.Left;
             btnVideoTrackRight.Left = Width / 2 + btnVideoTrackLeft.Left;
             btnAudioTrackRight.Left = Width / 2 + btnAudioTrackLeft.Left;
@@ -1612,23 +1619,19 @@ public partial class MainForm : Form
             btnPlayLeft.Left = btnFullScreenLeft.Left;
             btnPlayRight.Left = btnFullScreenLeft.Left - Width / 2;
             //btnFullScreenLeft.Left = btnFullScreenRight.Left - Width / 2;            
-            progressBarRight.Left = Width / 2 + progressBarLeft.Left;
-
-            progressBarLeft.Width = btnPlayRight.Right - btn3DLeft.Left; /*(int)(3750.0000 / 3840 * Width / 2);*/
-            progressBarRight.Width = progressBarLeft.Width;
-
             lblDurationRight.Left = Width / 2 + lblDurationLeft.Left;
             lblStatusLeft.Left = lblDurationLeft.Left + lblDurationLeft.Width;
             lblStatusRight.Left = Width / 2 + lblStatusLeft.Left;
-            lblStatusLeft.Width = (progressBarLeft.Width - lblDurationLeft.Width - lblVolumeLeft.Width);
-            lblStatusRight.Width = lblStatusLeft.Width;
+            progressBarRight.Left = Width / 2 + progressBarLeft.Left;
+            panelTestRight.Left = Width / 2 + panelTestLeft.Left;
             lblVolumeLeft.Left = lblStatusLeft.Left + lblStatusLeft.Width;
             lblVolumeRight.Left = Width / 2 + lblVolumeLeft.Left;
 
-            lblToastLeft.Left = 0;
-            lblToastLeft.Width = Width / 2;
-            lblToastRight.Left = Width / 2;
-            lblToastRight.Width = lblToastLeft.Width;
+            progressBarLeft.Width = btnPlayRight.Right - btn3DLeft.Left; /*(int)(3750.0000 / 3840 * Width / 2);*/
+            progressBarRight.Width = progressBarLeft.Width;
+            lblStatusLeft.Width = (progressBarLeft.Width - lblDurationLeft.Width - lblVolumeLeft.Width);
+            lblStatusRight.Width = lblStatusLeft.Width;
+
 
             btnFullScreenLeft.Visible = false;
 
@@ -1636,7 +1639,6 @@ public partial class MainForm : Form
             if (hhzMainPage.Visible == false) btn3DSubtitleModeRight.Visible = true;
             btn3DRight.Visible = true;
             if (hhzMainPage.Visible == false) progressBarRight.Visible = true;
-            progressBarRight.BringToFront();
             if (hhzMainPage.Visible == false) btnVideoTrackRight.Visible = true;
             if (hhzMainPage.Visible == false) btnAudioTrackRight.Visible = true;
             if (hhzMainPage.Visible == false) btnSubtitleTrackRight.Visible = true;
@@ -1644,7 +1646,10 @@ public partial class MainForm : Form
             if (hhzMainPage.Visible == false) btnPlayRight.Visible = true;
             if (hhzMainPage.Visible == false) lblDurationRight.Visible = true;
             if (hhzMainPage.Visible == false) lblStatusRight.Visible = true;
-            if (hhzMainPage.Visible == false) lblVolumeRight.Visible = true;            
+            if (hhzMainPage.Visible == false) lblVolumeRight.Visible = true;
+            if (hhzMainPage.Visible == false && bTestMode) panelTestRight.Visible = true;
+
+            progressBarRight.BringToFront();
         }
         else
         {
@@ -1658,8 +1663,6 @@ public partial class MainForm : Form
 
             btnPlayLeft.Left = btnFullScreenLeft.Left - btnFullScreenLeft.Width - 10;
             //btnPlayRight.Left = btnFullScreenLeft.Left - Width / 2;
-            lblToastLeft.Left = 0;
-            lblToastLeft.Width = Width;
 
             btnBackRight.Visible = false;
             btn3DSubtitleModeRight.Visible = false;
@@ -1676,8 +1679,9 @@ public partial class MainForm : Form
             lblDurationRight.Visible = false;
             lblStatusRight.Visible = false;
             lblVolumeRight.Visible = false;
+            panelTestRight.Visible = false;
         }
-        
+
         btnBackLeft.BringToFront();
         btn3DSubtitleModeLeft.BringToFront();
         btn3DLeft.BringToFront();
@@ -1694,7 +1698,7 @@ public partial class MainForm : Form
 
         btnBackRight.BringToFront();
         btn3DSubtitleModeRight.BringToFront();
-        btn3DRight.BringToFront();        
+        btn3DRight.BringToFront();
         btnVideoTrackRight.BringToFront();
         btnAudioTrackRight.BringToFront();
         btnSubtitleTrackRight.BringToFront();
@@ -1705,7 +1709,7 @@ public partial class MainForm : Form
         lblVolumeRight.BringToFront();
         if (isAudio)
         {
-            ShowAudioUI();            
+            ShowAudioUI();
         }
         _lastCursorChanged = Environment.TickCount;
     }
@@ -1732,6 +1736,7 @@ public partial class MainForm : Form
             lblDurationLeft.Visible = false;
             lblStatusLeft.Visible = false;
             lblVolumeLeft.Visible = false;
+            panelTestLeft.Visible = false;
 
             btnBackRight.Visible = false;
             btn3DSubtitleModeRight.Visible = false;
@@ -1745,6 +1750,7 @@ public partial class MainForm : Form
             lblDurationRight.Visible = false;
             lblStatusRight.Visible = false;
             lblVolumeRight.Visible = false;
+            panelTestRight.Visible = false;
         }
     }
 
@@ -1832,6 +1838,7 @@ public partial class MainForm : Form
     private bool bFileloaded;
     private string StreamingContextStates;
     private string strstate;
+    private bool bTestMode;
 
     void Set3DSubtitleMode(string mode3DSubtitle)
     {
@@ -1843,7 +1850,7 @@ public partial class MainForm : Form
         {
             v3DSubtitleMode.Sub3D(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
         }
-        _lastCursorChanged = Environment.TickCount;        
+        _lastCursorChanged = Environment.TickCount;
     }
 
     private void btnSubtitle_Click(object? sender, EventArgs e)
@@ -1945,7 +1952,7 @@ public partial class MainForm : Form
                     else
                     {
                         // 第一次按Escape，记录时间
-                        _lastEscapeTime = DateTime.Now;                        
+                        _lastEscapeTime = DateTime.Now;
                         ShowToast("再按一次ESC退出。。。", 1000);
                     }
                 }
@@ -1966,7 +1973,7 @@ public partial class MainForm : Form
                 //HideCursor();
                 //HideVideoOSD();
                 Player.Command("playlist-prev");   // 上一个媒体
-                if (Player.Duration.TotalSeconds == 0) bPressPageDownUp = true; /*Player.Command("pause");*/                
+                if (Player.Duration.TotalSeconds == 0) bPressPageDownUp = true; /*Player.Command("pause");*/
                 break;
             case Keys.PageDown:
                 //HideCursor();
@@ -2152,6 +2159,14 @@ public partial class MainForm : Form
             case Keys.F11:
                 break;
             case Keys.F12:
+                if (bTestMode == false)
+                {
+                    bTestMode = true;
+                }
+                else
+                {
+                    bTestMode = false;
+                }
                 break;
             case Keys.F13:
                 break;
@@ -2285,24 +2300,30 @@ public partial class MainForm : Form
                 break;
         }
     }
-    void ShowToast(string message,int showtime)
+    void ShowToast(string message, int showtime)
     {
         //启动Toast计时器并显示提示
         ToastTimer.Stop();
-        if (showtime>0) ToastTimer.Interval = showtime;
+        if (showtime > 0) ToastTimer.Interval = showtime;
         ToastTimer.Start();
         if (App.Settings.Enable3DMode)
         {
+            lblToastLeft.Left = 0;
+            lblToastLeft.Width = Width / 2;
             lblToastLeft.Text = message;
             lblToastLeft.Visible = true;
             lblToastLeft.BringToFront();
 
+            lblToastRight.Left = Width / 2;
+            lblToastRight.Width = lblToastLeft.Width;
             lblToastRight.Text = message;
             lblToastRight.Visible = true;
             lblToastRight.BringToFront();
         }
         else
         {
+            lblToastLeft.Left = 0;
+            lblToastLeft.Width = Width;
             lblToastLeft.Text = message;
             lblToastLeft.Visible = true;
             lblToastLeft.BringToFront();
@@ -2314,5 +2335,35 @@ public partial class MainForm : Form
         lblToastLeft.Visible = false;
         lblToastRight.Text = "";
         lblToastRight.Visible = false;
+    }
+
+    private void cmbVO_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        Player.SetPropertyString("vo", ((ComboBox)sender).SelectedText);
+    }
+
+    private void cmbhwdec_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        Player.SetPropertyString("hwdec", ((ComboBox)sender).SelectedText);
+    }
+
+    private void cmbgpuapi_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        Player.SetPropertyString("gpu-api", ((ComboBox)sender).SelectedText);
+    }
+
+    private void cmbGpuContext_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        Player.SetPropertyString("gpu-context", ((ComboBox)sender).SelectedText);
+    }
+
+    private void chkTestModeLeft_CheckedChanged(object sender, EventArgs e)
+    {
+        chkTestModeRight.Checked = chkTestModeLeft.Checked;
+    }
+
+    private void chkTestModeRight_CheckedChanged(object sender, EventArgs e)
+    {
+        chkTestModeLeft.Checked = chkTestModeRight.Checked;
     }
 }

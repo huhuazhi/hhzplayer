@@ -12,7 +12,7 @@
 		<FileVersion>7.1.1.4</FileVersion>
 		<AssemblyVersion>7.1.1.4</AssemblyVersion>
 		<InformationalVersion>7.1.1.4</InformationalVersion>
-		<ApplicationIcon>hhzplayer512x512.ico</ApplicationIcon>
+		<ApplicationIcon>HHZ\hhzplayer512x512.ico</ApplicationIcon>
 		<PackageIcon>hhzplayer.PNG</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="hhzplayer512x512.ico" />
+		<Content Include="HHZ\hhzplayer512x512.ico" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -72,7 +72,7 @@
 	  <None Update="MediaInfo.dll">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="mylogo.png">
+	  <None Update="HHZ\mylogo.png">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="swresample-5.dll">
@@ -83,9 +83,6 @@
 	  </None>
 	  <None Update="swscale-9.dll">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
-	  <None Update="tran1p.cur">
-	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
 

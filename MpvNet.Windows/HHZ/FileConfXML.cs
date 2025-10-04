@@ -1,6 +1,7 @@
 ﻿using System;
-using System.ComponentModel; // << 新增
+using System.ComponentModel;
 using System.IO;
+using System.Threading;
 using System.Xml.Serialization;
 
 namespace MyApp
@@ -13,7 +14,7 @@ namespace MyApp
         public string SubtitleMode
         {
             get => subtitleMode;
-            set { subtitleMode = value; if (!SettingsManager.IsLoading) SettingsManager.Save(); }
+            set { subtitleMode = value; SettingsManager.TrySave(); }
         }
 
         private int lastVideoTrackId = -1;
@@ -21,7 +22,7 @@ namespace MyApp
         public int LastVideoTrackId
         {
             get => lastVideoTrackId;
-            set { lastVideoTrackId = value; if (!SettingsManager.IsLoading) SettingsManager.Save(); }
+            set { lastVideoTrackId = value; SettingsManager.TrySave(); }
         }
 
         private int lastAudioTrackId = -1;
@@ -29,7 +30,7 @@ namespace MyApp
         public int LastAudioTrackId
         {
             get => lastAudioTrackId;
-            set { lastAudioTrackId = value; if (!SettingsManager.IsLoading) SettingsManager.Save(); }
+            set { lastAudioTrackId = value; SettingsManager.TrySave(); }
         }
 
         private int lastSubtitleTrackId = -1;
@@ -37,7 +38,7 @@ namespace MyApp
         public int LastSubtitleTrackId
         {
             get => lastSubtitleTrackId;
-            set { lastSubtitleTrackId = value; if (!SettingsManager.IsLoading) SettingsManager.Save(); }
+            set { lastSubtitleTrackId = value; SettingsManager.TrySave(); }
         }
 
         private string renderText = "2D渲染器";
@@ -45,7 +46,7 @@ namespace MyApp
         public string RenderText
         {
             get => renderText;
-            set { renderText = value; if (!SettingsManager.IsLoading) SettingsManager.Save(); }
+            set { renderText = value; SettingsManager.TrySave(); }
         }
 
         private string videoAspestW = "0";
@@ -53,7 +54,7 @@ namespace MyApp
         public string VideoAspestW
         {
             get => videoAspestW;
-            set { videoAspestW = value; if (!SettingsManager.IsLoading) SettingsManager.Save(); }
+            set { videoAspestW = value; SettingsManager.TrySave(); }
         }
 
         private string videoAspestH = "0";
@@ -61,7 +62,7 @@ namespace MyApp
         public string VideoAspestH
         {
             get => videoAspestH;
-            set { videoAspestH = value; if (!SettingsManager.IsLoading) SettingsManager.Save(); }
+            set { videoAspestH = value; SettingsManager.TrySave(); }
         }
 
         [XmlIgnore]
@@ -75,40 +76,40 @@ namespace MyApp
             VideoAspestH == "0";
 
         [XmlIgnore]
-        public bool IsModify =>
-            !IsAllDefault; // 也可以按你原来的口径只比对部分字段
+        public bool IsModify => !IsAllDefault;
     }
 
     public static class SettingsManager
     {
-        private static string filePath/* = "hhzsettings.xml"*/;
+        private static string filePath;
         private static hhzFileSettings currentSettings;
         internal static bool IsLoading { get; private set; }
+
+        private static readonly object saveLock = new();
+        private static DateTime lastSaveTime = DateTime.MinValue;
 
         public static hhzFileSettings Current => currentSettings ??= new hhzFileSettings();
 
         public static hhzFileSettings Load(string FilePath = null)
         {
-            /*if (string.IsNullOrEmpty(FilePath))*/ filePath = FilePath;
-            if (!File.Exists(filePath))
+            filePath = FilePath;
+            if (string.IsNullOrEmpty(filePath))
             {
                 currentSettings = new hhzFileSettings();
-                return null; // 按你原意：没有文件时返回 null
+                return currentSettings;
             }
-            else
+
+            if (!File.Exists(filePath) || new FileInfo(filePath).Length == 0)
             {
-                var fi = new FileInfo(filePath);
-                if (fi.Length == 0)
-                {
-                    currentSettings = new hhzFileSettings();
-                    return null;
-                }
+                currentSettings = new hhzFileSettings();
+                return currentSettings;
             }
+
             using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var serializer = new XmlSerializer(typeof(hhzFileSettings));
 
             IsLoading = true;
-            try 
+            try
             {
                 currentSettings = (hhzFileSettings)serializer.Deserialize(stream);
             }
@@ -120,47 +121,74 @@ namespace MyApp
             {
                 IsLoading = false;
             }
+
             return currentSettings;
         }
+
+        /// <summary>
+        /// 为避免多属性连续触发保存，这个函数带有简单防抖逻辑。
+        /// </summary>
+        internal static void TrySave()
+        {
+            if (IsLoading) return;
+            if ((DateTime.Now - lastSaveTime).TotalMilliseconds < 200) return; // 200ms防抖
+            lastSaveTime = DateTime.Now;
+            Save();
+        }
+
         public static void Save()
         {
+            if (IsLoading) return;
             currentSettings ??= new hhzFileSettings();
-
             if (string.IsNullOrWhiteSpace(filePath))
                 return;
 
-            if (currentSettings.IsAllDefault)
+            lock (saveLock)
             {
-                if (File.Exists(filePath))
+                if (currentSettings.IsAllDefault)
                 {
-                    try { File.Delete(filePath); } catch { }
+                    if (File.Exists(filePath))
+                    {
+                        try { File.Delete(filePath); } catch { }
+                    }
+                    return;
                 }
-                return;
-            }
 
-            var dir = Path.GetDirectoryName(Path.GetFullPath(filePath));
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
+                var dir = Path.GetDirectoryName(Path.GetFullPath(filePath));
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
 
-            try
-            {
-                using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                var serializer = new XmlSerializer(typeof(hhzFileSettings));
-                serializer.Serialize(stream, currentSettings);
-            }
-            catch { return; }
+                try
+                {
+                    // 如果文件存在并是隐藏的，先去掉隐藏属性
+                    if (File.Exists(filePath))
+                    {
+                        var attrs = File.GetAttributes(filePath);
+                        if ((attrs & FileAttributes.Hidden) != 0)
+                            File.SetAttributes(filePath, attrs & ~FileAttributes.Hidden);
+                    }
 
-            try
-            {
-                // ⭐ 设置隐藏属性
-                File.SetAttributes(filePath, FileAttributes.Hidden);
-            }
-            catch
-            {
-                // 忽略设置失败
+                    using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                    var serializer = new XmlSerializer(typeof(hhzFileSettings));
+                    serializer.Serialize(stream, currentSettings);
+
+                    // 写完再设回隐藏属性
+                    File.SetAttributes(filePath, FileAttributes.Hidden);
+                }
+                catch (Exception ex)
+                {
+                    DebugLog($"保存设置失败: {ex.Message}");
+                }
             }
         }
 
         public static void ResetToDefaults() => currentSettings = new hhzFileSettings();
+
+        private static void DebugLog(string msg)
+        {
+#if DEBUG
+            Console.WriteLine(msg);
+#endif
+        }
     }
 }
