@@ -18,7 +18,7 @@ if clip.width <= 1920 and clip.height <= 1080:
         gpu_id=0
     )
     # 转回 YUV 输出
-    clip = core.resize.Bicubic(clip, format=vs.YUV420P10, matrix_s='709')
+    clip = core.resize.Bicubic(clip, format=vs.YUV444P10, matrix_s='709')
 
 # 如果分辨率 > 1080p：先缩小再放大
 else:

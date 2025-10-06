@@ -171,7 +171,8 @@ public partial class MainForm : Form
     HHZMainPage hhzMainPage = new HHZMainPage();
     private void InitializehhzOverlay()
     {
-        hhzMainPage.BringToFront();
+        frmMediaProperty = new FormMediaProperty(this);
+        hhzMainPage.BringToFront();        
         // 如果上次目录存在就恢复
         if (!string.IsNullOrEmpty(App.Settings.LastOpenedFolder) &&
             Directory.Exists(App.Settings.LastOpenedFolder))
@@ -193,6 +194,8 @@ public partial class MainForm : Form
         Text = "hhzPlayer";
 
         Player.Init(overlayPanel.Handle, true);
+        Player.SetPropertyString("log-file", "hhzplayer-vs.log");
+        Player.SetPropertyString("msg-level", "all=v");
 
         CycleFullScreenFor3D(App.Settings.Enable3DMode);
         hhzMainPage.FileOpened += HhzMainPage_FileOpened;
@@ -320,17 +323,17 @@ public partial class MainForm : Form
     private void BtnRender_Click(object? sender, EventArgs e)
     {
         //Player.SetPropertyString("video-aspect-override", "32:9");
-        if (SettingsManager.Current.RenderText == "3D渲染器")
+        if (hhzSettingsManager.Current.RenderText == "3D渲染器")
         {
-            SettingsManager.Current.RenderText = "2D渲染器";
+            hhzSettingsManager.Current.RenderText = "2D渲染器";
         }
         else
         {
-            SettingsManager.Current.RenderText = "3D渲染器";
+            hhzSettingsManager.Current.RenderText = "3D渲染器";
         }
-        btnRenderLeft.Text = SettingsManager.Current.RenderText;
-        btnRenderRight.Text = SettingsManager.Current.RenderText;
-        setRender(SettingsManager.Current.RenderText);
+        btnRenderLeft.Text = hhzSettingsManager.Current.RenderText;
+        btnRenderRight.Text = hhzSettingsManager.Current.RenderText;
+        setRender(hhzSettingsManager.Current.RenderText);
     }
 
     private void BtnFullScreen_Click(object? sender, EventArgs e)
@@ -402,6 +405,7 @@ public partial class MainForm : Form
     {
         if (hhzMainPage.Visible != true)
         {
+            fps = 0;
             Player.Command("stop");
             hhzMainPage.Visible = true;
             overlayPanel.Visible = false;
@@ -481,7 +485,7 @@ public partial class MainForm : Form
     {
         if (paths.Length > 0)
         {
-            bFileloaded = false;
+            //bFileloaded = false;
             progressBarLeft.Value = 0;
             progressBarRight.Value = 0;
 
@@ -495,14 +499,14 @@ public partial class MainForm : Form
             CursorTimer.Enabled = true;
 
             string newPath = Path.ChangeExtension(paths[0], ".hhz");
-            SettingsManager.Load(newPath);
-            Set3DSubtitleMode(SettingsManager.Current.SubtitleMode);
-            setRender(SettingsManager.Current.RenderText);
+            hhzSettingsManager.Load(newPath);
+            Set3DSubtitleMode(hhzSettingsManager.Current.SubtitleMode);
+            setRender(hhzSettingsManager.Current.RenderText);
             Player.LoadFiles(paths, true, false);
-            if (SettingsManager.Current.LastVideoTrackId != -1) Player.SetPropertyString("vid", SettingsManager.Current.LastVideoTrackId.ToString());
-            if (SettingsManager.Current.LastAudioTrackId != -1) Player.SetPropertyString("aid", SettingsManager.Current.LastAudioTrackId.ToString());
-            if (SettingsManager.Current.LastSubtitleTrackId != -1) Player.SetPropertyString("sid", SettingsManager.Current.LastSubtitleTrackId.ToString());
-            if (SettingsManager.Current.VideoAspestW != "0" && SettingsManager.Current.VideoAspestH != "0") Player.SetPropertyString("video-aspect-override", $"{SettingsManager.Current.VideoAspestW}:{SettingsManager.Current.VideoAspestH}");
+            if (hhzSettingsManager.Current.LastVideoTrackId != -1) Player.SetPropertyString("vid", hhzSettingsManager.Current.LastVideoTrackId.ToString());
+            if (hhzSettingsManager.Current.LastAudioTrackId != -1) Player.SetPropertyString("aid", hhzSettingsManager.Current.LastAudioTrackId.ToString());
+            if (hhzSettingsManager.Current.LastSubtitleTrackId != -1) Player.SetPropertyString("sid", hhzSettingsManager.Current.LastSubtitleTrackId.ToString());
+            if (hhzSettingsManager.Current.VideoAspestW != "0" && hhzSettingsManager.Current.VideoAspestH != "0") Player.SetPropertyString("video-aspect-override", $"{hhzSettingsManager.Current.VideoAspestW}:{hhzSettingsManager.Current.VideoAspestH}");
             if (FileTypes.IsAudio(Path.GetExtension(paths[0]).Replace(".", ""))/*Player.Path.Ext())*/) //音频格式
             {
                 isAudio = true;
@@ -547,14 +551,12 @@ public partial class MainForm : Form
     }
 
     private Panel overlayPanel;
-
     void set3DFullHalf()
     {
-        if (Player.Duration.TotalMicroseconds > 0 && (SettingsManager.Current.VideoAspestW == "0" && SettingsManager.Current.VideoAspestH == "0"))
+        if (Player.Duration.TotalMicroseconds > 0 && (hhzSettingsManager.Current.VideoAspestW == "0" && hhzSettingsManager.Current.VideoAspestH == "0"))
         {
-            var vw = Player.GetPropertyInt("width");
-            var vh = Player.GetPropertyInt("height");
-            //Player.SetPropertyString("video-aspect-override", (Width).ToString() + ":" + (Width / (vw * 2) * vh).ToString());
+            vw = Player.GetPropertyInt("width");
+            vh = Player.GetPropertyInt("height");
             //FullSBS画面比例最小值为2.35 * 2 : 1
             if ((double)vw / vh < 2.35 / 1) // half-SBS
             {
@@ -801,11 +803,11 @@ public partial class MainForm : Form
             var state = DemuxerCacheParser.Parse(Player.GetPropertyString("demuxer-cache-state"));
             if (Player.Paused)
             {
-                StreamingContextStates = "暂停中...";
+                StreamingContextStates = $"{(bHDR ? "HDR" : "")} 暂停中...";
             }
             else
             {
-                StreamingContextStates = $"播放中...{GetActualFps():F2} fps ";
+                StreamingContextStates = $"{(bHDR ? "HDR" : "")} 播放中...  帧率:{GetActualFps():F2}帧/秒 ";
             }
             if (state.Underrun)
             {
@@ -940,15 +942,15 @@ public partial class MainForm : Form
                 {
                     case "video":
                         Player.SetPropertyString("vid", id.ToString());
-                        SettingsManager.Current.LastVideoTrackId = id;
+                        hhzSettingsManager.Current.LastVideoTrackId = id;
                         break;
                     case "audio":
                         Player.SetPropertyString("aid", id.ToString());
-                        SettingsManager.Current.LastAudioTrackId = id;
+                        hhzSettingsManager.Current.LastAudioTrackId = id;
                         break;
                     case "sub":
                         Player.SetPropertyString("sid", id.ToString());
-                        SettingsManager.Current.LastSubtitleTrackId = id;
+                        hhzSettingsManager.Current.LastSubtitleTrackId = id;
                         break;
                 }
                 BuildAllTrackMenus(); // 刷新勾选状态
@@ -959,15 +961,15 @@ public partial class MainForm : Form
                 {
                     case "video":
                         Player.SetPropertyString("vid", id.ToString());
-                        SettingsManager.Current.LastVideoTrackId = id;
+                        hhzSettingsManager.Current.LastVideoTrackId = id;
                         break;
                     case "audio":
                         Player.SetPropertyString("aid", id.ToString());
-                        SettingsManager.Current.LastAudioTrackId = id;
+                        hhzSettingsManager.Current.LastAudioTrackId = id;
                         break;
                     case "sub":
                         Player.SetPropertyString("sid", id.ToString());
-                        SettingsManager.Current.LastSubtitleTrackId = id;
+                        hhzSettingsManager.Current.LastSubtitleTrackId = id;
                         break;
                 }
                 BuildAllTrackMenus(); // 刷新勾选状态
@@ -1011,23 +1013,35 @@ public partial class MainForm : Form
             Checked = false,
             CheckOnClick = false
         };
-        defVidl.Click += (_, __) => { SettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
+        defVidl.Click += (_, __) => { hhzSettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
         _videoMenuLeft.Items.Add(defVidl);
-        defVidr.Click += (_, __) => { SettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
+        defVidr.Click += (_, __) => { hhzSettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
         _videoMenuRight.Items.Add(defVidr);
 
         _videoMenuLeft.Items.Add(new ToolStripSeparator());
         _videoMenuRight.Items.Add(new ToolStripSeparator());
-        var Videoaspectl = new ToolStripMenuItem("强制播放比例")
+        Videoaspectl = new ToolStripMenuItem("强制播放比例")
         {
             Checked = curVid == "no",
             CheckOnClick = false
         };
-        var Videoaspectr = new ToolStripMenuItem("强制播放比例")
+        Videoaspectr = new ToolStripMenuItem("强制播放比例")
         {
-            Checked = curVid == "no",
+            //Checked = curVid == "no",
             CheckOnClick = false
         };
+        if (hhzSettingsManager.Current.VideoAspestW != "0" && hhzSettingsManager.Current.VideoAspestH != "0")
+        {
+            Videoaspectl.Text = $"播放比例: {hhzSettingsManager.Current.VideoAspestW}:{hhzSettingsManager.Current.VideoAspestH}";
+            Videoaspectr.Text = $"播放比例: {hhzSettingsManager.Current.VideoAspestW}:{hhzSettingsManager.Current.VideoAspestH}";
+            Videoaspectl.Checked = true ;
+        }
+        else
+        {
+            Videoaspectl.Text = $"播放比例: 默认";
+            Videoaspectr.Text = $"播放比例: 默认";
+            Videoaspectl.Checked = false;
+        }
         Videoaspectl.Click += Videoaspectl_Click;
         _videoMenuLeft.Items.Add(Videoaspectl);
         Videoaspectr.Click += Videoaspectl_Click;
@@ -1062,9 +1076,9 @@ public partial class MainForm : Form
             Checked = false,
             CheckOnClick = false
         };
-        defAidl.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };
+        defAidl.Click += (_, __) => { hhzSettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };
         _audioMenuLeft.Items.Add(defAidl);
-        defAidr.Click += (_, __) => { SettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };
+        defAidr.Click += (_, __) => { hhzSettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };
         _audioMenuRight.Items.Add(defAidr);
 
         _subMenuLeft.Items.Add(new ToolStripSeparator());
@@ -1094,16 +1108,16 @@ public partial class MainForm : Form
             Checked = false,
             CheckOnClick = false
         };
-        defSubl.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };
+        defSubl.Click += (_, __) => { hhzSettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };
         _subMenuLeft.Items.Add(defSubl);
-        defSubr.Click += (_, __) => { SettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };
+        defSubr.Click += (_, __) => { hhzSettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };
         _subMenuRight.Items.Add(defSubr);
     }
 
     FormMediaProperty frmMediaProperty;
     private void Videoaspectl_Click(object? sender, EventArgs e)
     {
-        (frmMediaProperty = new FormMediaProperty()).Show();
+        frmMediaProperty.Show();
         //Player.SetPropertyString("video-aspect-override", "4:3");
     }
     // ======== 帮助函数 ========
@@ -1389,18 +1403,25 @@ public partial class MainForm : Form
                     if (!Player.GetPropertyBool("pause")) Player.Command("cycle pause");
                     bPressPageDownUp = false;
                 }
-            }
-            bFileloaded = true;
-            var vw = Player.GetPropertyInt("width");
-            var vh = Player.GetPropertyInt("height");
-            var fps = Player.GetPropertyDouble("container-fps");
+            }            
+            //bFileloaded = true;
+            vw = Player.GetPropertyInt("width");
+            vh = Player.GetPropertyInt("height");
+            fps = Player.GetPropertyDouble("container-fps");
             Player.SetPropertyString("hwdec", "nvdec-copy");
             string vfList = Player.GetPropertyString("vf");
-            Debug.WriteLine(vfList);
+            //Debug.WriteLine(vfList);
             if (fps <= 30)
             {
-                if (vfList == "" || vfList.Contains("vapoursynth=file=NULL"))
-                Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
+                chkRifeLeft.Checked = true;
+                chkRifeRight.Checked = true;
+                cbRifeTimesLeft.SelectedIndex = 0;
+                cbRifeTimesRight.SelectedIndex = 0;
+                cbRifeTimesLeft.Enabled = true;
+                cbRifeTimesRight.Enabled = true;
+                ShowVideoOSD();
+                if (!bRifeOn())
+                    Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
                 //if (vw <= 1920 && vh <= 1080)
                 //{
                 //    Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_1080p_2x.vpy").Replace("\\", "/")}:buffered-frames=2:concurrent-frames=2");
@@ -1412,10 +1433,17 @@ public partial class MainForm : Form
             }
             else
             {
-                if (vfList != "" && !vfList.Contains("vapoursynth=file=NULL"))
+                gbRifeLeft.Visible = false;
+                gbRifeRight.Visible = false;
+                chkRifeLeft.Checked = false;
+                chkRifeLeft.Checked = false;
+                cbRifeTimesLeft.Enabled = false;
+                cbRifeTimesRight.Enabled = false;
+                if (bRifeOn())
                     //Player.Command("no-osd vf toggle vapoursynth");
                     Player.Command("no-osd vf set vapoursynth=file=NULL");
             }
+            bHDR = IsVideoHDR(Player);
         });
 
         string path = Player.GetPropertyString("path");
@@ -1460,12 +1488,29 @@ public partial class MainForm : Form
         //SetDefaultSubId();
     }
 
+    private bool bHDR;
+    int vw;
+    int vh;
+    double fps;
+
+    bool bRifeOn()
+    {
+        string vfList = Player.GetPropertyString("vf");
+        if (vfList != "" && !vfList.Contains("vapoursynth=file=NULL"))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
     private void setDefaultAspect()
     {
-        if (Player.Duration.TotalMicroseconds > 0 && (SettingsManager.Current.VideoAspestW == "0" && SettingsManager.Current.VideoAspestH == "0"))
+        if (Player.Duration.TotalMicroseconds > 0 && (hhzSettingsManager.Current.VideoAspestW == "0" && hhzSettingsManager.Current.VideoAspestH == "0"))
         {
-            var vw = Player.GetPropertyInt("width");
-            var vh = Player.GetPropertyInt("height");
+            //vw = Player.GetPropertyInt("width");
+            //vh = Player.GetPropertyInt("height");
             Player.SetPropertyString("video-aspect-override", "0");
         }
     }
@@ -1529,7 +1574,7 @@ public partial class MainForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        base.OnFormClosing(e);        
+        base.OnFormClosing(e);
         //if (Player == null || !bPlayerinited)
         //    return;
         //if (Player.IsQuitNeeded)
@@ -1650,19 +1695,20 @@ public partial class MainForm : Form
     void ShowVideoOSD()
     {
         //Debug.Print($"{DateTime.Now.ToString()}-progressBarRight.visible={progressBarRight.Visible}");
-        if (hhzMainPage.Visible == false) btnBackLeft.Visible = true;
-        if (!isAudio && hhzMainPage.Visible == false) btn3DSubtitleModeLeft.Visible = true;
+        btnBackLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
+        btn3DSubtitleModeLeft.Visible = (!isAudio && hhzMainPage.Visible == false) ? true : false;
         btn3DLeft.Visible = true;
-        if (hhzMainPage.Visible == false) progressBarLeft.Visible = true;
-        if (hhzMainPage.Visible == false) btnVideoTrackLeft.Visible = true;
-        if (hhzMainPage.Visible == false) btnAudioTrackLeft.Visible = true;
-        if (hhzMainPage.Visible == false) btnSubtitleTrackLeft.Visible = true;
-        if (!isAudio && hhzMainPage.Visible == false) btnRenderLeft.Visible = true;
-        if (hhzMainPage.Visible == false) btnPlayLeft.Visible = true;
-        if (hhzMainPage.Visible == false) lblDurationLeft.Visible = true;
-        if (hhzMainPage.Visible == false) lblStatusLeft.Visible = true;
-        if (hhzMainPage.Visible == false) lblVolumeLeft.Visible = true;
-        if (hhzMainPage.Visible == false && bTestMode) panelTestLeft.Visible = true;
+        progressBarLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
+        btnVideoTrackLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
+        btnAudioTrackLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
+        btnSubtitleTrackLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
+        btnRenderLeft.Visible = (!isAudio && hhzMainPage.Visible == false) ? true : false;
+        btnPlayLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
+        lblDurationLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
+        lblStatusLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
+        lblVolumeLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
+        panelTestLeft.Visible = (hhzMainPage.Visible == false && bTestMode) ? true : false;
+        gbRifeLeft.Visible = (hhzMainPage.Visible == false && fps > 0 && fps <= 30) ? true : false;
 
         if (App.Settings.Enable3DMode)
         {
@@ -1685,28 +1731,30 @@ public partial class MainForm : Form
             panelTestRight.Left = Width / 2 + panelTestLeft.Left;
             lblVolumeLeft.Left = lblStatusLeft.Left + lblStatusLeft.Width;
             lblVolumeRight.Left = Width / 2 + lblVolumeLeft.Left;
+            gbRifeLeft.Left = lblVolumeLeft.Right - gbRifeLeft.Width;
+            gbRifeRight.Left = lblVolumeRight.Right - gbRifeRight.Width;
 
             progressBarLeft.Width = btnPlayRight.Right - btn3DLeft.Left; /*(int)(3750.0000 / 3840 * Width / 2);*/
             progressBarRight.Width = progressBarLeft.Width;
             lblStatusLeft.Width = (progressBarLeft.Width - lblDurationLeft.Width - lblVolumeLeft.Width);
             lblStatusRight.Width = lblStatusLeft.Width;
 
-
             btnFullScreenLeft.Visible = false;
 
-            if (hhzMainPage.Visible == false) btnBackRight.Visible = true;
-            if (hhzMainPage.Visible == false) btn3DSubtitleModeRight.Visible = true;
+            btnBackRight.Visible = (hhzMainPage.Visible == false) ? true : false;
+            btn3DSubtitleModeRight.Visible = (hhzMainPage.Visible == false) ? true : false;
             btn3DRight.Visible = true;
-            if (hhzMainPage.Visible == false) progressBarRight.Visible = true;
-            if (hhzMainPage.Visible == false) btnVideoTrackRight.Visible = true;
-            if (hhzMainPage.Visible == false) btnAudioTrackRight.Visible = true;
-            if (hhzMainPage.Visible == false) btnSubtitleTrackRight.Visible = true;
-            if (hhzMainPage.Visible == false) btnRenderRight.Visible = true;
-            if (hhzMainPage.Visible == false) btnPlayRight.Visible = true;
-            if (hhzMainPage.Visible == false) lblDurationRight.Visible = true;
-            if (hhzMainPage.Visible == false) lblStatusRight.Visible = true;
-            if (hhzMainPage.Visible == false) lblVolumeRight.Visible = true;
-            if (hhzMainPage.Visible == false && bTestMode) panelTestRight.Visible = true;
+            progressBarRight.Visible = (hhzMainPage.Visible == false) ? true : false;
+            btnVideoTrackRight.Visible = (hhzMainPage.Visible == false) ? true : false;
+            btnAudioTrackRight.Visible = (hhzMainPage.Visible == false) ? true : false;
+            btnSubtitleTrackRight.Visible = (hhzMainPage.Visible == false) ? true : false;
+            btnRenderRight.Visible = (hhzMainPage.Visible == false) ? true : false;
+            btnPlayRight.Visible = (hhzMainPage.Visible == false) ? true : false;
+            lblDurationRight.Visible = (hhzMainPage.Visible == false) ? true : false;
+            lblStatusRight.Visible = (hhzMainPage.Visible == false) ? true : false;
+            lblVolumeRight.Visible = (hhzMainPage.Visible == false) ? true : false;
+            panelTestRight.Visible = (hhzMainPage.Visible == false && bTestMode) ? true : false;
+            gbRifeRight.Visible = (hhzMainPage.Visible == false && fps > 0 && fps <= 30) ? true : false;
 
             progressBarRight.BringToFront();
         }
@@ -1719,6 +1767,7 @@ public partial class MainForm : Form
             lblStatusLeft.Left = lblDurationLeft.Left + lblDurationLeft.Width;
             lblStatusLeft.Width = (progressBarLeft.Width - lblDurationLeft.Width - lblVolumeLeft.Width);
             lblVolumeLeft.Left = lblStatusLeft.Left + lblStatusLeft.Width;
+            gbRifeLeft.Left = lblVolumeLeft.Right - gbRifeLeft.Width;
 
             btnPlayLeft.Left = btnFullScreenLeft.Left - btnFullScreenLeft.Width - 10;
             //btnPlayRight.Left = btnFullScreenLeft.Left - Width / 2;
@@ -1739,6 +1788,7 @@ public partial class MainForm : Form
             lblStatusRight.Visible = false;
             lblVolumeRight.Visible = false;
             panelTestRight.Visible = false;
+            gbRifeRight.Visible = false;
         }
 
         btnBackLeft.BringToFront();
@@ -1754,6 +1804,7 @@ public partial class MainForm : Form
         lblDurationLeft.BringToFront();
         lblStatusLeft.BringToFront();
         lblVolumeLeft.BringToFront();
+        gbRifeLeft.BringToFront();
 
         btnBackRight.BringToFront();
         btn3DSubtitleModeRight.BringToFront();
@@ -1766,6 +1817,7 @@ public partial class MainForm : Form
         lblDurationRight.BringToFront();
         lblStatusRight.BringToFront();
         lblVolumeRight.BringToFront();
+        lblDurationLeft.BringToFront();
         if (isAudio)
         {
             ShowAudioUI();
@@ -1796,6 +1848,7 @@ public partial class MainForm : Form
             lblStatusLeft.Visible = false;
             lblVolumeLeft.Visible = false;
             panelTestLeft.Visible = false;
+            gbRifeLeft.Visible = false;
 
             btnBackRight.Visible = false;
             btn3DSubtitleModeRight.Visible = false;
@@ -1810,6 +1863,7 @@ public partial class MainForm : Form
             lblStatusRight.Visible = false;
             lblVolumeRight.Visible = false;
             panelTestRight.Visible = false;
+            gbRifeRight.Visible = false;
         }
     }
 
@@ -1894,11 +1948,14 @@ public partial class MainForm : Form
     private bool bPressEnter;
     private DateTime _lastEscapeTime;
     private bool bPressPageDownUp;
-    private bool bFileloaded;
+    //private bool bFileloaded;
     private string StreamingContextStates;
     private string strstate;
     private bool bTestMode;
-    private bool bvapoursynth;
+    private ToolStripMenuItem Videoaspectl;
+    private ToolStripMenuItem Videoaspectr;
+
+    //private bool bvapoursynth;
 
     void Set3DSubtitleMode(string mode3DSubtitle)
     {
@@ -1915,14 +1972,14 @@ public partial class MainForm : Form
 
     private void btnSubtitle_Click(object? sender, EventArgs e)
     {
-        if (SettingsManager.Current.SubtitleMode.Contains("2D字幕(自动3D)"))
+        if (hhzSettingsManager.Current.SubtitleMode.Contains("2D字幕(自动3D)"))
         {
-            SettingsManager.Current.SubtitleMode = "3D字幕";
+            hhzSettingsManager.Current.SubtitleMode = "3D字幕";
             v3DSubtitleMode.Sub3D(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
         }
         else
         {
-            SettingsManager.Current.SubtitleMode = "2D字幕(自动3D)";
+            hhzSettingsManager.Current.SubtitleMode = "2D字幕(自动3D)";
             v3DSubtitleMode.Sub2D(btn3DSubtitleModeLeft, btn3DSubtitleModeRight);
         }
     }
@@ -2227,6 +2284,7 @@ public partial class MainForm : Form
                 {
                     bTestMode = false;
                 }
+                showtestMode();
                 break;
             case Keys.F13:
                 break;
@@ -2360,6 +2418,35 @@ public partial class MainForm : Form
                 break;
         }
     }
+
+    private void showtestMode()
+    {
+        if (App.Settings.Enable3DMode)
+        {
+            if (bTestMode)
+            {
+                panelTestLeft.Visible = true;
+                panelTestRight.Visible = true;
+            }
+            else
+            {
+                panelTestLeft.Visible = false;
+                panelTestRight.Visible = false;
+            }
+        }
+        else
+        {
+            if (bTestMode)
+            {
+                panelTestLeft.Visible = true;
+            }
+            else
+            {
+                panelTestLeft.Visible = false;
+            }
+        }
+    }
+
     void ShowToast(string message, int showtime)
     {
         //启动Toast计时器并显示提示
@@ -2425,5 +2512,59 @@ public partial class MainForm : Form
     private void chkTestModeRight_CheckedChanged(object sender, EventArgs e)
     {
         chkTestModeLeft.Checked = chkTestModeRight.Checked;
+    }
+
+    private void chkRife_CheckedChanged(object sender, EventArgs e)
+    {
+        if (bRifeOn())
+        {
+            cbRifeTimesLeft.Enabled = true;
+            cbRifeTimesRight.Enabled = true;
+            Player.Command("no-osd vf set vapoursynth=file=NULL");
+        }
+        else
+        {
+            cbRifeTimesLeft.Enabled = true;
+            cbRifeTimesRight.Enabled = true;
+            Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
+        }
+    }
+
+    private void cbRifeTimes_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames={2+((ComboBox)sender).SelectedIndex}");
+    }
+    public static bool IsVideoHDR(MainPlayer player)
+    {
+        try
+        {
+            string transfer = player.GetPropertyString("video-params/transfer") ?? "";
+            string primaries = player.GetPropertyString("video-params/primaries") ?? "";
+            string color = player.GetPropertyString("video-params/color-space") ?? "";
+            string light = player.GetPropertyString("video-params/light") ?? "";
+            string hdrFormat = player.GetPropertyString("video-params/hdr-format") ?? "";
+
+            // 新版字段优先
+            if (hdrFormat.Equals("PQ", StringComparison.OrdinalIgnoreCase) ||
+                hdrFormat.Equals("HLG", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // light 字段在新版本可直接判断
+            if (light.Contains("HDR", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // 旧版判断方式
+            if (transfer == "smpte2084" || transfer == "arib-std-b67")
+                return true;
+
+            if (primaries == "bt.2020" || color.Contains("bt.2020"))
+                return true;
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

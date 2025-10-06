@@ -78,7 +78,7 @@
             rbVidaspDefault.TabIndex = 1;
             rbVidaspDefault.Text = "默认";
             rbVidaspDefault.UseVisualStyleBackColor = true;
-            rbVidaspDefault.CheckedChanged += rbVidaspDefault_CheckedChanged;
+            rbVidaspDefault.Click += rbVidaspDefault_Click;
             // 
             // btnOK
             // 
@@ -216,6 +216,7 @@
             Name = "FormMediaProperty";
             Text = "媒体文件设置";
             TopMost = true;
+            Activated += FormMediaProperty_Activated;
             FormClosing += FormMediaProperty_FormClosing;
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();

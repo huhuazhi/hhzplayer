@@ -14,7 +14,7 @@ namespace MyApp
         public string SubtitleMode
         {
             get => subtitleMode;
-            set { subtitleMode = value; SettingsManager.TrySave(); }
+            set { subtitleMode = value; hhzSettingsManager.MarkDirty(); }
         }
 
         private int lastVideoTrackId = -1;
@@ -22,7 +22,7 @@ namespace MyApp
         public int LastVideoTrackId
         {
             get => lastVideoTrackId;
-            set { lastVideoTrackId = value; SettingsManager.TrySave(); }
+            set { lastVideoTrackId = value; hhzSettingsManager.MarkDirty(); }
         }
 
         private int lastAudioTrackId = -1;
@@ -30,7 +30,7 @@ namespace MyApp
         public int LastAudioTrackId
         {
             get => lastAudioTrackId;
-            set { lastAudioTrackId = value; SettingsManager.TrySave(); }
+            set { lastAudioTrackId = value; hhzSettingsManager.MarkDirty(); }
         }
 
         private int lastSubtitleTrackId = -1;
@@ -38,7 +38,7 @@ namespace MyApp
         public int LastSubtitleTrackId
         {
             get => lastSubtitleTrackId;
-            set { lastSubtitleTrackId = value; SettingsManager.TrySave(); }
+            set { lastSubtitleTrackId = value; hhzSettingsManager.MarkDirty(); }
         }
 
         private string renderText = "2D渲染器";
@@ -46,7 +46,7 @@ namespace MyApp
         public string RenderText
         {
             get => renderText;
-            set { renderText = value; SettingsManager.TrySave(); }
+            set { renderText = value; hhzSettingsManager.MarkDirty(); }
         }
 
         private string videoAspestW = "0";
@@ -54,7 +54,7 @@ namespace MyApp
         public string VideoAspestW
         {
             get => videoAspestW;
-            set { videoAspestW = value; SettingsManager.TrySave(); }
+            set { videoAspestW = value; hhzSettingsManager.MarkDirty(); }
         }
 
         private string videoAspestH = "0";
@@ -62,7 +62,7 @@ namespace MyApp
         public string VideoAspestH
         {
             get => videoAspestH;
-            set { videoAspestH = value; SettingsManager.TrySave(); }
+            set { videoAspestH = value; hhzSettingsManager.MarkDirty(); }
         }
 
         [XmlIgnore]
@@ -79,14 +79,29 @@ namespace MyApp
         public bool IsModify => !IsAllDefault;
     }
 
-    public static class SettingsManager
+    public static class hhzSettingsManager
     {
         private static string filePath;
         private static hhzFileSettings currentSettings;
         internal static bool IsLoading { get; private set; }
 
         private static readonly object saveLock = new();
+        private static bool IsDirty = false;
         private static DateTime lastSaveTime = DateTime.MinValue;
+
+        private static Thread watcherThread;
+        private static bool running = true;
+
+        static hhzSettingsManager()
+        {
+            // 启动后台轮询线程
+            watcherThread = new Thread(WatcherLoop)
+            {
+                IsBackground = true,
+                Name = "hhzSettingsWatcher"
+            };
+            watcherThread.Start();
+        }
 
         public static hhzFileSettings Current => currentSettings ??= new hhzFileSettings();
 
@@ -125,15 +140,32 @@ namespace MyApp
             return currentSettings;
         }
 
-        /// <summary>
-        /// 为避免多属性连续触发保存，这个函数带有简单防抖逻辑。
-        /// </summary>
-        internal static void TrySave()
+        public static void MarkDirty()
         {
             if (IsLoading) return;
-            if ((DateTime.Now - lastSaveTime).TotalMilliseconds < 200) return; // 200ms防抖
-            lastSaveTime = DateTime.Now;
-            Save();
+            IsDirty = true;
+        }
+
+        private static void WatcherLoop()
+        {
+            while (running)
+            {
+                try
+                {
+                    Thread.Sleep(500); // 每500ms轮询一次
+
+                    if (!IsDirty) continue;
+                    if ((DateTime.Now - lastSaveTime).TotalMilliseconds < 800) continue;
+
+                    Save();
+                    IsDirty = false;
+                    lastSaveTime = DateTime.Now;
+                }
+                catch
+                {
+                    // 防止线程崩溃
+                }
+            }
         }
 
         public static void Save()
@@ -160,7 +192,6 @@ namespace MyApp
 
                 try
                 {
-                    // 如果文件存在并是隐藏的，先去掉隐藏属性
                     if (File.Exists(filePath))
                     {
                         var attrs = File.GetAttributes(filePath);
@@ -172,23 +203,20 @@ namespace MyApp
                     var serializer = new XmlSerializer(typeof(hhzFileSettings));
                     serializer.Serialize(stream, currentSettings);
 
-                    // 写完再设回隐藏属性
                     File.SetAttributes(filePath, FileAttributes.Hidden);
                 }
                 catch (Exception ex)
                 {
-                    DebugLog($"保存设置失败: {ex.Message}");
+#if DEBUG
+                    Console.WriteLine($"保存设置失败: {ex.Message}");
+#endif
                 }
             }
         }
 
-        public static void ResetToDefaults() => currentSettings = new hhzFileSettings();
-
-        private static void DebugLog(string msg)
+        public static void StopWatcher()
         {
-#if DEBUG
-            Console.WriteLine(msg);
-#endif
+            running = false;
         }
     }
 }

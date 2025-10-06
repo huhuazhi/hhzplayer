@@ -80,10 +80,18 @@ partial class MainForm
         label6 = new System.Windows.Forms.Label();
         label7 = new System.Windows.Forms.Label();
         label8 = new System.Windows.Forms.Label();
+        gbRifeLeft = new System.Windows.Forms.GroupBox();
+        cbRifeTimesLeft = new System.Windows.Forms.ComboBox();
+        chkRifeLeft = new System.Windows.Forms.CheckBox();
+        gbRifeRight = new System.Windows.Forms.GroupBox();
+        cbRifeTimesRight = new System.Windows.Forms.ComboBox();
+        chkRifeRight = new System.Windows.Forms.CheckBox();
         ((System.ComponentModel.ISupportInitialize)btnBackLeft).BeginInit();
         ((System.ComponentModel.ISupportInitialize)btnBackRight).BeginInit();
         panelTestLeft.SuspendLayout();
         panelTestRight.SuspendLayout();
+        gbRifeLeft.SuspendLayout();
+        gbRifeRight.SuspendLayout();
         SuspendLayout();
         // 
         // CursorTimer
@@ -723,6 +731,84 @@ partial class MainForm
         label8.TabIndex = 41;
         label8.Text = "视频输出";
         // 
+        // gbRifeLeft
+        // 
+        gbRifeLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        gbRifeLeft.Controls.Add(cbRifeTimesLeft);
+        gbRifeLeft.Controls.Add(chkRifeLeft);
+        gbRifeLeft.ForeColor = System.Drawing.Color.White;
+        gbRifeLeft.Location = new System.Drawing.Point(1656, 685);
+        gbRifeLeft.Name = "gbRifeLeft";
+        gbRifeLeft.Size = new System.Drawing.Size(214, 163);
+        gbRifeLeft.TabIndex = 43;
+        gbRifeLeft.TabStop = false;
+        gbRifeLeft.Text = "实时补帧";
+        gbRifeLeft.Visible = false;
+        // 
+        // cbRifeTimesLeft
+        // 
+        cbRifeTimesLeft.BackColor = System.Drawing.Color.Black;
+        cbRifeTimesLeft.ForeColor = System.Drawing.Color.White;
+        cbRifeTimesLeft.FormattingEnabled = true;
+        cbRifeTimesLeft.Items.AddRange(new object[] { "2x", "3x", "4x" });
+        cbRifeTimesLeft.Location = new System.Drawing.Point(33, 122);
+        cbRifeTimesLeft.Name = "cbRifeTimesLeft";
+        cbRifeTimesLeft.Size = new System.Drawing.Size(147, 40);
+        cbRifeTimesLeft.TabIndex = 38;
+        cbRifeTimesLeft.Text = "2x";
+        cbRifeTimesLeft.Visible = false;
+        cbRifeTimesLeft.SelectedIndexChanged += cbRifeTimes_SelectedIndexChanged;
+        // 
+        // chkRifeLeft
+        // 
+        chkRifeLeft.AutoSize = true;
+        chkRifeLeft.Location = new System.Drawing.Point(33, 77);
+        chkRifeLeft.Name = "chkRifeLeft";
+        chkRifeLeft.Size = new System.Drawing.Size(155, 36);
+        chkRifeLeft.TabIndex = 0;
+        chkRifeLeft.Text = "开启/关闭";
+        chkRifeLeft.UseVisualStyleBackColor = true;
+        chkRifeLeft.CheckedChanged += chkRife_CheckedChanged;
+        // 
+        // gbRifeRight
+        // 
+        gbRifeRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        gbRifeRight.Controls.Add(cbRifeTimesRight);
+        gbRifeRight.Controls.Add(chkRifeRight);
+        gbRifeRight.ForeColor = System.Drawing.Color.White;
+        gbRifeRight.Location = new System.Drawing.Point(1436, 685);
+        gbRifeRight.Name = "gbRifeRight";
+        gbRifeRight.Size = new System.Drawing.Size(214, 163);
+        gbRifeRight.TabIndex = 44;
+        gbRifeRight.TabStop = false;
+        gbRifeRight.Text = "实时补帧";
+        gbRifeRight.Visible = false;
+        // 
+        // cbRifeTimesRight
+        // 
+        cbRifeTimesRight.BackColor = System.Drawing.Color.Black;
+        cbRifeTimesRight.ForeColor = System.Drawing.Color.White;
+        cbRifeTimesRight.FormattingEnabled = true;
+        cbRifeTimesRight.Items.AddRange(new object[] { "2x", "3x", "4x" });
+        cbRifeTimesRight.Location = new System.Drawing.Point(33, 122);
+        cbRifeTimesRight.Name = "cbRifeTimesRight";
+        cbRifeTimesRight.Size = new System.Drawing.Size(147, 40);
+        cbRifeTimesRight.TabIndex = 38;
+        cbRifeTimesRight.Text = "2x";
+        cbRifeTimesRight.Visible = false;
+        cbRifeTimesRight.SelectedIndexChanged += cbRifeTimes_SelectedIndexChanged;
+        // 
+        // chkRifeRight
+        // 
+        chkRifeRight.AutoSize = true;
+        chkRifeRight.Location = new System.Drawing.Point(33, 77);
+        chkRifeRight.Name = "chkRifeRight";
+        chkRifeRight.Size = new System.Drawing.Size(155, 36);
+        chkRifeRight.TabIndex = 0;
+        chkRifeRight.Text = "开启/关闭";
+        chkRifeRight.UseVisualStyleBackColor = true;
+        chkRifeRight.CheckedChanged += chkRife_CheckedChanged;
+        // 
         // MainForm
         // 
         AllowDrop = true;
@@ -730,6 +816,8 @@ partial class MainForm
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
         BackColor = System.Drawing.Color.Black;
         ClientSize = new System.Drawing.Size(1920, 1080);
+        Controls.Add(gbRifeRight);
+        Controls.Add(gbRifeLeft);
         Controls.Add(panelTestRight);
         Controls.Add(panelTestLeft);
         Controls.Add(lblToastLeft);
@@ -773,6 +861,10 @@ partial class MainForm
         panelTestLeft.PerformLayout();
         panelTestRight.ResumeLayout(false);
         panelTestRight.PerformLayout();
+        gbRifeLeft.ResumeLayout(false);
+        gbRifeLeft.PerformLayout();
+        gbRifeRight.ResumeLayout(false);
+        gbRifeRight.PerformLayout();
         ResumeLayout(false);
     }
 
@@ -827,4 +919,10 @@ partial class MainForm
     private System.Windows.Forms.ComboBox comboBox3;
     private System.Windows.Forms.ComboBox comboBox4;
     private System.Windows.Forms.ComboBox comboBox5;
+    private System.Windows.Forms.GroupBox gbRifeLeft;
+    private System.Windows.Forms.ComboBox cbRifeTimesLeft;
+    private System.Windows.Forms.CheckBox chkRifeLeft;
+    private System.Windows.Forms.GroupBox gbRifeRight;
+    private System.Windows.Forms.ComboBox cbRifeTimesRight;
+    private System.Windows.Forms.CheckBox chkRifeRight;
 }
