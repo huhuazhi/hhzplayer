@@ -780,6 +780,15 @@ public partial class MainForm : Form
         base.OnActivated(e);
     }
 
+    double GetActualFps()
+    {
+        double fps = 0;
+        try { fps = Player.GetPropertyDouble("estimated-vf-fps"); } catch { }
+        if (fps <= 0) try { fps = Player.GetPropertyDouble("video-params/fps"); } catch { }
+        if (fps <= 0) try { fps = Player.GetPropertyDouble("container-fps"); } catch { }
+        return fps;
+    }
+
     void CursorTimer_Tick(object sender, EventArgs e)
     {
         //Debug.Print($"{DateTime.Now.ToString()}-CursorPositionDiff: {_lastCursorPosition != MousePosition}");
@@ -796,7 +805,7 @@ public partial class MainForm : Form
             }
             else
             {
-                StreamingContextStates = "播放中...";
+                StreamingContextStates = $"播放中...{GetActualFps():F2} fps ";
             }
             if (state.Underrun)
             {
@@ -1277,6 +1286,31 @@ public partial class MainForm : Form
         }
     }
 
+    void InterpOff()
+    {
+        Player.Command("vf remove @interp");
+    }
+
+    void InterpTo60()
+    {
+        Player.Command("vf remove @interp");
+        Player.Command(@"vf add @interp:lavfi=[minterpolate=fps=60000/1001:mi_mode=mci:mc_mode=aobmc:me_mode=bidir]");
+    }
+
+    // 按倍数补帧：2× / 3×
+    void InterpMul(int mul)
+    {
+        double src = GetActualFps();
+        if (src <= 0) return;
+        double target = src * mul;
+
+        // 防止 23.976×3 变 71.928，想贴 60 的话，你也可以在这里把 target 量化到 59.94
+        // target = 60000.0 / 1001;
+
+        Player.Command("vf remove @interp");
+        Player.Command($"vf add @interp:lavfi=[minterpolate=fps={target.ToString(CultureInfo.InvariantCulture)}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir]");
+    }
+
     void Player_FileLoaded()
     {
         BeginInvoke(() =>
@@ -1357,6 +1391,22 @@ public partial class MainForm : Form
                 }
             }
             bFileloaded = true;
+            var vw = Player.GetPropertyInt("width");
+            var vh = Player.GetPropertyInt("height");
+            var fps = Player.GetPropertyDouble("container-fps");
+            Player.SetPropertyString("hwdec", "nvdec-copy");
+            if (fps <= 30)
+            {
+                Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
+                //if (vw <= 1920 && vh <= 1080)
+                //{
+                //    Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_1080p_2x.vpy").Replace("\\", "/")}:buffered-frames=2:concurrent-frames=2");
+                //}
+                //else
+                //{
+                //    Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_4k_2x.vpy").Replace("\\", "/")}:buffered-frames=2:concurrent-frames=2");
+                //}
+            }
         });
 
         string path = Player.GetPropertyString("path");
@@ -1470,7 +1520,7 @@ public partial class MainForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        base.OnFormClosing(e);
+        base.OnFormClosing(e);        
         //if (Player == null || !bPlayerinited)
         //    return;
         //if (Player.IsQuitNeeded)
@@ -1839,6 +1889,7 @@ public partial class MainForm : Form
     private string StreamingContextStates;
     private string strstate;
     private bool bTestMode;
+    private bool bvapoursynth;
 
     void Set3DSubtitleMode(string mode3DSubtitle)
     {

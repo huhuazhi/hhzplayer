@@ -1,17 +1,16 @@
 ﻿
+using MpvNet.ExtensionMethod;
+using MpvNet.Help;
+using MpvNet.Native;
 using System.Drawing;
 using System.Globalization;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
-
-using MpvNet.ExtensionMethod;
-using MpvNet.Help;
-using MpvNet.Native;
-
 using static MpvNet.Native.LibMpv;
 
 namespace MpvNet;
@@ -104,18 +103,17 @@ public class MainPlayer : MpvClient
         //SetPropertyBool("input-default-bindings", true);
         //SetPropertyBool("input-builtin-bindings", false);
         //SetPropertyBool("input-media-keys", true);
-        SetPropertyString("hwdec", "auto");
-        SetPropertyString("hwdec-interop", "all");
-        SetPropertyInt("hwdec-extra-frames", 4);
-        //SetPropertyInt("video-sync", 60);
-        SetPropertyString("interpolation", "no");
-        SetPropertyInt("swapchain-depth", 2);
-        SetPropertyString("profile", "gpu-hq");
+        SetPropertyString("hwdec", "auto"); //# 尝试用硬件解码，减少 CPU 负担
+        //SetPropertyString("hwdec-interop", "all"); //# 这个选项可以在创建 GL 上下文时尽量预加载 interop 支持
+        SetPropertyInt("hwdec-extra-frames", 4); //# 多预分配几帧缓冲，减少申请开销
+        //SetPropertyInt("video-sync", 60); //强制按显示刷新同步（可能锁帧，但稳定性好）
+        SetPropertyString("interpolation", "no"); //# 关闭帧间插值（插值对超高分辨率代价太大）
+        
+        SetPropertyInt("swapchain-depth", 2); //# 双缓冲（如果 OpenGL 后端支持的话）# 限制最大的帧排队数 / 缓冲深度
+        SetPropertyString("profile", "gpu-hq"); //# 在测试时用高质量 profile 对比性能,打开TestMode测试一个最好的值
         SetPropertyString("sub-font", "Microsoft YaHei");
 
-        SetPropertyDouble("volume", App.Settings.Volume);
-        SetPropertyString("cursor-autohide", "no");
-        SetPropertyString("autocreate-playlist", "filter");
+        SetPropertyDouble("volume", App.Settings.Volume);        
         //SetPropertyString("media-controls", "yes");
         SetPropertyString("idle", "yes");
         SetPropertyString("screenshot-directory", "~~desktop/");
@@ -123,29 +121,55 @@ public class MainPlayer : MpvClient
         SetPropertyString("osd-playing-msg", "");
 
         SetPropertyString("keepaspect-window", "no");
-        SetPropertyString("config-dir", ConfigFolder);
+        //SetPropertyString("config-dir", ConfigFolder);
+        SetPropertyString("config-dir", AppDomain.CurrentDomain.BaseDirectory);
         SetPropertyString("config", "yes");
 
         SetPropertyString("osc", "no");
         //SetPropertyDouble("osd-level", 0);
         SetPropertyString("osd-bar", "no");
+        SetPropertyString("cursor-autohide", "no");
         SetPropertyString("sub-codepage", "gbk");
 
-        SetPropertyDouble("contrast", 10);
+        SetPropertyDouble("contrast", 5);
         SetPropertyDouble("brightness", -3);
         SetPropertyDouble("saturation", 30);
         //SetPropertyDouble("cache-secs", 30);
         SetPropertyDouble("demuxer-readahead-secs", 60);
 
-        SetPropertyString("autocreate-playlist", "same");
-        SetPropertyString("sub-stereo-duplicate", "no");
-        SetPropertyString("sub-stereo-layout", "sbs");
-        SetPropertyDouble("sub-stereo-offset-px", 0);
-        SetPropertyString("alang", "cmn,yue,zh,chi,zho");
-        SetPropertyString("slang", "cmn,yue,zh,chi,zho");        
+        //no	不自动创建播放列表（默认行为）	只播放当前文件
+        //same	加入同目录下相同扩展名的文件	打开 1.mkv 时，也加 2.mkv, 3.mkv
+        //filter	加入同目录下所有被识别为媒体文件的文件	打开 1.mkv 时，也加 .mp4, .avi, .m2ts 等
+        //yes	和 filter 一样	同上
+        SetPropertyString("autocreate-playlist", "filter");
+        //SetPropertyString("autocreate-playlist", "same");
 
-        ////特外
-        SetPropertyString("sub-stereo-duplicate", "yes");
+        //音频、字幕 优先选择顺序
+        SetPropertyString("alang", "cmn,mandarin,chs,zh,cht,中文,普通话,chi,zho,zh-Hant,zh-Hans,台湾,香港,粤语,cantonese,yue,en,eng");
+        SetPropertyString("slang", "cmn,mandarin,chs,zh,cht,中文,普通话,chi,zho,zh-Hant,zh-Hans,台湾,香港,粤语,cantonese,yue,en,eng");
+
+        
+
+        //# 跳帧控制：如果来不及就跳帧避免卡顿
+        //#hr-seek-framedrop=no
+        //#framedrop=vo                 # 在必要时由渲染器丢帧
+
+        //# 色彩 / HDR / 映射（如果你的源是 HDR）
+        //#tone-mapping=bt.2390
+        //#hdr-compute-peak=yes
+
+        //# 滤镜 / 后处理：关闭高开销特性，尽可能简化
+        //#dscale=mitchell        # 用比较快的缩放算法，不用那些极端高质量算法
+        //#scale=ewa_lanczossharp  # 这个可调，可换为 bilinear 或 spline 看看性能
+        //#cscale=fast_bilinear    # 色度缩放用简单的
+
+        //# 子字幕 / OSD 优化
+        //#sub-ass-cc=fast              # ASS 字幕中某些复杂渲染优化
+        //#osd-scale-by-window=yes
+
+        //特外
+        SetPropertyString("sub-stereo-duplicate", "no");
+        //SetPropertyString("sub-stereo-duplicate", "yes");
         SetPropertyString("sub-stereo-layout", "sbs");
         SetPropertyLong("sub-stereo-offset-px", 0);
 
@@ -170,6 +194,7 @@ public class MainPlayer : MpvClient
 
         //Environment.SetEnvironmentVariable("MPVNET_VERSION", AppInfo.Version.ToString());  // deprecated
 
+        mpv_set_option_string(MainHandle, Encoding.UTF8.GetBytes("process-instance"), Encoding.UTF8.GetBytes("multi"));
         mpv_error err = mpv_initialize(MainHandle);
 
         if (err < 0)
@@ -192,7 +217,7 @@ public class MainPlayer : MpvClient
         // this means Lua scripts that use idle might not work correctly
         SetPropertyString("idle", "yes");
 
-        SetPropertyString("user-data/frontend/name", "mpv.net");
+        SetPropertyString("user-data/frontend/name", "hhzplayer");
         SetPropertyString("user-data/frontend/version", AppInfo.Version.ToString());
         SetPropertyString("user-data/frontend/process-path", Environment.ProcessPath!);
 

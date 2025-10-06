@@ -72,14 +72,14 @@ partial class MainForm
         label1 = new System.Windows.Forms.Label();
         panelTestRight = new System.Windows.Forms.Panel();
         chkTestModeRight = new System.Windows.Forms.CheckBox();
-        label5 = new System.Windows.Forms.Label();
-        label6 = new System.Windows.Forms.Label();
-        label7 = new System.Windows.Forms.Label();
-        label8 = new System.Windows.Forms.Label();
         comboBox2 = new System.Windows.Forms.ComboBox();
         comboBox3 = new System.Windows.Forms.ComboBox();
         comboBox4 = new System.Windows.Forms.ComboBox();
         comboBox5 = new System.Windows.Forms.ComboBox();
+        label5 = new System.Windows.Forms.Label();
+        label6 = new System.Windows.Forms.Label();
+        label7 = new System.Windows.Forms.Label();
+        label8 = new System.Windows.Forms.Label();
         ((System.ComponentModel.ISupportInitialize)btnBackLeft).BeginInit();
         ((System.ComponentModel.ISupportInitialize)btnBackRight).BeginInit();
         panelTestLeft.SuspendLayout();
@@ -507,7 +507,7 @@ partial class MainForm
         cmbGpuContext.BackColor = System.Drawing.Color.Black;
         cmbGpuContext.ForeColor = System.Drawing.Color.White;
         cmbGpuContext.FormattingEnabled = true;
-        cmbGpuContext.Items.AddRange(new object[] { "d3d11", "angle", "win", "dxinterop", "winvk" });
+        cmbGpuContext.Items.AddRange(new object[] { "auto", "d3d11", "angle", "win", "dxinterop", "winvk" });
         cmbGpuContext.Location = new System.Drawing.Point(161, 162);
         cmbGpuContext.Name = "cmbGpuContext";
         cmbGpuContext.Size = new System.Drawing.Size(139, 40);
@@ -521,14 +521,14 @@ partial class MainForm
         panelTestLeft.BackColor = System.Drawing.Color.Black;
         panelTestLeft.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
         panelTestLeft.Controls.Add(chkTestModeLeft);
-        panelTestLeft.Controls.Add(label4);
-        panelTestLeft.Controls.Add(label3);
-        panelTestLeft.Controls.Add(label2);
-        panelTestLeft.Controls.Add(label1);
         panelTestLeft.Controls.Add(cmbVO);
         panelTestLeft.Controls.Add(cmbGpuContext);
         panelTestLeft.Controls.Add(cmbhwdec);
         panelTestLeft.Controls.Add(cmbgpuapi);
+        panelTestLeft.Controls.Add(label4);
+        panelTestLeft.Controls.Add(label3);
+        panelTestLeft.Controls.Add(label2);
+        panelTestLeft.Controls.Add(label1);
         panelTestLeft.ForeColor = System.Drawing.Color.White;
         panelTestLeft.Location = new System.Drawing.Point(41, 585);
         panelTestLeft.Name = "panelTestLeft";
@@ -554,7 +554,7 @@ partial class MainForm
         label4.AutoSize = true;
         label4.BackColor = System.Drawing.Color.Black;
         label4.ForeColor = System.Drawing.Color.White;
-        label4.Location = new System.Drawing.Point(46, 165);
+        label4.Location = new System.Drawing.Point(41, 165);
         label4.Name = "label4";
         label4.Size = new System.Drawing.Size(114, 32);
         label4.TabIndex = 44;
@@ -599,14 +599,14 @@ partial class MainForm
         panelTestRight.BackColor = System.Drawing.Color.Black;
         panelTestRight.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
         panelTestRight.Controls.Add(chkTestModeRight);
-        panelTestRight.Controls.Add(label5);
-        panelTestRight.Controls.Add(label6);
-        panelTestRight.Controls.Add(label7);
-        panelTestRight.Controls.Add(label8);
         panelTestRight.Controls.Add(comboBox2);
         panelTestRight.Controls.Add(comboBox3);
         panelTestRight.Controls.Add(comboBox4);
         panelTestRight.Controls.Add(comboBox5);
+        panelTestRight.Controls.Add(label5);
+        panelTestRight.Controls.Add(label6);
+        panelTestRight.Controls.Add(label7);
+        panelTestRight.Controls.Add(label8);
         panelTestRight.ForeColor = System.Drawing.Color.White;
         panelTestRight.Location = new System.Drawing.Point(406, 585);
         panelTestRight.Name = "panelTestRight";
@@ -626,50 +626,6 @@ partial class MainForm
         chkTestModeRight.Text = "不隐藏";
         chkTestModeRight.UseVisualStyleBackColor = false;
         chkTestModeRight.CheckedChanged += chkTestModeRight_CheckedChanged;
-        // 
-        // label5
-        // 
-        label5.AutoSize = true;
-        label5.BackColor = System.Drawing.Color.Black;
-        label5.ForeColor = System.Drawing.Color.White;
-        label5.Location = new System.Drawing.Point(46, 165);
-        label5.Name = "label5";
-        label5.Size = new System.Drawing.Size(114, 32);
-        label5.TabIndex = 44;
-        label5.Text = "视频渲染\r\n";
-        // 
-        // label6
-        // 
-        label6.AutoSize = true;
-        label6.BackColor = System.Drawing.Color.Black;
-        label6.ForeColor = System.Drawing.Color.White;
-        label6.Location = new System.Drawing.Point(41, 119);
-        label6.Name = "label6";
-        label6.Size = new System.Drawing.Size(109, 32);
-        label6.TabIndex = 43;
-        label6.Text = "GPU接口";
-        // 
-        // label7
-        // 
-        label7.AutoSize = true;
-        label7.BackColor = System.Drawing.Color.Black;
-        label7.ForeColor = System.Drawing.Color.White;
-        label7.Location = new System.Drawing.Point(41, 73);
-        label7.Name = "label7";
-        label7.Size = new System.Drawing.Size(114, 32);
-        label7.TabIndex = 42;
-        label7.Text = "硬解码器";
-        // 
-        // label8
-        // 
-        label8.AutoSize = true;
-        label8.BackColor = System.Drawing.Color.Black;
-        label8.ForeColor = System.Drawing.Color.White;
-        label8.Location = new System.Drawing.Point(41, 27);
-        label8.Name = "label8";
-        label8.Size = new System.Drawing.Size(114, 32);
-        label8.TabIndex = 41;
-        label8.Text = "视频输出";
         // 
         // comboBox2
         // 
@@ -722,6 +678,50 @@ partial class MainForm
         comboBox5.TabIndex = 39;
         comboBox5.Text = "auto";
         comboBox5.SelectedIndexChanged += cmbgpuapi_SelectedIndexChanged;
+        // 
+        // label5
+        // 
+        label5.AutoSize = true;
+        label5.BackColor = System.Drawing.Color.Black;
+        label5.ForeColor = System.Drawing.Color.White;
+        label5.Location = new System.Drawing.Point(41, 165);
+        label5.Name = "label5";
+        label5.Size = new System.Drawing.Size(114, 32);
+        label5.TabIndex = 44;
+        label5.Text = "视频渲染\r\n";
+        // 
+        // label6
+        // 
+        label6.AutoSize = true;
+        label6.BackColor = System.Drawing.Color.Black;
+        label6.ForeColor = System.Drawing.Color.White;
+        label6.Location = new System.Drawing.Point(41, 119);
+        label6.Name = "label6";
+        label6.Size = new System.Drawing.Size(109, 32);
+        label6.TabIndex = 43;
+        label6.Text = "GPU接口";
+        // 
+        // label7
+        // 
+        label7.AutoSize = true;
+        label7.BackColor = System.Drawing.Color.Black;
+        label7.ForeColor = System.Drawing.Color.White;
+        label7.Location = new System.Drawing.Point(41, 73);
+        label7.Name = "label7";
+        label7.Size = new System.Drawing.Size(114, 32);
+        label7.TabIndex = 42;
+        label7.Text = "硬解码器";
+        // 
+        // label8
+        // 
+        label8.AutoSize = true;
+        label8.BackColor = System.Drawing.Color.Black;
+        label8.ForeColor = System.Drawing.Color.White;
+        label8.Location = new System.Drawing.Point(41, 27);
+        label8.Name = "label8";
+        label8.Size = new System.Drawing.Size(114, 32);
+        label8.TabIndex = 41;
+        label8.Text = "视频输出";
         // 
         // MainForm
         // 

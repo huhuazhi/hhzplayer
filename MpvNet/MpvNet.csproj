@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
-		<AssemblyName>libmpvnet</AssemblyName>
+		<AssemblyName>libhhzplayer</AssemblyName>
 		<RootNamespace>MpvNet</RootNamespace>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	</PropertyGroup>
