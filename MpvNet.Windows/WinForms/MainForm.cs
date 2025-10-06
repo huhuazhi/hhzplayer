@@ -1395,8 +1395,11 @@ public partial class MainForm : Form
             var vh = Player.GetPropertyInt("height");
             var fps = Player.GetPropertyDouble("container-fps");
             Player.SetPropertyString("hwdec", "nvdec-copy");
+            string vfList = Player.GetPropertyString("vf");
+            Debug.WriteLine(vfList);
             if (fps <= 30)
             {
+                if (vfList == "" || vfList.Contains("vapoursynth=file=NULL"))
                 Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
                 //if (vw <= 1920 && vh <= 1080)
                 //{
@@ -1406,6 +1409,12 @@ public partial class MainForm : Form
                 //{
                 //    Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_4k_2x.vpy").Replace("\\", "/")}:buffered-frames=2:concurrent-frames=2");
                 //}
+            }
+            else
+            {
+                if (vfList != "" && !vfList.Contains("vapoursynth=file=NULL"))
+                    //Player.Command("no-osd vf toggle vapoursynth");
+                    Player.Command("no-osd vf set vapoursynth=file=NULL");
             }
         });
 
