@@ -102,7 +102,7 @@ namespace MpvNet.Windows.WinForms
                 var scrW = hhzForm.Width;
                 var scrH = hhzForm.Height;
                 //FullSBS画面比例最小值为2.35 * 2 : 1
-                if ((double)vw / vh < 2.35 / 1) // half-SBS
+                if ((vw != 0 && vh != 0) && (double)vw / vh < 2.35 / 1) // half-SBS
                 {
                     if ((scrW / scrH) <= 16.00 / 9)
                     {

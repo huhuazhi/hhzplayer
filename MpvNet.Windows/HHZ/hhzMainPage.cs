@@ -416,6 +416,50 @@ namespace MpvNet.Windows
             }
         }
 
+        public unsafe static (int Width, int Height, double Fps) GetVideoInfoFFmpeg(string filePath)
+        {
+            // ⚠ 如果你不播放网络视频，可以去掉这一行
+            // ffmpeg.avformat_network_init();
+
+            AVFormatContext* pFormatContext = null;
+            if (ffmpeg.avformat_open_input(&pFormatContext, filePath, null, null) != 0)
+                return (0, 0, 0);
+
+            if (ffmpeg.avformat_find_stream_info(pFormatContext, null) < 0)
+            {
+                ffmpeg.avformat_close_input(&pFormatContext);
+                return (0, 0, 0);
+            }
+
+            double fps = 0;
+            int width = 0, height = 0;
+
+            for (int i = 0; i < pFormatContext->nb_streams; i++)
+            {
+                AVStream* stream = pFormatContext->streams[i];
+                AVCodecParameters* codecpar = stream->codecpar;
+
+                if (codecpar->codec_type == AVMediaType.AVMEDIA_TYPE_VIDEO)
+                {
+                    width = codecpar->width;
+                    height = codecpar->height;
+
+                    // ⚙ 获取帧率：优先 avg_frame_rate，如果无效则 fallback 到 r_frame_rate
+                    AVRational rate = stream->avg_frame_rate;
+                    if (rate.num > 0 && rate.den > 0)
+                        fps = ffmpeg.av_q2d(rate);
+                    else
+                        fps = ffmpeg.av_q2d(stream->r_frame_rate);
+
+                    break;
+                }
+            }
+
+            ffmpeg.avformat_close_input(&pFormatContext);
+            return (width, height, fps);
+        }
+
+
         public unsafe static (int Width, int Height) GetVideoSizeFFmpeg(string filePath)
         {
             ffmpeg.avformat_network_init();
