@@ -172,7 +172,7 @@ public partial class MainForm : Form
     private void InitializehhzOverlay()
     {
         frmMediaProperty = new FormMediaProperty(this);
-        hhzMainPage.BringToFront();        
+        hhzMainPage.BringToFront();
         // 如果上次目录存在就恢复
         if (!string.IsNullOrEmpty(App.Settings.LastOpenedFolder) &&
             Directory.Exists(App.Settings.LastOpenedFolder))
@@ -308,11 +308,18 @@ public partial class MainForm : Form
             case "2D渲染器":
                 btnRenderLeft.Text = "2D渲染器";
                 Player.SetPropertyString("vo", "gpu");
+                Player.SetPropertyString("hwdec", "no");
+                //Player.SetPropertyString("hwdec", "auto");
+                //Player.SetPropertyString("hwdec", "nvdec-copy");
+                //Player.SetPropertyString("vo", "gpu-next");
+                //Player.SetPropertyString("hwdec", "d3d11va");
+                //Player.SetPropertyString("gpu-api", "d3d11");
                 Player.SetPropertyString("gpu-api", "auto");
                 break;
             case "3D渲染器":
                 btnRenderLeft.Text = "3D渲染器";
                 Player.SetPropertyString("vo", "gpu");
+                Player.SetPropertyString("hwdec", "auto");
                 Player.SetPropertyString("gpu-api", "opengl");
                 break;
             default:
@@ -580,6 +587,7 @@ public partial class MainForm : Form
                 }
                 else
                 {
+                    if (vw > 0 && vh > 0)
                     //Two Screen
                     Player.SetPropertyString("video-aspect-override", $"{Width}:{Width / vw * vh}");
                     //Player.SetPropertyString("video-aspect-override", $"{Width}:{vh}");
@@ -606,14 +614,14 @@ public partial class MainForm : Form
 
             if (rightScreen != null)
             {
-                //Console.WriteLine($"右边有扩展屏幕：{rightScreen.Bounds}");
+                //Debug.WriteLine($"右边有扩展屏幕：{rightScreen.Bounds}");
                 Rectangle bounds = Screen.PrimaryScreen.Bounds;
                 bounds.Width = bounds.Width * 2;
                 this.Bounds = bounds;
             }
             else
             {
-                //Console.WriteLine("右边没有扩展屏幕");
+                //Debug.WriteLine("右边没有扩展屏幕");
                 this.Bounds = Screen.PrimaryScreen.Bounds;
             }
 
@@ -1034,7 +1042,7 @@ public partial class MainForm : Form
         {
             Videoaspectl.Text = $"播放比例: {hhzSettingsManager.Current.VideoAspestW}:{hhzSettingsManager.Current.VideoAspestH}";
             Videoaspectr.Text = $"播放比例: {hhzSettingsManager.Current.VideoAspestW}:{hhzSettingsManager.Current.VideoAspestH}";
-            Videoaspectl.Checked = true ;
+            Videoaspectl.Checked = true;
         }
         else
         {
@@ -1327,7 +1335,7 @@ public partial class MainForm : Form
 
     void Player_FileLoaded()
     {
-        BeginInvoke(() =>
+        BeginInvoke((Delegate)(() =>
         {
             //if (Player.Duration.TotalMilliseconds > 0)
             {
@@ -1403,25 +1411,47 @@ public partial class MainForm : Form
                     if (!Player.GetPropertyBool("pause")) Player.Command("cycle pause");
                     bPressPageDownUp = false;
                 }
-            }            
+            }
             //bFileloaded = true;
             vw = Player.GetPropertyInt("width");
             vh = Player.GetPropertyInt("height");
             fps = Player.GetPropertyDouble("container-fps");
-            Player.SetPropertyString("hwdec", "nvdec-copy");
-            string vfList = Player.GetPropertyString("vf");
+            //Player.SetPropertyString("hwdec", "nvdec-copy");
+
+            //Player.SetPropertyString("vo", "gpu-next");
+            //Player.SetPropertyString("hwdec", "d3d11va");
+            //Player.SetPropertyString("gpu-api", "d3d11");
+            //string vfList = Player.GetPropertyString("vf");
             //Debug.WriteLine(vfList);
+
             if (fps <= 30)
             {
-                chkRifeLeft.Checked = true;
-                chkRifeRight.Checked = true;
-                cbRifeTimesLeft.SelectedIndex = 0;
-                cbRifeTimesRight.SelectedIndex = 0;
-                cbRifeTimesLeft.Enabled = true;
-                cbRifeTimesRight.Enabled = true;
-                ShowVideoOSD();
-                if (!bRifeOn())
-                    Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
+                if (hhzSettingsManager.Current.Riff)
+               {
+                    if (!bRifeOn())
+                    {
+                        //if (vw > 1920 || vh > 1080) Player.SetPropertyString("hwdec", "nvdec-copy");
+                        //if (vw > 1920 || vh > 1080) Player.SetPropertyString("hwdec", "no");
+                        Player.Command($"no-osd vf add vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
+                        //Player.Command($"no-osd vf add d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                        //Player.Command($"vf add @interp:lavfi=[minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir]");
+                        //InterpMul(3);
+                    }
+                    chkRifeLeft.Enabled = true;
+                    chkRifeLeft.Enabled = true;
+                    chkRifeLeft.Checked = true;
+                    chkRifeRight.Checked = true;
+                    cbRifeTimesLeft.SelectedIndex = 0;
+                    cbRifeTimesRight.SelectedIndex = 0;
+                    cbRifeTimesLeft.Enabled = true;
+                    cbRifeTimesRight.Enabled = true;
+                    ShowVideoOSD();
+                }
+                else
+                {
+                    chkRifeLeft.Checked = false;
+                    chkRifeRight.Checked = false;
+                }
                 //if (vw <= 1920 && vh <= 1080)
                 //{
                 //    Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_1080p_2x.vpy").Replace("\\", "/")}:buffered-frames=2:concurrent-frames=2");
@@ -1439,12 +1469,45 @@ public partial class MainForm : Form
                 chkRifeLeft.Checked = false;
                 cbRifeTimesLeft.Enabled = false;
                 cbRifeTimesRight.Enabled = false;
+                chkRifeLeft.Enabled = false;
+                chkRifeLeft.Enabled = false;
                 if (bRifeOn())
-                    //Player.Command("no-osd vf toggle vapoursynth");
-                    Player.Command("no-osd vf set vapoursynth=file=NULL");
+                {
+                    Player.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
+                }
             }
+            if (vw <= 1920 && vh <= 1080)
+            {
+                if (hhzSettingsManager.Current.VSR)
+                {
+                    chkVSRLeft.Enabled = true;
+                    chkVSRRight.Enabled = true;
+                    chkVSRLeft.Checked = true;
+                    chkVSRRight.Checked = true;
+                    if (!bRTXOn())
+                    {
+                        Player.Command($"no-osd vf add d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                        //Player.Command($"no-osd vf add d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                    }
+                }
+                else
+                {
+                    chkVSRLeft.Checked = false;
+                    chkVSRRight.Checked = false;
+                    if (bRTXOn())
+                        Player.Command("no-osd vf del d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                }
+            }
+            else
+            {
+                chkVSRLeft.Enabled = false;
+                chkVSRRight.Enabled = false;
+                chkVSRLeft.Checked = false;
+                chkVSRRight.Checked = false;
+            }
+
             bHDR = IsVideoHDR(Player);
-        });
+        }));
 
         string path = Player.GetPropertyString("path");
 
@@ -1496,7 +1559,7 @@ public partial class MainForm : Form
     bool bRifeOn()
     {
         string vfList = Player.GetPropertyString("vf");
-        if (vfList != "" && !vfList.Contains("vapoursynth=file=NULL"))
+        if (vfList != "" && vfList.Contains("vapoursynth=file="))
         {
             return true;
         }
@@ -1509,8 +1572,6 @@ public partial class MainForm : Form
     {
         if (Player.Duration.TotalMicroseconds > 0 && (hhzSettingsManager.Current.VideoAspestW == "0" && hhzSettingsManager.Current.VideoAspestH == "0"))
         {
-            //vw = Player.GetPropertyInt("width");
-            //vh = Player.GetPropertyInt("height");
             Player.SetPropertyString("video-aspect-override", "0");
         }
     }
@@ -1708,7 +1769,7 @@ public partial class MainForm : Form
         lblStatusLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
         lblVolumeLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
         panelTestLeft.Visible = (hhzMainPage.Visible == false && bTestMode) ? true : false;
-        gbRifeLeft.Visible = (hhzMainPage.Visible == false && fps > 0 && fps <= 30) ? true : false;
+        gbRifeLeft.Visible = (hhzMainPage.Visible == false /*&& (fps > 0 && fps <= 30)*/) ? true : false;
 
         if (App.Settings.Enable3DMode)
         {
@@ -1754,7 +1815,7 @@ public partial class MainForm : Form
             lblStatusRight.Visible = (hhzMainPage.Visible == false) ? true : false;
             lblVolumeRight.Visible = (hhzMainPage.Visible == false) ? true : false;
             panelTestRight.Visible = (hhzMainPage.Visible == false && bTestMode) ? true : false;
-            gbRifeRight.Visible = (hhzMainPage.Visible == false && fps > 0 && fps <= 30) ? true : false;
+            gbRifeRight.Visible = (hhzMainPage.Visible == false /*&& (fps > 0 && fps <= 30)*/) ? true : false;
 
             progressBarRight.BringToFront();
         }
@@ -1954,6 +2015,7 @@ public partial class MainForm : Form
     private bool bTestMode;
     private ToolStripMenuItem Videoaspectl;
     private ToolStripMenuItem Videoaspectr;
+    private bool bNvidia;
 
     //private bool bvapoursynth;
 
@@ -2274,6 +2336,7 @@ public partial class MainForm : Form
             case Keys.F10:
                 break;
             case Keys.F11:
+                Player.Command($"vf remove d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
                 break;
             case Keys.F12:
                 if (bTestMode == false)
@@ -2516,23 +2579,29 @@ public partial class MainForm : Form
 
     private void chkRife_CheckedChanged(object sender, EventArgs e)
     {
-        if (bRifeOn())
+        if (WasShown)
         {
-            cbRifeTimesLeft.Enabled = true;
-            cbRifeTimesRight.Enabled = true;
-            Player.Command("no-osd vf set vapoursynth=file=NULL");
-        }
-        else
-        {
-            cbRifeTimesLeft.Enabled = true;
-            cbRifeTimesRight.Enabled = true;
-            Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
+            if (((CheckBox)sender).Checked)
+            {
+                cbRifeTimesLeft.Enabled = true;
+                cbRifeTimesRight.Enabled = true;
+                if (!bRifeOn()) Player.Command($"no-osd vf add vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
+                hhzSettingsManager.Current.Riff = true;
+            }
+            else
+            {
+                cbRifeTimesLeft.Enabled = false;
+                cbRifeTimesRight.Enabled = false;
+                //if (bRifeOn()) Player.Command("no-osd vf set vapoursynth=file=NULL");
+                if (bRifeOn()) Player.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames=2");
+                hhzSettingsManager.Current.Riff = false;
+            }
         }
     }
 
     private void cbRifeTimes_SelectedIndexChanged(object sender, EventArgs e)
     {
-        Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames={2+((ComboBox)sender).SelectedIndex}");
+        Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames=8:concurrent-frames={2 + ((ComboBox)sender).SelectedIndex}");
     }
     public static bool IsVideoHDR(MainPlayer player)
     {
@@ -2564,6 +2633,36 @@ public partial class MainForm : Form
         }
         catch
         {
+            return false;
+        }
+    }
+
+    private void chkVSR_CheckedChanged(object sender, EventArgs e)
+    {
+        if (WasShown)
+        {
+            if (((CheckBox)sender).Checked)
+            {
+                if (!bRTXOn()) Player.Command($"no-osd vf add d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                hhzSettingsManager.Current.VSR = true;
+            }
+            else
+            {
+                if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                hhzSettingsManager.Current.VSR = false;
+            }
+        }
+    }
+
+    private bool bRTXOn()
+    {
+        string vfList = Player.GetPropertyString("vf");
+        if (vfList != "" && vfList.Contains("d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12"))
+        {
+            return true;
+        }
+        else
+        {            
             return false;
         }
     }

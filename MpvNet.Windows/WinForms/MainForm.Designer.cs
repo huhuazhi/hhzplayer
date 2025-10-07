@@ -81,9 +81,11 @@ partial class MainForm
         label7 = new System.Windows.Forms.Label();
         label8 = new System.Windows.Forms.Label();
         gbRifeLeft = new System.Windows.Forms.GroupBox();
+        chkVSRLeft = new System.Windows.Forms.CheckBox();
         cbRifeTimesLeft = new System.Windows.Forms.ComboBox();
         chkRifeLeft = new System.Windows.Forms.CheckBox();
         gbRifeRight = new System.Windows.Forms.GroupBox();
+        chkVSRRight = new System.Windows.Forms.CheckBox();
         cbRifeTimesRight = new System.Windows.Forms.ComboBox();
         chkRifeRight = new System.Windows.Forms.CheckBox();
         ((System.ComponentModel.ISupportInitialize)btnBackLeft).BeginInit();
@@ -734,16 +736,30 @@ partial class MainForm
         // gbRifeLeft
         // 
         gbRifeLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        gbRifeLeft.Controls.Add(chkVSRLeft);
         gbRifeLeft.Controls.Add(cbRifeTimesLeft);
         gbRifeLeft.Controls.Add(chkRifeLeft);
         gbRifeLeft.ForeColor = System.Drawing.Color.White;
-        gbRifeLeft.Location = new System.Drawing.Point(1656, 685);
+        gbRifeLeft.Location = new System.Drawing.Point(1656, 637);
         gbRifeLeft.Name = "gbRifeLeft";
-        gbRifeLeft.Size = new System.Drawing.Size(214, 163);
+        gbRifeLeft.Size = new System.Drawing.Size(214, 211);
         gbRifeLeft.TabIndex = 43;
         gbRifeLeft.TabStop = false;
-        gbRifeLeft.Text = "实时补帧";
+        gbRifeLeft.Text = "AI功能";
         gbRifeLeft.Visible = false;
+        // 
+        // chkVSRLeft
+        // 
+        chkVSRLeft.AutoSize = true;
+        chkVSRLeft.Checked = true;
+        chkVSRLeft.CheckState = System.Windows.Forms.CheckState.Checked;
+        chkVSRLeft.Location = new System.Drawing.Point(14, 110);
+        chkVSRLeft.Name = "chkVSRLeft";
+        chkVSRLeft.Size = new System.Drawing.Size(186, 36);
+        chkVSRLeft.TabIndex = 40;
+        chkVSRLeft.Text = "RTX超分辨率";
+        chkVSRLeft.UseVisualStyleBackColor = true;
+        chkVSRLeft.CheckedChanged += chkVSR_CheckedChanged;
         // 
         // cbRifeTimesLeft
         // 
@@ -751,7 +767,7 @@ partial class MainForm
         cbRifeTimesLeft.ForeColor = System.Drawing.Color.White;
         cbRifeTimesLeft.FormattingEnabled = true;
         cbRifeTimesLeft.Items.AddRange(new object[] { "2x", "3x", "4x" });
-        cbRifeTimesLeft.Location = new System.Drawing.Point(33, 122);
+        cbRifeTimesLeft.Location = new System.Drawing.Point(36, 165);
         cbRifeTimesLeft.Name = "cbRifeTimesLeft";
         cbRifeTimesLeft.Size = new System.Drawing.Size(147, 40);
         cbRifeTimesLeft.TabIndex = 38;
@@ -762,27 +778,41 @@ partial class MainForm
         // chkRifeLeft
         // 
         chkRifeLeft.AutoSize = true;
-        chkRifeLeft.Location = new System.Drawing.Point(33, 77);
+        chkRifeLeft.Location = new System.Drawing.Point(14, 55);
         chkRifeLeft.Name = "chkRifeLeft";
-        chkRifeLeft.Size = new System.Drawing.Size(155, 36);
+        chkRifeLeft.Size = new System.Drawing.Size(146, 36);
         chkRifeLeft.TabIndex = 0;
-        chkRifeLeft.Text = "开启/关闭";
+        chkRifeLeft.Text = "实时补帧";
         chkRifeLeft.UseVisualStyleBackColor = true;
         chkRifeLeft.CheckedChanged += chkRife_CheckedChanged;
         // 
         // gbRifeRight
         // 
         gbRifeRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        gbRifeRight.Controls.Add(chkVSRRight);
         gbRifeRight.Controls.Add(cbRifeTimesRight);
         gbRifeRight.Controls.Add(chkRifeRight);
         gbRifeRight.ForeColor = System.Drawing.Color.White;
-        gbRifeRight.Location = new System.Drawing.Point(1436, 685);
+        gbRifeRight.Location = new System.Drawing.Point(1436, 637);
         gbRifeRight.Name = "gbRifeRight";
-        gbRifeRight.Size = new System.Drawing.Size(214, 163);
+        gbRifeRight.Size = new System.Drawing.Size(214, 211);
         gbRifeRight.TabIndex = 44;
         gbRifeRight.TabStop = false;
-        gbRifeRight.Text = "实时补帧";
+        gbRifeRight.Text = "AI功能";
         gbRifeRight.Visible = false;
+        // 
+        // chkVSRRight
+        // 
+        chkVSRRight.AutoSize = true;
+        chkVSRRight.Checked = true;
+        chkVSRRight.CheckState = System.Windows.Forms.CheckState.Checked;
+        chkVSRRight.Location = new System.Drawing.Point(22, 110);
+        chkVSRRight.Name = "chkVSRRight";
+        chkVSRRight.Size = new System.Drawing.Size(186, 36);
+        chkVSRRight.TabIndex = 39;
+        chkVSRRight.Text = "RTX超分辨率";
+        chkVSRRight.UseVisualStyleBackColor = true;
+        chkVSRRight.CheckedChanged += chkVSR_CheckedChanged;
         // 
         // cbRifeTimesRight
         // 
@@ -790,7 +820,7 @@ partial class MainForm
         cbRifeTimesRight.ForeColor = System.Drawing.Color.White;
         cbRifeTimesRight.FormattingEnabled = true;
         cbRifeTimesRight.Items.AddRange(new object[] { "2x", "3x", "4x" });
-        cbRifeTimesRight.Location = new System.Drawing.Point(33, 122);
+        cbRifeTimesRight.Location = new System.Drawing.Point(30, 165);
         cbRifeTimesRight.Name = "cbRifeTimesRight";
         cbRifeTimesRight.Size = new System.Drawing.Size(147, 40);
         cbRifeTimesRight.TabIndex = 38;
@@ -801,11 +831,11 @@ partial class MainForm
         // chkRifeRight
         // 
         chkRifeRight.AutoSize = true;
-        chkRifeRight.Location = new System.Drawing.Point(33, 77);
+        chkRifeRight.Location = new System.Drawing.Point(22, 55);
         chkRifeRight.Name = "chkRifeRight";
-        chkRifeRight.Size = new System.Drawing.Size(155, 36);
+        chkRifeRight.Size = new System.Drawing.Size(146, 36);
         chkRifeRight.TabIndex = 0;
-        chkRifeRight.Text = "开启/关闭";
+        chkRifeRight.Text = "实时补帧";
         chkRifeRight.UseVisualStyleBackColor = true;
         chkRifeRight.CheckedChanged += chkRife_CheckedChanged;
         // 
@@ -925,4 +955,6 @@ partial class MainForm
     private System.Windows.Forms.GroupBox gbRifeRight;
     private System.Windows.Forms.ComboBox cbRifeTimesRight;
     private System.Windows.Forms.CheckBox chkRifeRight;
+    private System.Windows.Forms.CheckBox chkVSRLeft;
+    private System.Windows.Forms.CheckBox chkVSRRight;
 }

@@ -32,7 +32,7 @@ public static class Terminal
         if (color == ConsoleColor.Red || color == ConsoleColor.DarkRed)
             Console.Error.WriteLine(text);
         else
-            Console.WriteLine(text);
+            Debug.WriteLine(text);
 
         Console.ResetColor();
         Trace.WriteLine(obj);

@@ -65,6 +65,20 @@ namespace MyApp
             set { videoAspestH = value; hhzSettingsManager.MarkDirty(); }
         }
 
+        private bool bVSR = true;
+        public bool VSR
+        {
+            get => bVSR;
+            set { bVSR = value; hhzSettingsManager.MarkDirty(); }
+        }
+
+        private bool _RIFF = true;
+        public bool Riff
+        {
+            get => _RIFF;
+            set { _RIFF = value; hhzSettingsManager.MarkDirty(); }
+        }
+
         [XmlIgnore]
         public bool IsAllDefault =>
             SubtitleMode == "2D字幕(自动3D)" &&
@@ -73,10 +87,13 @@ namespace MyApp
             LastSubtitleTrackId == -1 &&
             RenderText == "2D渲染器" &&
             VideoAspestW == "0" &&
-            VideoAspestH == "0";
+            VideoAspestH == "0" &&
+            bVSR == true &&
+            _RIFF == true;
 
         [XmlIgnore]
         public bool IsModify => !IsAllDefault;
+
     }
 
     public static class hhzSettingsManager
@@ -152,7 +169,7 @@ namespace MyApp
             {
                 try
                 {
-                    Thread.Sleep(500); // 每500ms轮询一次
+                    Thread.Sleep(200); // 每500ms轮询一次
 
                     if (!IsDirty) continue;
                     if ((DateTime.Now - lastSaveTime).TotalMilliseconds < 800) continue;
@@ -208,7 +225,7 @@ namespace MyApp
                 catch (Exception ex)
                 {
 #if DEBUG
-                    Console.WriteLine($"保存设置失败: {ex.Message}");
+                    Debug.WriteLine($"保存设置失败: {ex.Message}");
 #endif
                 }
             }

@@ -20,6 +20,10 @@ static class Program
             RegistryHelp.ProductName = AppInfo.Product;
             Translator.Current = new WpfTranslator();
 
+            string exeDir = AppDomain.CurrentDomain.BaseDirectory;
+            // 强制设置工作目录
+            Directory.SetCurrentDirectory(exeDir);
+
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
 
@@ -130,35 +134,35 @@ static class Program
             if (arg == "--profile=help")
             {
                 Player.Init(IntPtr.Zero, false);
-                Console.WriteLine(Player.GetProfiles());
+                Debug.WriteLine(Player.GetProfiles());
                 Player.Destroy();
                 return true;
             }
             else if (arg == "--vd=help" || arg == "--ad=help")
             {
                 Player.Init(IntPtr.Zero, false);
-                Console.WriteLine(Player.GetDecoders());
+                Debug.WriteLine(Player.GetDecoders());
                 Player.Destroy();
                 return true;
             }
             else if (arg == "--audio-device=help")
             {
                 Player.Init(IntPtr.Zero, false);
-                Console.WriteLine(Player.GetPropertyOsdString("audio-device-list"));
+                Debug.WriteLine(Player.GetPropertyOsdString("audio-device-list"));
                 Player.Destroy();
                 return true;
             }
             else if (arg == "--input-keylist")
             {
                 Player.Init(IntPtr.Zero, false);
-                Console.WriteLine(Player.GetPropertyString("input-key-list").Replace(",", BR));
+                Debug.WriteLine(Player.GetPropertyString("input-key-list").Replace(",", BR));
                 Player.Destroy();
                 return true;
             }
             else if (arg == "--version")
             {
                 Player.Init(IntPtr.Zero, false);
-                Console.WriteLine(AppClass.About);
+                Debug.WriteLine(AppClass.About);
                 Player.Destroy();
                 return true;
             }
