@@ -483,6 +483,7 @@ partial class MainForm
         cmbVO.Name = "cmbVO";
         cmbVO.Size = new System.Drawing.Size(139, 40);
         cmbVO.TabIndex = 37;
+        cmbVO.TabStop = false;
         cmbVO.Text = "gpu";
         cmbVO.SelectedIndexChanged += cmbVO_SelectedIndexChanged;
         // 
@@ -496,6 +497,7 @@ partial class MainForm
         cmbhwdec.Name = "cmbhwdec";
         cmbhwdec.Size = new System.Drawing.Size(139, 40);
         cmbhwdec.TabIndex = 38;
+        cmbhwdec.TabStop = false;
         cmbhwdec.Text = "no";
         cmbhwdec.SelectedIndexChanged += cmbhwdec_SelectedIndexChanged;
         // 
@@ -509,6 +511,7 @@ partial class MainForm
         cmbgpuapi.Name = "cmbgpuapi";
         cmbgpuapi.Size = new System.Drawing.Size(139, 40);
         cmbgpuapi.TabIndex = 39;
+        cmbgpuapi.TabStop = false;
         cmbgpuapi.Text = "auto";
         cmbgpuapi.SelectedIndexChanged += cmbgpuapi_SelectedIndexChanged;
         // 
@@ -522,6 +525,7 @@ partial class MainForm
         cmbGpuContext.Name = "cmbGpuContext";
         cmbGpuContext.Size = new System.Drawing.Size(139, 40);
         cmbGpuContext.TabIndex = 40;
+        cmbGpuContext.TabStop = false;
         cmbGpuContext.Text = "auto";
         cmbGpuContext.SelectedIndexChanged += cmbGpuContext_SelectedIndexChanged;
         // 
@@ -555,6 +559,7 @@ partial class MainForm
         chkTestModeLeft.Name = "chkTestModeLeft";
         chkTestModeLeft.Size = new System.Drawing.Size(121, 36);
         chkTestModeLeft.TabIndex = 45;
+        chkTestModeLeft.TabStop = false;
         chkTestModeLeft.Text = "不隐藏";
         chkTestModeLeft.UseVisualStyleBackColor = false;
         chkTestModeLeft.CheckedChanged += chkTestModeLeft_CheckedChanged;
@@ -633,6 +638,7 @@ partial class MainForm
         chkTestModeRight.Name = "chkTestModeRight";
         chkTestModeRight.Size = new System.Drawing.Size(121, 36);
         chkTestModeRight.TabIndex = 45;
+        chkTestModeRight.TabStop = false;
         chkTestModeRight.Text = "不隐藏";
         chkTestModeRight.UseVisualStyleBackColor = false;
         chkTestModeRight.CheckedChanged += chkTestModeRight_CheckedChanged;
@@ -647,6 +653,7 @@ partial class MainForm
         comboBox2.Name = "comboBox2";
         comboBox2.Size = new System.Drawing.Size(139, 40);
         comboBox2.TabIndex = 37;
+        comboBox2.TabStop = false;
         comboBox2.Text = "gpu";
         comboBox2.SelectedIndexChanged += cmbVO_SelectedIndexChanged;
         // 
@@ -660,6 +667,7 @@ partial class MainForm
         comboBox3.Name = "comboBox3";
         comboBox3.Size = new System.Drawing.Size(139, 40);
         comboBox3.TabIndex = 40;
+        comboBox3.TabStop = false;
         comboBox3.Text = "auto";
         comboBox3.SelectedIndexChanged += cmbGpuContext_SelectedIndexChanged;
         // 
@@ -673,6 +681,7 @@ partial class MainForm
         comboBox4.Name = "comboBox4";
         comboBox4.Size = new System.Drawing.Size(139, 40);
         comboBox4.TabIndex = 38;
+        comboBox4.TabStop = false;
         comboBox4.Text = "no";
         comboBox4.SelectedIndexChanged += cmbhwdec_SelectedIndexChanged;
         // 
@@ -686,6 +695,7 @@ partial class MainForm
         comboBox5.Name = "comboBox5";
         comboBox5.Size = new System.Drawing.Size(139, 40);
         comboBox5.TabIndex = 39;
+        comboBox5.TabStop = false;
         comboBox5.Text = "auto";
         comboBox5.SelectedIndexChanged += cmbgpuapi_SelectedIndexChanged;
         // 
@@ -757,6 +767,7 @@ partial class MainForm
         chkVSRLeft.Name = "chkVSRLeft";
         chkVSRLeft.Size = new System.Drawing.Size(186, 36);
         chkVSRLeft.TabIndex = 40;
+        chkVSRLeft.TabStop = false;
         chkVSRLeft.Text = "RTX超分辨率";
         chkVSRLeft.UseVisualStyleBackColor = true;
         chkVSRLeft.CheckedChanged += chkVSR_CheckedChanged;
@@ -771,6 +782,7 @@ partial class MainForm
         cbRifeTimesLeft.Name = "cbRifeTimesLeft";
         cbRifeTimesLeft.Size = new System.Drawing.Size(147, 40);
         cbRifeTimesLeft.TabIndex = 38;
+        cbRifeTimesLeft.TabStop = false;
         cbRifeTimesLeft.Text = "2x";
         cbRifeTimesLeft.Visible = false;
         cbRifeTimesLeft.SelectedIndexChanged += cbRifeTimes_SelectedIndexChanged;
@@ -782,6 +794,7 @@ partial class MainForm
         chkRifeLeft.Name = "chkRifeLeft";
         chkRifeLeft.Size = new System.Drawing.Size(146, 36);
         chkRifeLeft.TabIndex = 0;
+        chkRifeLeft.TabStop = false;
         chkRifeLeft.Text = "实时补帧";
         chkRifeLeft.UseVisualStyleBackColor = true;
         chkRifeLeft.CheckedChanged += chkRife_CheckedChanged;
@@ -810,6 +823,7 @@ partial class MainForm
         chkVSRRight.Name = "chkVSRRight";
         chkVSRRight.Size = new System.Drawing.Size(186, 36);
         chkVSRRight.TabIndex = 39;
+        chkVSRRight.TabStop = false;
         chkVSRRight.Text = "RTX超分辨率";
         chkVSRRight.UseVisualStyleBackColor = true;
         chkVSRRight.CheckedChanged += chkVSR_CheckedChanged;
@@ -824,6 +838,7 @@ partial class MainForm
         cbRifeTimesRight.Name = "cbRifeTimesRight";
         cbRifeTimesRight.Size = new System.Drawing.Size(147, 40);
         cbRifeTimesRight.TabIndex = 38;
+        cbRifeTimesRight.TabStop = false;
         cbRifeTimesRight.Text = "2x";
         cbRifeTimesRight.Visible = false;
         cbRifeTimesRight.SelectedIndexChanged += cbRifeTimes_SelectedIndexChanged;
@@ -835,6 +850,7 @@ partial class MainForm
         chkRifeRight.Name = "chkRifeRight";
         chkRifeRight.Size = new System.Drawing.Size(146, 36);
         chkRifeRight.TabIndex = 0;
+        chkRifeRight.TabStop = false;
         chkRifeRight.Text = "实时补帧";
         chkRifeRight.UseVisualStyleBackColor = true;
         chkRifeRight.CheckedChanged += chkRife_CheckedChanged;

@@ -1,0 +1,57 @@
+vapoursynth闪退
+
+拷贝python
+├── python311.dll
+├── python311.zip
+├── python.exe
+├── pythonw.exe
+.\vs-detect-python.bat
+.\7z.exe x .\wheel\VapourSynth-65-cp311-cp311-win_amd64.whl -oLib\site-packages
+C:\Program Files\Python311\DLLs\_ctypes.pyd
+C:\Program Files\Python311\DLLs\libffi-8.dll
+
+VapourSynth64-Portable-R65
+concrt140.dl
+msvcp140.dll
+msvcp140 1.dl
+msvcp140 2.dl
+msvcp140 atomic wait.dl
+msvcp140 codecvt ids.dl
+portable.vs  <---------------只拷贝了这个就可以出版本号了
+VapourSynth.dll
+vccorlib140.dll
+vcruntime140.dll
+vcruntime140 1.dl
+vs-detect-python.bat
+VSPipe.exe
+VSScript.dl
+VSScriptPython38.dll
+VSVFW.dl
+
+
+
+msvc库版本太旧
+安装新的https://aka.ms/vs/17/release/vc_redist.x64.exe
+
+测试.\vspipe.exe -i test.py
+
+从最简单的部分测起
+.\vspipe.exe --version 或 .\vspipe.exe
+
+第二步：只加载插件，不运行模型
+import vapoursynth as vs
+core = vs.core
+core.std.LoadPlugin(r"rife\librife_windows_x86-64.dll")
+print("✅ RIFE 插件加载成功")
+clip = core.std.BlankClip(width=1280, height=720, format=vs.RGBS)
+clip.set_output()
+
+第三步：明确指定模型路径
+import vapoursynth as vs
+core = vs.core
+core.std.LoadPlugin(r"rife\librife_windows_x86-64.dll")
+
+model = r"rife\models\rife-v4.6"
+clip = core.std.BlankClip(width=1280, height=720, format=vs.RGBS)
+clip = core.rife.RIFE(clip, model_path=model, factor_num=2, gpu_id=0)
+clip.set_output()

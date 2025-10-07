@@ -901,6 +901,10 @@ namespace MpvNet.Windows.HHZ
             }
             else
             {
+                _toolTip.Hide(this); _tipVisible = false;            
+                _tipTimer.Stop();
+                _tipIndex = -1;
+                _tipNameRect = Rectangle.Empty;
                 FileOpened?.Invoke(this, new[] { item.FullPath });
             }
         }

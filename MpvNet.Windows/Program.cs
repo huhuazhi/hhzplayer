@@ -20,9 +20,21 @@ static class Program
             RegistryHelp.ProductName = AppInfo.Product;
             Translator.Current = new WpfTranslator();
 
-            string exeDir = AppDomain.CurrentDomain.BaseDirectory;
-            // 强制设置工作目录
-            Directory.SetCurrentDirectory(exeDir);
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            Directory.SetCurrentDirectory(baseDir);// 强制设置工作目录
+
+            Environment.SetEnvironmentVariable("PYTHONHOME", baseDir, EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable("PYTHONPATH", Path.Combine(baseDir, "Lib") + ";" +
+                                                           Path.Combine(baseDir, "Lib", "site-packages"),
+                                               EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable("PATH", baseDir + ";" + Environment.GetEnvironmentVariable("PATH"),
+                                               EnvironmentVariableTarget.Process);
+
+            //Environment.SetEnvironmentVariable("PYTHONHOME", baseDir);
+            //Environment.SetEnvironmentVariable("PYTHONPATH", $"{baseDir}\\Lib;\\Lib\\sit-packages");
+            //Environment.SetEnvironmentVariable("PYTHONHOME", "");
+            //Environment.SetEnvironmentVariable("PYTHONPATH", "");
+            //Environment.SetEnvironmentVariable("PATH", baseDir + ";" + Environment.GetEnvironmentVariable("PATH"));
 
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
