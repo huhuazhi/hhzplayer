@@ -69,8 +69,8 @@ public partial class MainForm : Form
         this.UpdateStyles();
 
         UpdateDarkMode();
-        InitializehhzOverlay();
-        //InitPlayer();
+        InitializehhzOverlay();        
+        InitPlayer();
 
         int cmdlineArgLength = Environment.GetCommandLineArgs().Length;
         if (cmdlineArgLength > 1)
@@ -119,7 +119,7 @@ public partial class MainForm : Form
     double timepos;
     private void InitPlayer()
     {
-        Player.Init(overlayPanel.Handle, true);
+        Player.Init(@overlayPanel.Handle, true);
         Player.SetPropertyString("log-file", "hhzplayer-vs.log");
         Player.SetPropertyString("msg-level", "all=v");
 
@@ -308,7 +308,7 @@ public partial class MainForm : Form
             case "2D渲染器":
                 btnRenderLeft.Text = "2D渲染器";
                 Player.SetPropertyString("vo", "gpu");
-                Player.SetPropertyString("hwdec", "no");
+                Player.SetPropertyString("hwdec", "auto");
                 //Player.SetPropertyString("hwdec", "auto");
                 //Player.SetPropertyString("hwdec", "nvdec-copy");
                 //Player.SetPropertyString("vo", "gpu-next");
@@ -492,9 +492,9 @@ public partial class MainForm : Form
     {
         if (paths.Length > 0)
         {
-            Player.Destroy();
+            //Player.Destroy();
 
-            InitPlayer();
+            //InitPlayer();
             progressBarLeft.Value = 0;
             progressBarRight.Value = 0;
 
@@ -512,6 +512,7 @@ public partial class MainForm : Form
             Set3DSubtitleMode(hhzSettingsManager.Current.SubtitleMode);
             setRender(hhzSettingsManager.Current.RenderText);
             Player.LoadFiles(paths, true, false);
+            Player.Command("set pause yes");
             if (hhzSettingsManager.Current.LastVideoTrackId != -1) Player.SetPropertyString("vid", hhzSettingsManager.Current.LastVideoTrackId.ToString());
             if (hhzSettingsManager.Current.LastAudioTrackId != -1) Player.SetPropertyString("aid", hhzSettingsManager.Current.LastAudioTrackId.ToString());
             if (hhzSettingsManager.Current.LastSubtitleTrackId != -1) Player.SetPropertyString("sid", hhzSettingsManager.Current.LastSubtitleTrackId.ToString());
@@ -1386,7 +1387,6 @@ public partial class MainForm : Form
                     lblStatusLeft.Text = "暂停中";
                     lblStatusRight.Text = lblStatusLeft.Text;
                 }
-                Player.Command("set pause no");
                 string path = Player.GetPropertyString("path");
                 path = MainPlayer.ConvertFilePath(path);
 
@@ -1513,6 +1513,7 @@ public partial class MainForm : Form
             }
             bHDR = IsVideoHDR(Player);
             ShowVideoOSD();
+            Player.Command("set pause no");
         }));
 
         string path = Player.GetPropertyString("path");
