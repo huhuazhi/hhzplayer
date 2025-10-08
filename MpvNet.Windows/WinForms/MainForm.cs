@@ -8,11 +8,13 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text.Json;
+using System.Windows.Controls.Primitives;
 using System.Windows.Forms;
 using static MpvNet.AppSettings;
 using static MpvNet.Windows.Help.WinApiHelp;
 using static MpvNet.Windows.Native.WinApi;
 using static System.Windows.Forms.AxHost;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
 
 namespace MpvNet.Windows.WinForms;
 
@@ -358,8 +360,13 @@ public partial class MainForm : Form
             case "2D渲染器":                
                 btnRenderLeft.Text = "2D渲染器";
                 Player.SetPropertyString("vo", "gpu");
-                Player.SetPropertyString("hwdec", "no");
+                Player.SetPropertyString("hwdec", "auto");
                 Player.SetPropertyString("gpu-api", "auto");
+
+                cmbVO.Text = "gpu";
+                cmbhwdec.Text = "auto";
+                cmbgpuapi.Text = "auto";
+                cmbGpuContext.Text = "auto";
                 setVSR();
                 break;
             case "3D渲染器":
@@ -368,6 +375,10 @@ public partial class MainForm : Form
                 Player.SetPropertyString("vo", "gpu");
                 Player.SetPropertyString("hwdec", "auto");
                 Player.SetPropertyString("gpu-api", "opengl");
+                cmbVO.Text = "gpu";
+                cmbhwdec.Text = "auto";
+                cmbgpuapi.Text = "opengl";
+                cmbGpuContext.Text = "auto";
                 break;
             default:
                 break;
@@ -565,11 +576,8 @@ public partial class MainForm : Form
             Set3DSubtitleMode(hhzSettingsManager.Current.SubtitleMode);
             setRender(hhzSettingsManager.Current.RenderText);
             bSetRender = false;
-            Player.LoadFiles(paths, true, false);            
-            if (hhzSettingsManager.Current.LastVideoTrackId != -1) Player.SetPropertyString("vid", hhzSettingsManager.Current.LastVideoTrackId.ToString());
-            if (hhzSettingsManager.Current.LastAudioTrackId != -1) Player.SetPropertyString("aid", hhzSettingsManager.Current.LastAudioTrackId.ToString());
-            if (hhzSettingsManager.Current.LastSubtitleTrackId != -1) Player.SetPropertyString("sid", hhzSettingsManager.Current.LastSubtitleTrackId.ToString());
-            if (hhzSettingsManager.Current.VideoAspestW != "0" && hhzSettingsManager.Current.VideoAspestH != "0") Player.SetPropertyString("video-aspect-override", $"{hhzSettingsManager.Current.VideoAspestW}:{hhzSettingsManager.Current.VideoAspestH}");
+            Player.LoadFiles(paths, true, false);
+
             if (FileTypes.IsAudio(Path.GetExtension(paths[0]).Replace(".", ""))/*Player.Path.Ext())*/) //音频格式
             {
                 isAudio = true;
@@ -1069,17 +1077,19 @@ public partial class MainForm : Form
         _videoMenuRight.Items.Add(new ToolStripSeparator());
         var defVidl = new ToolStripMenuItem("恢复默认")
         {
+            Text = $"恢复自动(目前:{getcurrentVideoTrack()})",
             Checked = false,
             CheckOnClick = false
         };
         var defVidr = new ToolStripMenuItem("恢复默认")
         {
+            Text = $"恢复自动(目前:{getcurrentVideoTrack()})",
             Checked = false,
             CheckOnClick = false
         };
-        defVidl.Click += (_, __) => { hhzSettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
+        defVidl.Click += (_, __) => { hhzSettingsManager.Current.LastVideoTrackId = -1; Player.SetPropertyString("vid", AutoVideoid); BuildAllTrackMenus(); };
         _videoMenuLeft.Items.Add(defVidl);
-        defVidr.Click += (_, __) => { hhzSettingsManager.Current.LastVideoTrackId = -1; BuildAllTrackMenus(); };
+        defVidr.Click += (_, __) => { hhzSettingsManager.Current.LastVideoTrackId = -1; Player.SetPropertyString("vid", AutoVideoid); BuildAllTrackMenus(); };
         _videoMenuRight.Items.Add(defVidr);
 
         _videoMenuLeft.Items.Add(new ToolStripSeparator());
@@ -1130,19 +1140,22 @@ public partial class MainForm : Form
 
         _audioMenuLeft.Items.Add(new ToolStripSeparator());
         _audioMenuRight.Items.Add(new ToolStripSeparator());
+        
         var defAidl = new ToolStripMenuItem("恢复默认")
-        {
+        {            
+            Text = $"恢复自动(目前:{getcurrentAudioTrack()})",
             Checked = false,
             CheckOnClick = false
         };
         var defAidr = new ToolStripMenuItem("恢复默认")
         {
+            Text = $"恢复自动(目前:{getcurrentAudioTrack()})",
             Checked = false,
             CheckOnClick = false
         };
-        defAidl.Click += (_, __) => { hhzSettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };
+        defAidl.Click += (_, __) => { hhzSettingsManager.Current.LastAudioTrackId = -1; Player.SetPropertyString("aid", AutoAudioid); BuildAllTrackMenus(); };
         _audioMenuLeft.Items.Add(defAidl);
-        defAidr.Click += (_, __) => { hhzSettingsManager.Current.LastAudioTrackId = -1; BuildAllTrackMenus(); };
+        defAidr.Click += (_, __) => { hhzSettingsManager.Current.LastAudioTrackId = -1; Player.SetPropertyString("aid", AutoAudioid); BuildAllTrackMenus(); };
         _audioMenuRight.Items.Add(defAidr);
 
         _subMenuLeft.Items.Add(new ToolStripSeparator());
@@ -1164,18 +1177,113 @@ public partial class MainForm : Form
 
         var defSubl = new ToolStripMenuItem("恢复默认")
         {
+            Text = $"恢复自动(目前:{getcurrentSubtitleTrack()})",
             Checked = false,
             CheckOnClick = false
         };
         var defSubr = new ToolStripMenuItem("恢复默认")
         {
+            Text = $"恢复自动(目前:{getcurrentSubtitleTrack()})",
             Checked = false,
             CheckOnClick = false
         };
-        defSubl.Click += (_, __) => { hhzSettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };
+        defSubl.Click += (_, __) => { hhzSettingsManager.Current.LastSubtitleTrackId = -1; Player.SetPropertyString("sid", AutoSubtitleid); BuildAllTrackMenus(); };
         _subMenuLeft.Items.Add(defSubl);
-        defSubr.Click += (_, __) => { hhzSettingsManager.Current.LastSubtitleTrackId = -1; BuildAllTrackMenus(); };
+        defSubr.Click += (_, __) => { hhzSettingsManager.Current.LastSubtitleTrackId = -1; Player.SetPropertyString("sid", AutoSubtitleid); BuildAllTrackMenus(); };
         _subMenuRight.Items.Add(defSubr);
+    }
+
+    private object getcurrentSubtitleTrack()
+    {
+        if (hhzSettingsManager.Current.LastSubtitleTrackId == -1)
+        {
+            return "自动";
+        }
+        else
+        {
+            foreach (var track in _subMenuLeft.Items)
+            {
+                if (track is ToolStripMenuItem item && item.Checked)
+                {
+                    return item.Text;
+                }
+            }
+            return null;
+        }
+    }
+
+    private object getcurrentVideoTrack()
+    {
+        if (hhzSettingsManager.Current.LastVideoTrackId == -1)
+        {
+            return "自动";
+        }
+        else
+        {
+            foreach (var track in _videoMenuLeft.Items)
+            {
+                if (track is ToolStripMenuItem item && item.Checked)
+                {
+                    return item.Text;
+                }
+            }
+            return null;
+        }
+    }
+
+    string getcurrentSubtitleTrackId()
+    {
+        foreach (var track in _subMenuLeft.Items)
+        {
+            if (track is ToolStripMenuItem item && item.Checked)
+            {
+                return item.Tag == null ? "" : item.Tag.ToString();
+            }
+        }
+        return null;
+    }
+
+    string getcurrentVideoTrackId()
+    {
+        foreach (var track in _videoMenuLeft.Items)
+        {
+            if (track is ToolStripMenuItem item && item.Checked)
+            {
+                return item.Tag == null ? "" : item.Tag.ToString();
+            }
+        }
+        return null;
+    }
+
+    string getcurrentAudioTrackId()
+    {
+        foreach (var track in _audioMenuLeft.Items)
+        {
+            if (track is ToolStripMenuItem item && item.Checked)
+            {
+                return item.Tag == null ? "" : item.Tag.ToString();
+            }
+        }
+        return null;
+    }
+
+    string getcurrentAudioTrack()
+    {
+        if (hhzSettingsManager.Current.LastAudioTrackId == -1)
+        {
+            return "自动";
+        } 
+        else
+        {
+            foreach (var track in _audioMenuLeft.Items)
+            {
+                if (track is ToolStripMenuItem item && item.Checked)
+                {
+                    return item.Text;
+                }
+            }
+            return null;
+        }
     }
 
     FormMediaProperty frmMediaProperty;
@@ -1399,7 +1507,33 @@ public partial class MainForm : Form
                 ShowToast(currfile, 2000);
                 lblDurationLeft.Text = $"{TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
                 lblDurationRight.Text = lblDurationLeft.Text;
+
                 BuildAllTrackMenus();
+                if (hhzSettingsManager.Current.LastVideoTrackId != -1)
+                {
+                    Player.SetPropertyString("vid", hhzSettingsManager.Current.LastVideoTrackId.ToString());
+                }
+                else
+                {
+                    AutoVideoid = getcurrentVideoTrackId();
+                }
+                if (hhzSettingsManager.Current.LastAudioTrackId != -1)
+                {
+                    Player.SetPropertyString("aid", hhzSettingsManager.Current.LastAudioTrackId.ToString());
+                }
+                else
+                {
+                    AutoAudioid = getcurrentAudioTrackId();
+                }
+                if (hhzSettingsManager.Current.LastSubtitleTrackId != -1)
+                {
+                    Player.SetPropertyString("sid", hhzSettingsManager.Current.LastSubtitleTrackId.ToString());
+                }
+                else
+                {
+                    AutoSubtitleid = getcurrentSubtitleTrackId();
+                }
+                if (hhzSettingsManager.Current.VideoAspestW != "0" && hhzSettingsManager.Current.VideoAspestH != "0") Player.SetPropertyString("video-aspect-override", $"{hhzSettingsManager.Current.VideoAspestW}:{hhzSettingsManager.Current.VideoAspestH}");
 
                 hhzMainPage.Visible = false;
                 //SetProgressBarMax(Player.Duration.TotalSeconds);
@@ -2055,6 +2189,9 @@ public partial class MainForm : Form
     private int iconcurrentframe = 2;
     private bool bSetRender;
     private int iVsrScale = 2;
+    private string AutoAudioid;
+    private string AutoVideoid;
+    private string AutoSubtitleid;
 
     //private bool bvapoursynth;
 
@@ -2588,22 +2725,22 @@ public partial class MainForm : Form
 
     private void cmbVO_SelectedIndexChanged(object sender, EventArgs e)
     {
-        Player.SetPropertyString("vo", ((ComboBox)sender).SelectedText);
+        Player.SetPropertyString("vo", cmbVO.Text);
     }
 
     private void cmbhwdec_SelectedIndexChanged(object sender, EventArgs e)
     {
-        Player.SetPropertyString("hwdec", ((ComboBox)sender).SelectedText);
+        Player.SetPropertyString("hwdec", cmbhwdec.Text);
     }
 
     private void cmbgpuapi_SelectedIndexChanged(object sender, EventArgs e)
     {
-        Player.SetPropertyString("gpu-api", ((ComboBox)sender).SelectedText);
+        Player.SetPropertyString("gpu-api", cmbgpuapi.Text);
     }
 
     private void cmbGpuContext_SelectedIndexChanged(object sender, EventArgs e)
     {
-        Player.SetPropertyString("gpu-context", ((ComboBox)sender).SelectedText);
+        Player.SetPropertyString("gpu-context", cmbGpuContext.Text);
     }
 
     private void chkTestModeLeft_CheckedChanged(object sender, EventArgs e)

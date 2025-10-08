@@ -496,7 +496,7 @@ partial class MainForm
         cmbhwdec.BackColor = System.Drawing.Color.Black;
         cmbhwdec.ForeColor = System.Drawing.Color.White;
         cmbhwdec.FormattingEnabled = true;
-        cmbhwdec.Items.AddRange(new object[] { "no", "auto", "yes", "auto-copy", "auto-safe", "dxva2", "dxva2-copy", "d3d11va", "d3d11va-copy", "cuda", "cuda-copy", "nvdec", "nvdec-copy" });
+        cmbhwdec.Items.AddRange(new object[] { "auto", "yes", "no", "auto-copy", "auto-safe", "dxva2", "dxva2-copy", "d3d11va", "d3d11va-copy", "cuda", "cuda-copy", "nvdec", "nvdec-copy" });
         cmbhwdec.Location = new System.Drawing.Point(161, 70);
         cmbhwdec.Name = "cmbhwdec";
         cmbhwdec.Size = new System.Drawing.Size(139, 40);
