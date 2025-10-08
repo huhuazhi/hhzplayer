@@ -140,7 +140,7 @@ namespace MpvNet.Windows
             _fileListRight.DirectoryChanged += (_, path) =>
             {
                 if (_syncingFileDir) return;
-                try { _syncingFileDir = true; _fileListLeft.NavigateTo(path); }
+                try { _syncingFileDir = true; _fileListLeft.NavigateTo(path); App.Settings.LastOpenedFolder = path; }
                 finally { _syncingFileDir = false; }
             };
 
@@ -184,14 +184,14 @@ namespace MpvNet.Windows
             _diskListLeft.DiskSelected += (_, root) =>
             {
                 if (_syncingFileDir) return;
-                try { _syncingFileDir = true; _fileListLeft.NavigateTo(root); _fileListRight.NavigateTo(root); }
+                try { _syncingFileDir = true; _fileListLeft.NavigateTo(root); _fileListRight.NavigateTo(root); App.Settings.LastOpenedFolder = root; }
                 finally { _syncingFileDir = false; }
             };
 
             _diskListRight.DiskSelected += (_, root) =>
             {
                 if (_syncingFileDir) return;
-                try { _syncingFileDir = true; _fileListLeft.NavigateTo(root); _fileListRight.NavigateTo(root); }
+                try { _syncingFileDir = true; _fileListLeft.NavigateTo(root); _fileListRight.NavigateTo(root); App.Settings.LastOpenedFolder = root; }
                 finally { _syncingFileDir = false; }
             };
 
