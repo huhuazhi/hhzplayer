@@ -122,6 +122,7 @@ public partial class MainForm : Form
         Player.Init(@overlayPanel.Handle, true);
         Player.SetPropertyString("log-file", "hhzplayer-vs.log");
         Player.SetPropertyString("msg-level", "all=v");
+        Player.Command("set pause yes");
 
         Player.FileLoaded += Player_FileLoaded;
         // 订阅播放进度
@@ -308,7 +309,7 @@ public partial class MainForm : Form
             case "2D渲染器":
                 btnRenderLeft.Text = "2D渲染器";
                 Player.SetPropertyString("vo", "gpu");
-                Player.SetPropertyString("hwdec", "auto");
+                Player.SetPropertyString("hwdec", "no");
                 //Player.SetPropertyString("hwdec", "auto");
                 //Player.SetPropertyString("hwdec", "nvdec-copy");
                 //Player.SetPropertyString("vo", "gpu-next");
@@ -412,8 +413,9 @@ public partial class MainForm : Form
     {
         if (hhzMainPage.Visible != true)
         {
-            fps = 0;
+            fps = 0;            
             Player.Command("stop");
+            Player.Command("set pause yes");
             hhzMainPage.Visible = true;
             overlayPanel.Visible = false;
             CursorTimer.Enabled = false;
@@ -510,9 +512,8 @@ public partial class MainForm : Form
             string newPath = Path.ChangeExtension(paths[0], ".hhz");
             hhzSettingsManager.Load(newPath);
             Set3DSubtitleMode(hhzSettingsManager.Current.SubtitleMode);
-            setRender(hhzSettingsManager.Current.RenderText);
+            setRender("3D渲染器");
             Player.LoadFiles(paths, true, false);
-            Player.Command("set pause yes");
             if (hhzSettingsManager.Current.LastVideoTrackId != -1) Player.SetPropertyString("vid", hhzSettingsManager.Current.LastVideoTrackId.ToString());
             if (hhzSettingsManager.Current.LastAudioTrackId != -1) Player.SetPropertyString("aid", hhzSettingsManager.Current.LastAudioTrackId.ToString());
             if (hhzSettingsManager.Current.LastSubtitleTrackId != -1) Player.SetPropertyString("sid", hhzSettingsManager.Current.LastSubtitleTrackId.ToString());
@@ -1511,6 +1512,7 @@ public partial class MainForm : Form
                     Player.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
                 }
             }
+            setRender(hhzSettingsManager.Current.RenderText);
             bHDR = IsVideoHDR(Player);
             ShowVideoOSD();
             Player.Command("set pause no");
