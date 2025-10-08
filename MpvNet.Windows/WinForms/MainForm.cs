@@ -120,8 +120,8 @@ public partial class MainForm : Form
     private void InitPlayer()
     {
         Player.Init(@overlayPanel.Handle, true);
-        Player.SetPropertyString("log-file", "hhzplayer-vs.log");
-        Player.SetPropertyString("msg-level", "all=v");
+        //Player.SetPropertyString("log-file", "hhzplayer-vs.log");
+        //Player.SetPropertyString("msg-level", "all=v");
         Player.Command("set pause yes");
 
         Player.FileLoaded += Player_FileLoaded;
@@ -317,11 +317,11 @@ public partial class MainForm : Form
                     lblVSRRight.Visible = false;
                     if (hhzSettingsManager.Current.VSR)
                     {
-                        if (!bRTXOn()) Player.Command($"no-osd vf add d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                        if (!bRTXOn()) Player.Command($"no-osd vf add d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12");
                     }
                     else
                     {
-                        if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                        if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12");
                     }
                     break;
                 case "3D渲染器":
@@ -331,7 +331,7 @@ public partial class MainForm : Form
                     lblVSRRight.Text = "3D渲染下无效";
                     lblVSRLeft.Visible = true;
                     lblVSRRight.Visible = true;
-                    if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                    if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12");
                     break;
             }            
             chkVSRLeft.Checked = hhzSettingsManager.Current.VSR;
@@ -1504,7 +1504,7 @@ public partial class MainForm : Form
                         //if (vw > 1920 || vh > 1080) Player.SetPropertyString("hwdec", "nvdec-copy");
                         //if (vw > 1920 || vh > 1080) Player.SetPropertyString("hwdec", "no");                        
                         Player.Command($"no-osd vf add vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
-                        //Player.Command($"no-osd vf add d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                        //Player.Command($"no-osd vf add d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12");
                         //Player.Command($"vf add @interp:lavfi=[minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir]");
                         //InterpMul(3);
                     }
@@ -2054,6 +2054,7 @@ public partial class MainForm : Form
     private int ibufferframe = 8;
     private int iconcurrentframe = 2;
     private bool bSetRender;
+    private int iVsrScale = 2;
 
     //private bool bvapoursynth;
 
@@ -2374,7 +2375,7 @@ public partial class MainForm : Form
             case Keys.F10:
                 break;
             case Keys.F11:
-                Player.Command($"vf remove d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                //Player.Command($"vf remove d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12");
                 break;
             case Keys.F12:
                 if (bTestMode == false)
@@ -2694,7 +2695,7 @@ public partial class MainForm : Form
     private bool bRTXOn()
     {
         string vfList = Player.GetPropertyString("vf");
-        if (vfList != "" && vfList.Contains("d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12"))
+        if (vfList != "" && vfList.Contains($"d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12"))
         {
             return true;
         }
