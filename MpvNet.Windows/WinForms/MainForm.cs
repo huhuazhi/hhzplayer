@@ -302,23 +302,69 @@ public partial class MainForm : Form
         }
     }
 
+    void setVSR()
+    {
+        vw = Player.GetPropertyInt("width");
+        vh = Player.GetPropertyInt("height");
+        if (vw <= 1920 && vh <= 1080)
+        {
+            switch (hhzSettingsManager.Current.RenderText)
+            {
+                case "2D渲染器":
+                    chkVSRLeft.Enabled = true;
+                    chkVSRLeft.Enabled = true;
+                    lblVSRLeft.Visible = false;
+                    lblVSRRight.Visible = false;
+                    if (hhzSettingsManager.Current.VSR)
+                    {
+                        if (!bRTXOn()) Player.Command($"no-osd vf add d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                    }
+                    else
+                    {
+                        if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                    }
+                    break;
+                case "3D渲染器":
+                    chkVSRLeft.Enabled = false; //3D模式下超分无效
+                    chkVSRLeft.Enabled = false;
+                    lblVSRLeft.Text = "3D渲染下无效";
+                    lblVSRRight.Text = "3D渲染下无效";
+                    lblVSRLeft.Visible = true;
+                    lblVSRRight.Visible = true;
+                    if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
+                    break;
+            }            
+            chkVSRLeft.Checked = hhzSettingsManager.Current.VSR;
+            chkVSRLeft.Checked = hhzSettingsManager.Current.VSR;
+        }
+        else
+        {
+            chkVSRLeft.Enabled = false;
+            chkVSRRight.Enabled = false;
+            chkVSRLeft.Checked = false;
+            chkVSRRight.Checked = false;
+            lblVSRLeft.Text = "超过1080p";
+            lblVSRRight.Text = "超过1080p";
+            lblVSRLeft.Visible = true;
+            lblVSRRight.Visible = true;
+        }
+    }
+
     void setRender(string RenderText)
     {
+        bSetRender = true;
         switch (RenderText)
         {
-            case "2D渲染器":
+            case "2D渲染器":                
                 btnRenderLeft.Text = "2D渲染器";
                 Player.SetPropertyString("vo", "gpu");
                 Player.SetPropertyString("hwdec", "no");
-                //Player.SetPropertyString("hwdec", "auto");
-                //Player.SetPropertyString("hwdec", "nvdec-copy");
-                //Player.SetPropertyString("vo", "gpu-next");
-                //Player.SetPropertyString("hwdec", "d3d11va");
-                //Player.SetPropertyString("gpu-api", "d3d11");
                 Player.SetPropertyString("gpu-api", "auto");
+                setVSR();
                 break;
             case "3D渲染器":
                 btnRenderLeft.Text = "3D渲染器";
+                setVSR();
                 Player.SetPropertyString("vo", "gpu");
                 Player.SetPropertyString("hwdec", "auto");
                 Player.SetPropertyString("gpu-api", "opengl");
@@ -326,6 +372,7 @@ public partial class MainForm : Form
             default:
                 break;
         }
+        bSetRender = false;
     }
 
     private void BtnRender_Click(object? sender, EventArgs e)
@@ -423,6 +470,10 @@ public partial class MainForm : Form
             HideVideoOSD();
             btn3DLeft.Visible = true;
             btnFullScreenLeft.Visible = true;
+            lblRifeLeft.Visible = false;
+            lblRifeRight.Visible = false;
+            lblVSRLeft.Visible = false;
+            lblVSRRight.Visible = false;
         }
     }
 
@@ -512,8 +563,9 @@ public partial class MainForm : Form
             string newPath = Path.ChangeExtension(paths[0], ".hhz");
             hhzSettingsManager.Load(newPath);
             Set3DSubtitleMode(hhzSettingsManager.Current.SubtitleMode);
-            setRender("3D渲染器");
-            Player.LoadFiles(paths, true, false);
+            setRender(hhzSettingsManager.Current.RenderText);
+            bSetRender = false;
+            Player.LoadFiles(paths, true, false);            
             if (hhzSettingsManager.Current.LastVideoTrackId != -1) Player.SetPropertyString("vid", hhzSettingsManager.Current.LastVideoTrackId.ToString());
             if (hhzSettingsManager.Current.LastAudioTrackId != -1) Player.SetPropertyString("aid", hhzSettingsManager.Current.LastAudioTrackId.ToString());
             if (hhzSettingsManager.Current.LastSubtitleTrackId != -1) Player.SetPropertyString("sid", hhzSettingsManager.Current.LastSubtitleTrackId.ToString());
@@ -1432,39 +1484,13 @@ public partial class MainForm : Form
             //Player.SetPropertyString("audio-format", "s16");
             //string vfList = Player.GetPropertyString("vf");
             //Debug.WriteLine(vfList);
-            if (vw <= 1920 && vh <= 1080)
-            {
-                if (hhzSettingsManager.Current.VSR)
-                {
-                    chkVSRLeft.Enabled = true;
-                    chkVSRRight.Enabled = true;
-                    chkVSRLeft.Checked = true;
-                    chkVSRRight.Checked = true;
-                    if (!bRTXOn())
-                    {
-                        Player.Command($"no-osd vf add d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
-                        //Player.Command($"no-osd vf add d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
-                    }
-                }
-                else
-                {
-                    chkVSRLeft.Checked = false;
-                    chkVSRRight.Checked = false;
-                    if (bRTXOn())
-                        Player.Command("no-osd vf del d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
-                }
-            }
-            else
-            {
-                chkVSRLeft.Enabled = false;
-                chkVSRRight.Enabled = false;
-                chkVSRLeft.Checked = false;
-                chkVSRRight.Checked = false;
-            }
+            setVSR();
             if (fps <= 30)
             {
+                lblRifeLeft.Visible = false;
+                lblRifeRight.Visible = false;
                 if (hhzSettingsManager.Current.Riff)
-               {
+                {
                     chkRifeLeft.Enabled = true;
                     chkRifeLeft.Enabled = true;
                     chkRifeLeft.Checked = true;
@@ -1472,7 +1498,7 @@ public partial class MainForm : Form
                     cbRifeTimesLeft.SelectedIndex = 0;
                     cbRifeTimesRight.SelectedIndex = 0;
                     cbRifeTimesLeft.Enabled = true;
-                    cbRifeTimesRight.Enabled = true;                    
+                    cbRifeTimesRight.Enabled = true;
                     if (!bRifeOn())
                     {
                         //if (vw > 1920 || vh > 1080) Player.SetPropertyString("hwdec", "nvdec-copy");
@@ -1499,6 +1525,8 @@ public partial class MainForm : Form
             }
             else
             {
+                lblRifeLeft.Visible = true;
+                lblRifeRight.Visible = true;
                 gbRifeLeft.Visible = false;
                 gbRifeRight.Visible = false;
                 chkRifeLeft.Checked = false;
@@ -1512,7 +1540,6 @@ public partial class MainForm : Form
                     Player.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
                 }
             }
-            setRender(hhzSettingsManager.Current.RenderText);
             bHDR = IsVideoHDR(Player);
             ShowVideoOSD();
             Player.Command("set pause no");
@@ -2026,6 +2053,7 @@ public partial class MainForm : Form
     private bool bNvidia;
     private int ibufferframe = 8;
     private int iconcurrentframe = 2;
+    private bool bSetRender;
 
     //private bool bvapoursynth;
 
@@ -2649,18 +2677,17 @@ public partial class MainForm : Form
 
     private void chkVSR_CheckedChanged(object sender, EventArgs e)
     {
-        if (WasShown)
+        if (WasShown && !bSetRender)
         {
             if (((CheckBox)sender).Checked)
-            {
-                if (!bRTXOn()) Player.Command($"no-osd vf add d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
-                hhzSettingsManager.Current.VSR = true;
+            {                
+                hhzSettingsManager.Current.VSR = true;                
             }
             else
             {
-                if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale=2:scaling-mode=nvidia:format=nv12");
                 hhzSettingsManager.Current.VSR = false;
             }
+            setVSR();
         }
     }
 

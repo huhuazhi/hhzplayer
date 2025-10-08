@@ -66,6 +66,7 @@ namespace MyApp
         }
 
         private bool bVSR = true;
+        [DefaultValue(true)]
         public bool VSR
         {
             get => bVSR;
@@ -73,6 +74,7 @@ namespace MyApp
         }
 
         private bool _RIFF = true;
+        [DefaultValue(true)]
         public bool Riff
         {
             get => _RIFF;

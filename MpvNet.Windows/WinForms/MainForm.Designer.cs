@@ -81,10 +81,14 @@ partial class MainForm
         label7 = new System.Windows.Forms.Label();
         label8 = new System.Windows.Forms.Label();
         gbRifeLeft = new System.Windows.Forms.GroupBox();
+        lblVSRLeft = new System.Windows.Forms.Label();
+        lblRifeLeft = new System.Windows.Forms.Label();
         chkVSRLeft = new System.Windows.Forms.CheckBox();
         cbRifeTimesLeft = new System.Windows.Forms.ComboBox();
         chkRifeLeft = new System.Windows.Forms.CheckBox();
         gbRifeRight = new System.Windows.Forms.GroupBox();
+        lblVSRRight = new System.Windows.Forms.Label();
+        lblRifeRight = new System.Windows.Forms.Label();
         chkVSRRight = new System.Windows.Forms.CheckBox();
         cbRifeTimesRight = new System.Windows.Forms.ComboBox();
         chkRifeRight = new System.Windows.Forms.CheckBox();
@@ -746,24 +750,51 @@ partial class MainForm
         // gbRifeLeft
         // 
         gbRifeLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        gbRifeLeft.Controls.Add(lblVSRLeft);
+        gbRifeLeft.Controls.Add(lblRifeLeft);
         gbRifeLeft.Controls.Add(chkVSRLeft);
         gbRifeLeft.Controls.Add(cbRifeTimesLeft);
         gbRifeLeft.Controls.Add(chkRifeLeft);
         gbRifeLeft.ForeColor = System.Drawing.Color.White;
-        gbRifeLeft.Location = new System.Drawing.Point(1656, 637);
+        gbRifeLeft.Location = new System.Drawing.Point(1656, 633);
         gbRifeLeft.Name = "gbRifeLeft";
-        gbRifeLeft.Size = new System.Drawing.Size(214, 211);
+        gbRifeLeft.Size = new System.Drawing.Size(214, 215);
         gbRifeLeft.TabIndex = 43;
         gbRifeLeft.TabStop = false;
         gbRifeLeft.Text = "AI功能";
         gbRifeLeft.Visible = false;
+        // 
+        // lblVSRLeft
+        // 
+        lblVSRLeft.BackColor = System.Drawing.Color.Black;
+        lblVSRLeft.ForeColor = System.Drawing.Color.Red;
+        lblVSRLeft.Location = new System.Drawing.Point(6, 155);
+        lblVSRLeft.Name = "lblVSRLeft";
+        lblVSRLeft.Size = new System.Drawing.Size(202, 32);
+        lblVSRLeft.TabIndex = 44;
+        lblVSRLeft.Tag = "abcdef";
+        lblVSRLeft.Text = "超过1080p";
+        lblVSRLeft.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+        lblVSRLeft.Visible = false;
+        // 
+        // lblRifeLeft
+        // 
+        lblRifeLeft.BackColor = System.Drawing.Color.Black;
+        lblRifeLeft.ForeColor = System.Drawing.Color.Red;
+        lblRifeLeft.Location = new System.Drawing.Point(6, 84);
+        lblRifeLeft.Name = "lblRifeLeft";
+        lblRifeLeft.Size = new System.Drawing.Size(202, 32);
+        lblRifeLeft.TabIndex = 43;
+        lblRifeLeft.Text = "视频超过30帧";
+        lblRifeLeft.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+        lblRifeLeft.Visible = false;
         // 
         // chkVSRLeft
         // 
         chkVSRLeft.AutoSize = true;
         chkVSRLeft.Checked = true;
         chkVSRLeft.CheckState = System.Windows.Forms.CheckState.Checked;
-        chkVSRLeft.Location = new System.Drawing.Point(14, 110);
+        chkVSRLeft.Location = new System.Drawing.Point(22, 118);
         chkVSRLeft.Name = "chkVSRLeft";
         chkVSRLeft.Size = new System.Drawing.Size(186, 36);
         chkVSRLeft.TabIndex = 40;
@@ -778,7 +809,7 @@ partial class MainForm
         cbRifeTimesLeft.ForeColor = System.Drawing.Color.White;
         cbRifeTimesLeft.FormattingEnabled = true;
         cbRifeTimesLeft.Items.AddRange(new object[] { "2x", "3x", "4x" });
-        cbRifeTimesLeft.Location = new System.Drawing.Point(36, 165);
+        cbRifeTimesLeft.Location = new System.Drawing.Point(30, 191);
         cbRifeTimesLeft.Name = "cbRifeTimesLeft";
         cbRifeTimesLeft.Size = new System.Drawing.Size(147, 40);
         cbRifeTimesLeft.TabIndex = 38;
@@ -790,7 +821,7 @@ partial class MainForm
         // chkRifeLeft
         // 
         chkRifeLeft.AutoSize = true;
-        chkRifeLeft.Location = new System.Drawing.Point(14, 55);
+        chkRifeLeft.Location = new System.Drawing.Point(22, 45);
         chkRifeLeft.Name = "chkRifeLeft";
         chkRifeLeft.Size = new System.Drawing.Size(146, 36);
         chkRifeLeft.TabIndex = 0;
@@ -802,24 +833,51 @@ partial class MainForm
         // gbRifeRight
         // 
         gbRifeRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        gbRifeRight.Controls.Add(lblVSRRight);
+        gbRifeRight.Controls.Add(lblRifeRight);
         gbRifeRight.Controls.Add(chkVSRRight);
         gbRifeRight.Controls.Add(cbRifeTimesRight);
         gbRifeRight.Controls.Add(chkRifeRight);
         gbRifeRight.ForeColor = System.Drawing.Color.White;
-        gbRifeRight.Location = new System.Drawing.Point(1436, 637);
+        gbRifeRight.Location = new System.Drawing.Point(1436, 633);
         gbRifeRight.Name = "gbRifeRight";
-        gbRifeRight.Size = new System.Drawing.Size(214, 211);
+        gbRifeRight.Size = new System.Drawing.Size(214, 215);
         gbRifeRight.TabIndex = 44;
         gbRifeRight.TabStop = false;
         gbRifeRight.Text = "AI功能";
         gbRifeRight.Visible = false;
+        // 
+        // lblVSRRight
+        // 
+        lblVSRRight.BackColor = System.Drawing.Color.Black;
+        lblVSRRight.ForeColor = System.Drawing.Color.Red;
+        lblVSRRight.Location = new System.Drawing.Point(6, 155);
+        lblVSRRight.Name = "lblVSRRight";
+        lblVSRRight.Size = new System.Drawing.Size(202, 32);
+        lblVSRRight.TabIndex = 44;
+        lblVSRRight.Tag = "abcdef";
+        lblVSRRight.Text = "超过1080p";
+        lblVSRRight.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+        lblVSRRight.Visible = false;
+        // 
+        // lblRifeRight
+        // 
+        lblRifeRight.BackColor = System.Drawing.Color.Black;
+        lblRifeRight.ForeColor = System.Drawing.Color.Red;
+        lblRifeRight.Location = new System.Drawing.Point(6, 84);
+        lblRifeRight.Name = "lblRifeRight";
+        lblRifeRight.Size = new System.Drawing.Size(202, 32);
+        lblRifeRight.TabIndex = 42;
+        lblRifeRight.Text = "视频超过30帧";
+        lblRifeRight.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+        lblRifeRight.Visible = false;
         // 
         // chkVSRRight
         // 
         chkVSRRight.AutoSize = true;
         chkVSRRight.Checked = true;
         chkVSRRight.CheckState = System.Windows.Forms.CheckState.Checked;
-        chkVSRRight.Location = new System.Drawing.Point(22, 110);
+        chkVSRRight.Location = new System.Drawing.Point(22, 118);
         chkVSRRight.Name = "chkVSRRight";
         chkVSRRight.Size = new System.Drawing.Size(186, 36);
         chkVSRRight.TabIndex = 39;
@@ -834,7 +892,7 @@ partial class MainForm
         cbRifeTimesRight.ForeColor = System.Drawing.Color.White;
         cbRifeTimesRight.FormattingEnabled = true;
         cbRifeTimesRight.Items.AddRange(new object[] { "2x", "3x", "4x" });
-        cbRifeTimesRight.Location = new System.Drawing.Point(30, 165);
+        cbRifeTimesRight.Location = new System.Drawing.Point(30, 191);
         cbRifeTimesRight.Name = "cbRifeTimesRight";
         cbRifeTimesRight.Size = new System.Drawing.Size(147, 40);
         cbRifeTimesRight.TabIndex = 38;
@@ -846,7 +904,7 @@ partial class MainForm
         // chkRifeRight
         // 
         chkRifeRight.AutoSize = true;
-        chkRifeRight.Location = new System.Drawing.Point(22, 55);
+        chkRifeRight.Location = new System.Drawing.Point(22, 45);
         chkRifeRight.Name = "chkRifeRight";
         chkRifeRight.Size = new System.Drawing.Size(146, 36);
         chkRifeRight.TabIndex = 0;
@@ -973,4 +1031,8 @@ partial class MainForm
     private System.Windows.Forms.CheckBox chkRifeRight;
     private System.Windows.Forms.CheckBox chkVSRLeft;
     private System.Windows.Forms.CheckBox chkVSRRight;
+    private System.Windows.Forms.Label lblRifeRight;
+    private System.Windows.Forms.Label lblVSRLeft;
+    private System.Windows.Forms.Label lblRifeLeft;
+    private System.Windows.Forms.Label lblVSRRight;
 }
