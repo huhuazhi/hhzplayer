@@ -17,6 +17,8 @@ static class Program
     {        
         try
         {
+            string[] args = Environment.GetCommandLineArgs().Skip(1).ToArray();
+
             RegistryHelp.ProductName = AppInfo.Product;
             Translator.Current = new WpfTranslator();
 
@@ -30,22 +32,13 @@ static class Program
             Environment.SetEnvironmentVariable("PATH", baseDir + ";" + Environment.GetEnvironmentVariable("PATH"),
                                                EnvironmentVariableTarget.Process);
 
-            //Environment.SetEnvironmentVariable("PYTHONHOME", baseDir);
-            //Environment.SetEnvironmentVariable("PYTHONPATH", $"{baseDir}\\Lib;\\Lib\\sit-packages");
-            //Environment.SetEnvironmentVariable("PYTHONHOME", "");
-            //Environment.SetEnvironmentVariable("PYTHONPATH", "");
-            //Environment.SetEnvironmentVariable("PATH", baseDir + ";" + Environment.GetEnvironmentVariable("PATH"));
-
-            //Application.EnableVisualStyles();
-            //Application.SetCompatibleTextRenderingDefault(false);
-
             AppDomain.CurrentDomain.UnhandledException += (sender, e) => Terminal.WriteError(e.ExceptionObject);
             Application.ThreadException += (sender, e) => Terminal.WriteError(e.Exception);
 
             if (App.IsTerminalAttached)
                 WinApi.AttachConsole(-1 /*ATTACH_PARENT_PROCESS*/);
 
-            string[] args = Environment.GetCommandLineArgs().Skip(1).ToArray();
+            //string[] args = Environment.GetCommandLineArgs().Skip(1).ToArray();
 
             if (args.Length > 0 && args[0] == "--register-file-associations")
             {
@@ -178,6 +171,13 @@ static class Program
                 Player.Destroy();
                 return true;
             }
+            //else if (arg == "--msg-level=all=warn")
+            //{
+            //    Player.Init(IntPtr.Zero, false);
+            //    Console.WriteLine(AppClass.About);
+            //    Player.Destroy();
+            //    return true;
+            //}
         }
 
         return false;

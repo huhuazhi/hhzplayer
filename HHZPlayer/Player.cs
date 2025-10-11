@@ -89,8 +89,8 @@ public class MainPlayer : HhzplayerClient
 
         //if (App.IsTerminalAttached)
         //{
-        //    SetPropertyString("terminal", "yes");
-        //    SetPropertyString("input-terminal", "yes");
+            //SetPropertyString("terminal", "yes");
+            //SetPropertyString("input-terminal", "yes");
         //}
 
         if (formHandle != IntPtr.Zero)

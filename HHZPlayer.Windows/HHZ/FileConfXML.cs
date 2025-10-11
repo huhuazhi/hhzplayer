@@ -73,13 +73,23 @@ namespace MyApp
             set { bVSR = value; hhzSettingsManager.MarkDirty(); }
         }
 
-        private bool _RIFF = true;
+        private bool _RIFE = true;
         [DefaultValue(true)]
-        public bool Riff
+        public bool Rife
         {
-            get => _RIFF;
-            set { _RIFF = value; hhzSettingsManager.MarkDirty(); }
+            get => _RIFE;
+            set { _RIFE = value; hhzSettingsManager.MarkDirty(); }
         }
+
+        private bool fromLastPosPlay = false;
+        [DefaultValue(false)]
+        public bool FromLastPosPlay
+        {
+            get => fromLastPosPlay;
+            set { fromLastPosPlay = value; hhzSettingsManager.MarkDirty(); }
+        }
+
+        public double LastTimePos { get; set; }
 
         [XmlIgnore]
         public bool IsAllDefault =>
@@ -91,7 +101,7 @@ namespace MyApp
             VideoAspestW == "0" &&
             VideoAspestH == "0" &&
             bVSR == true &&
-            _RIFF == true;
+            _RIFE == true;
 
         [XmlIgnore]
         public bool IsModify => !IsAllDefault;

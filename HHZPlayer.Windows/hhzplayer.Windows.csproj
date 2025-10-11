@@ -16,6 +16,13 @@
 		<PackageIcon>hhzplayer.PNG</PackageIcon>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
+	
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<OutputType>WinExe</OutputType>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<Compile Remove="Misc\**" />
@@ -133,6 +140,24 @@
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </None>
 	  <None Update="rife\librife_windows_x86-64.dll">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="rife\models\rife-v2.3\contextnet.bin">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="rife\models\rife-v2.3\contextnet.param">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="rife\models\rife-v2.3\flownet.bin">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="rife\models\rife-v2.3\flownet.param">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="rife\models\rife-v2.3\fusionnet.bin">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="rife\models\rife-v2.3\fusionnet.param">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="rife\models\rife-v4.6\flownet.bin">

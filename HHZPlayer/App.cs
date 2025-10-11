@@ -29,8 +29,7 @@ public class AppClass
     public bool Queue { get; set; }
     public bool RememberAudioDevice { get; set; } = true;
     public bool RememberVolume { get; set; } = true;
-    public bool RememberWindowPosition { get; set; }
-
+    public bool RememberWindowPosition { get; set; }    
     public int RecentCount { get; set; } = 15;
 
     public float AutofitAudio { get; set; } = 0.7f;
