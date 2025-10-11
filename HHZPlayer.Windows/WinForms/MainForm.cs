@@ -579,7 +579,7 @@ public partial class MainForm : Form
             overlayPanel.Visible = true;
             CursorTimer.Enabled = true;
 
-            string newPath = Path.ChangeExtension(paths[0], ".hhz");
+            string newPath = $"{paths[0]}.hhz";
             hhzSettingsManager.Load(newPath);
             Set3DSubtitleMode(hhzSettingsManager.Current.SubtitleMode);
             setRender(hhzSettingsManager.Current.RenderText);
