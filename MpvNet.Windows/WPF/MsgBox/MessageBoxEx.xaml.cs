@@ -12,9 +12,9 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-using MpvNet.Help;
+using HHZPlayer.Help;
 
-namespace MpvNet.Windows.WPF.MsgBox;
+namespace HHZPlayer.Windows.WPF.MsgBox;
 
 public partial class MessageBoxEx : Window, INotifyPropertyChanged
 {

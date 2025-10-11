@@ -1,7 +1,7 @@
 ﻿
-using MpvNet.Windows.WPF.ViewModels;
+using HHZPlayer.Windows.WPF.ViewModels;
 
-namespace MpvNet.Windows.WPF.Views;
+namespace HHZPlayer.Windows.WPF.Views;
 
 public partial class AboutWindow
 {

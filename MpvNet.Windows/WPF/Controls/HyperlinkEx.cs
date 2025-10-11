@@ -2,9 +2,9 @@
 using System.Windows.Documents;
 using System.Windows.Navigation;
 
-using MpvNet.Help;
+using HHZPlayer.Help;
 
-namespace MpvNet.Windows.WPF;
+namespace HHZPlayer.Windows.WPF;
 
 public class HyperlinkEx : Hyperlink
 {

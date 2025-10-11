@@ -3,9 +3,9 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 
-using static MpvNet.Windows.Native.WinApi;
+using static HHZPlayer.Windows.Native.WinApi;
 
-namespace MpvNet.Windows.Help;
+namespace HHZPlayer.Windows.Help;
 
 public static class WinApiHelp
 {

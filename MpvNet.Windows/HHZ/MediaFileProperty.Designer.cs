@@ -1,4 +1,4 @@
-﻿namespace MpvNet.Windows.WinForms
+﻿namespace HHZPlayer.Windows.WinForms
 {
     partial class FormMediaProperty
     {

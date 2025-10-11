@@ -1,7 +1,7 @@
 ﻿
-using MpvNet.ExtensionMethod;
+using HHZPlayer.ExtensionMethod;
 
-namespace MpvNet.Windows;
+namespace HHZPlayer.Windows;
 
 public class Conf
 {

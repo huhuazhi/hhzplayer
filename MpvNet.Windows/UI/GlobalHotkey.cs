@@ -2,9 +2,9 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-using MpvNet.ExtensionMethod;
+using HHZPlayer.ExtensionMethod;
 
-namespace MpvNet.Windows.UI;
+namespace HHZPlayer.Windows.UI;
 
 class GlobalHotkey
 {

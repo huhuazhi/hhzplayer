@@ -1,5 +1,5 @@
 ﻿
-namespace MpvNet.Help;
+namespace HHZPlayer.Help;
 
 public class MpvHelp
 {

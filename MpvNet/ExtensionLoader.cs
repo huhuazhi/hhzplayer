@@ -1,9 +1,9 @@
 ﻿
 using System.Reflection;
 
-using MpvNet.ExtensionMethod;
+using HHZPlayer.ExtensionMethod;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public class ExtensionLoader
 {

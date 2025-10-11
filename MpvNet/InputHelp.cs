@@ -1,7 +1,7 @@
 ﻿
 using System.Text;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public static class InputHelp
 {

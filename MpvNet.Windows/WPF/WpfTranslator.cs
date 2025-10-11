@@ -3,7 +3,7 @@ using NGettext.Wpf;
 
 using System.Globalization;
 
-namespace MpvNet.Windows.WPF;
+namespace HHZPlayer.Windows.WPF;
 
 public class WpfTranslator : ITranslator
 {

@@ -1,7 +1,7 @@
 ﻿
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public class Binding : ObservableObject
 {

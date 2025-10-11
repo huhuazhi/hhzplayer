@@ -1,4 +1,4 @@
-﻿namespace MpvNet.Windows
+﻿namespace HHZPlayer.Windows
 {
     partial class HHZMainPage
     {

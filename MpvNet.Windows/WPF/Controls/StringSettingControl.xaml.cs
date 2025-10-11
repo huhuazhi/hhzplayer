@@ -6,9 +6,9 @@ using System.Windows.Media;
 
 using Forms = System.Windows.Forms;
 
-using MpvNet.Windows.UI;
+using HHZPlayer.Windows.UI;
 
-namespace MpvNet.Windows.WPF;
+namespace HHZPlayer.Windows.WPF;
 
 public partial class StringSettingControl : UserControl, ISettingControl
 {

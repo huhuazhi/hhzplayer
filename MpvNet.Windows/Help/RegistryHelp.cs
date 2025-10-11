@@ -1,7 +1,7 @@
 ﻿
 using Microsoft.Win32;
 
-namespace MpvNet.Windows.Help;
+namespace HHZPlayer.Windows.Help;
 
 public static class RegistryHelp
 {

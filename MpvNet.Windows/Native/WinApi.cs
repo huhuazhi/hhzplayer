@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using static HandyControl.Tools.Interop.InteropValues;
 
-namespace MpvNet.Windows.Native;
+namespace HHZPlayer.Windows.Native;
 
 public static class WinApi
 {

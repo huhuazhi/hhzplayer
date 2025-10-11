@@ -1,7 +1,7 @@
 ﻿
-using MpvNet.ExtensionMethod;
+using HHZPlayer.ExtensionMethod;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public static class FileTypes
 {

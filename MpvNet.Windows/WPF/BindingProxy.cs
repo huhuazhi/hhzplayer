@@ -1,7 +1,7 @@
 ﻿
 using System.Windows;
 
-namespace MpvNet.Windows.WPF;
+namespace HHZPlayer.Windows.WPF;
 
 public class BindingProxy : Freezable
 {

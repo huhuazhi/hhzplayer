@@ -2,9 +2,9 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-using static MpvNet.Native.LibMpv;
+using static HHZPlayer.Native.LibMpv;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public class MpvClient
 {

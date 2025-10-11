@@ -6,10 +6,10 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Forms;
 
-using MpvNet.Help;
-using MpvNet.Windows.UI;
+using HHZPlayer.Help;
+using HHZPlayer.Windows.UI;
 
-namespace MpvNet.Windows;
+namespace HHZPlayer.Windows;
 
 public partial class LearnWindow : Window
 {

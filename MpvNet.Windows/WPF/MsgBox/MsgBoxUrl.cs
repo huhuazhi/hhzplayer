@@ -1,7 +1,7 @@
 ﻿
 using System.Windows.Media;
 
-namespace MpvNet.Windows.WPF.MsgBox;
+namespace HHZPlayer.Windows.WPF.MsgBox;
 
 public class MsgBoxUrl
 {

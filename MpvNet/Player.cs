@@ -1,7 +1,7 @@
 ﻿
-using MpvNet.ExtensionMethod;
-using MpvNet.Help;
-using MpvNet.Native;
+using HHZPlayer.ExtensionMethod;
+using HHZPlayer.Help;
+using HHZPlayer.Native;
 using System.Drawing;
 using System.Globalization;
 using System.Reflection.Metadata;
@@ -11,9 +11,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
-using static MpvNet.Native.LibMpv;
+using static HHZPlayer.Native.LibMpv;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public class MainPlayer : MpvClient
 {

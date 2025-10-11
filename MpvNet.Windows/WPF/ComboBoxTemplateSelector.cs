@@ -2,7 +2,7 @@
 using System.Windows.Controls;
 using System.Windows;
 
-namespace MpvNet.Windows.WPF;
+namespace HHZPlayer.Windows.WPF;
 
 public class ComboBoxTemplateSelector : DataTemplateSelector
 {

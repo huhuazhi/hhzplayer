@@ -1,7 +1,7 @@
 ﻿
 using System.Windows;
 
-namespace MpvNet.Windows;
+namespace HHZPlayer.Windows;
 
 public abstract class Setting
 {

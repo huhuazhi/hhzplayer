@@ -1,4 +1,4 @@
 ﻿
-namespace MpvNet.MVVM;
+namespace HHZPlayer.MVVM;
 
 public class MainWindowIsLoadedMessage { }

@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace MpvNet.Windows.WPF.MsgBox;
+namespace HHZPlayer.Windows.WPF.MsgBox;
 
 public class MsgBoxExCheckBoxData : INotifyPropertyChanged
 {

@@ -1,7 +1,7 @@
 ﻿
 using System.Reflection;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public static class AppInfo
 {

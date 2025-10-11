@@ -1,11 +1,11 @@
 ﻿
 using CommunityToolkit.Mvvm.Messaging;
-using MpvNet.ExtensionMethod;
-using MpvNet.Help;
-using MpvNet.MVVM;
+using HHZPlayer.ExtensionMethod;
+using HHZPlayer.Help;
+using HHZPlayer.MVVM;
 using System.Numerics;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public class AppClass
 {

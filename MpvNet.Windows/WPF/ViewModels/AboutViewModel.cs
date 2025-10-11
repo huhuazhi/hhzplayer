@@ -1,7 +1,7 @@
 ﻿
 using CommunityToolkit.Mvvm.Input;
 
-namespace MpvNet.Windows.WPF.ViewModels;
+namespace HHZPlayer.Windows.WPF.ViewModels;
 
 public partial class AboutViewModel : ViewModelBase
 {

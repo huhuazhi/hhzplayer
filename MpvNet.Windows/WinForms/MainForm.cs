@@ -1,7 +1,7 @@
 ﻿
 using CommunityToolkit.Mvvm.Messaging;
-using MpvNet.MVVM;
-using MpvNet.Windows.UI;
+using HHZPlayer.MVVM;
+using HHZPlayer.Windows.UI;
 using MyApp;
 using System.Drawing;
 using System.Globalization;
@@ -10,13 +10,13 @@ using System.Runtime.Serialization;
 using System.Text.Json;
 using System.Windows.Controls.Primitives;
 using System.Windows.Forms;
-using static MpvNet.AppSettings;
-using static MpvNet.Windows.Help.WinApiHelp;
-using static MpvNet.Windows.Native.WinApi;
+using static HHZPlayer.AppSettings;
+using static HHZPlayer.Windows.Help.WinApiHelp;
+using static HHZPlayer.Windows.Native.WinApi;
 using static System.Windows.Forms.AxHost;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
 
-namespace MpvNet.Windows.WinForms;
+namespace HHZPlayer.Windows.WinForms;
 
 public partial class MainForm : Form
 {

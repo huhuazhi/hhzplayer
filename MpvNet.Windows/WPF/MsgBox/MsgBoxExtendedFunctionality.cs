@@ -1,5 +1,5 @@
 ﻿
-namespace MpvNet.Windows.WPF.MsgBox;
+namespace HHZPlayer.Windows.WPF.MsgBox;
 
 public class MsgBoxExtendedFunctionality
 {

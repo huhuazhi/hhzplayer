@@ -2,13 +2,13 @@
 using System.Windows.Forms;
 using System.Threading;
 
-using MpvNet.Windows.Native;
-using MpvNet.Help;
-using MpvNet.Windows.UI;
-using MpvNet.Windows.Help;
-using MpvNet.Windows.WPF;
+using HHZPlayer.Windows.Native;
+using HHZPlayer.Help;
+using HHZPlayer.Windows.UI;
+using HHZPlayer.Windows.Help;
+using HHZPlayer.Windows.WPF;
 
-namespace MpvNet.Windows;
+namespace HHZPlayer.Windows;
 
 static class Program
 {

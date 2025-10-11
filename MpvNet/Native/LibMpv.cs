@@ -6,7 +6,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace MpvNet.Native;
+namespace HHZPlayer.Native;
 
 public static class LibMpv
 {

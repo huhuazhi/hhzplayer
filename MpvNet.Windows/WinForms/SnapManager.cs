@@ -2,10 +2,10 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using MpvNet.Windows.Help;
-using MpvNet.Windows.Native;
+using HHZPlayer.Windows.Help;
+using HHZPlayer.Windows.Native;
 
-namespace MpvNet.Windows.WinForms;
+namespace HHZPlayer.Windows.WinForms;
 
 public class SnapManager
 {

@@ -1,9 +1,9 @@
 ﻿
 using Microsoft.Win32;
 
-using MpvNet.Windows.Help;
+using HHZPlayer.Windows.Help;
 
-namespace MpvNet.Windows;
+namespace HHZPlayer.Windows;
 
 public static class FileAssociation
 {

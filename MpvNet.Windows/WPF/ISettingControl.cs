@@ -1,5 +1,5 @@
 ﻿
-namespace MpvNet.Windows.WPF;
+namespace HHZPlayer.Windows.WPF;
 
 interface ISettingControl
 {

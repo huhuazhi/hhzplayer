@@ -5,9 +5,9 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 
-using MpvNet.Windows.UI;
+using HHZPlayer.Windows.UI;
 
-namespace MpvNet.Windows.WPF;
+namespace HHZPlayer.Windows.WPF;
 
 public partial class InputWindow : Window
 {

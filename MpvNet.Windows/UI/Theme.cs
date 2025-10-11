@@ -4,7 +4,7 @@ using System.Windows.Media;
 
 using Microsoft.Win32;
 
-namespace MpvNet.Windows.UI;
+namespace HHZPlayer.Windows.UI;
 
 public class Theme
 {

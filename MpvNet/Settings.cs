@@ -3,9 +3,9 @@ using System.Text;
 using System.Xml.Serialization;
 using System.Xml;
 using System.Drawing;
-using static MpvNet.AppSettings;
+using static HHZPlayer.AppSettings;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 [Serializable()]
 public class AppSettings

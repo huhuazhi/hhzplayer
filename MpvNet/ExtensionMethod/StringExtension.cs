@@ -1,7 +1,7 @@
 ﻿
 using System.Globalization;
 
-namespace MpvNet.ExtensionMethod;
+namespace HHZPlayer.ExtensionMethod;
 
 public static class StringExtension
 {

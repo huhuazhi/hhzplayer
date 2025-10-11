@@ -2,9 +2,9 @@
 using System.Windows;
 using System.Windows.Controls;
 
-using MpvNet.Windows.UI;
+using HHZPlayer.Windows.UI;
 
-namespace MpvNet.Windows.WPF;
+namespace HHZPlayer.Windows.WPF;
 
 public partial class ComboBoxSettingControl : UserControl, ISettingControl
 {

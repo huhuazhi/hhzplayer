@@ -1,5 +1,5 @@
 ﻿
-namespace MpvNet.Windows.UI;
+namespace HHZPlayer.Windows.UI;
 
 public class TreeNode
 {

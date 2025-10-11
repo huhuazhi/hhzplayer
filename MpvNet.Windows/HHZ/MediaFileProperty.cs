@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MpvNet.Windows.WinForms
+namespace HHZPlayer.Windows.WinForms
 {
     public partial class FormMediaProperty : Form
     {

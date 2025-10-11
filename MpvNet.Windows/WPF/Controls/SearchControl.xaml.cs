@@ -5,9 +5,9 @@ using System.Windows.Input;
 
 using CommunityToolkit.Mvvm.Input;
 
-using MpvNet.Windows.UI;
+using HHZPlayer.Windows.UI;
 
-namespace MpvNet.Windows.WPF.Controls;
+namespace HHZPlayer.Windows.WPF.Controls;
 
 public partial class SearchControl : UserControl
 {

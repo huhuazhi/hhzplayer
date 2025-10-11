@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net9.0-windows7.0</TargetFramework>
-		<RootNamespace>MpvNet.Windows</RootNamespace>
+		<RootNamespace>HHZPlayer.Windows</RootNamespace>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<PublishSingleFile>true</PublishSingleFile>
 		<AssemblyName>hhzplayer</AssemblyName>

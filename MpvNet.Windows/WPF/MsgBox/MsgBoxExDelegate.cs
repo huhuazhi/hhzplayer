@@ -1,7 +1,7 @@
 ﻿
 using System.Windows;
 
-namespace MpvNet.Windows.WPF.MsgBox;
+namespace HHZPlayer.Windows.WPF.MsgBox;
 
 public abstract class MsgBoxExDelegate
 {

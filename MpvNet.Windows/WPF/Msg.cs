@@ -4,9 +4,9 @@ using System.Windows;
 
 using Forms = System.Windows.Forms;
 
-using MpvNet.Windows.WPF.MsgBox;
+using HHZPlayer.Windows.WPF.MsgBox;
 
-namespace MpvNet.Windows.WPF;
+namespace HHZPlayer.Windows.WPF;
 
 public class Msg
 {

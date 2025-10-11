@@ -11,12 +11,12 @@ using System.Windows.Threading;
 
 using CommunityToolkit.Mvvm.Input;
 
-using MpvNet.Help;
-using MpvNet.Windows.UI;
-using MpvNet.Windows.WPF.Controls;
-using MpvNet.Windows.WPF.ViewModels;
+using HHZPlayer.Help;
+using HHZPlayer.Windows.UI;
+using HHZPlayer.Windows.WPF.Controls;
+using HHZPlayer.Windows.WPF.ViewModels;
 
-namespace MpvNet.Windows.WPF;
+namespace HHZPlayer.Windows.WPF;
 
 public partial class ConfWindow : Window, INotifyPropertyChanged
 {

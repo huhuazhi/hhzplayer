@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 
-namespace MpvNet.Windows.HHZ
+namespace HHZPlayer.Windows.HHZ
 {
     /// <summary>
     /// 透明背景自绘磁盘列表：上部圆角标题栏 + 两排文字 + 进度条 + 系统图标

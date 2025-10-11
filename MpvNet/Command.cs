@@ -1,8 +1,8 @@
 ﻿
 using System.Globalization;
-using MpvNet.Help;
+using HHZPlayer.Help;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public class Command
 {

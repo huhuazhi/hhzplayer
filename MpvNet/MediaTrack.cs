@@ -1,5 +1,5 @@
 ﻿
-namespace MpvNet;
+namespace HHZPlayer;
 
 public class MediaTrack
 {

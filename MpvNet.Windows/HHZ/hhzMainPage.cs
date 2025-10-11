@@ -1,9 +1,9 @@
 ﻿using System.Drawing;
 using System.Windows.Forms;
 using FFmpeg.AutoGen;
-using MpvNet.Windows.HHZ;
+using HHZPlayer.Windows.HHZ;
 
-namespace MpvNet.Windows
+namespace HHZPlayer.Windows
 {
     public partial class HHZMainPage : UserControl
     {

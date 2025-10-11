@@ -7,15 +7,15 @@ using System.Windows.Forms;
 using System.Windows.Interop;
 using System.Windows;
 
-using MpvNet.ExtensionMethod;
-using MpvNet.Windows.WinForms;
-using MpvNet.Windows.WPF.Views;
-using MpvNet.Windows.WPF;
-using MpvNet.Windows.WPF.MsgBox;
-using MpvNet.Windows.Help;
-using MpvNet.Help;
+using HHZPlayer.ExtensionMethod;
+using HHZPlayer.Windows.WinForms;
+using HHZPlayer.Windows.WPF.Views;
+using HHZPlayer.Windows.WPF;
+using HHZPlayer.Windows.WPF.MsgBox;
+using HHZPlayer.Windows.Help;
+using HHZPlayer.Help;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public class GuiCommand
 {

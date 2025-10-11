@@ -1,9 +1,9 @@
 ﻿
 using CommunityToolkit.Mvvm.ComponentModel;
 
-using MpvNet.Windows.UI;
+using HHZPlayer.Windows.UI;
 
-namespace MpvNet.Windows.WPF.ViewModels;
+namespace HHZPlayer.Windows.WPF.ViewModels;
 
 public class NodeViewModel : ObservableObject
 {

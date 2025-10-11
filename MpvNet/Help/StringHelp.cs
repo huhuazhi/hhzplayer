@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace MpvNet.Help;
+namespace HHZPlayer.Help;
 
 public static class StringHelp
 {

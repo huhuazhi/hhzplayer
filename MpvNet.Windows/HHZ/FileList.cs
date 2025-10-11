@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MpvNet.Windows.HHZ
+namespace HHZPlayer.Windows.HHZ
 {
     public class FileList : Control
     {

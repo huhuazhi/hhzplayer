@@ -9,7 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 
-namespace MpvNet.Windows.WPF.MsgBox;
+namespace HHZPlayer.Windows.WPF.MsgBox;
 
 public partial class MessageBoxEx : Window, INotifyPropertyChanged
 {

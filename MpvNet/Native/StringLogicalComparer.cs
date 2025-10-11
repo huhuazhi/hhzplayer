@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Collections;
 
-namespace MpvNet.Native;
+namespace HHZPlayer.Native;
 
 public class StringLogicalComparer : IComparer, IComparer<string>
 {

@@ -1,7 +1,7 @@
 ﻿
 using System.Runtime.InteropServices;
 
-namespace MpvNet;
+namespace HHZPlayer;
 
 public class MediaInfo : IDisposable
 {
