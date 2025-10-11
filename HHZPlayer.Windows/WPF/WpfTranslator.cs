@@ -38,7 +38,7 @@ public class WpfTranslator : ITranslator
     {
         if (Translation.Localizer == null || _localizerLangauge != App.Language)
         {
-            CompositionRoot.Compose("mpvnet", GetCulture(App.Language), Folder.Startup + "Locale");
+            CompositionRoot.Compose("hhzplayer", GetCulture(App.Language), Folder.Startup + "Locale");
             _localizerLangauge = App.Language;
         }
     }
@@ -59,21 +59,21 @@ public class WpfTranslator : ITranslator
             name = GetSystemLanguage();
 
         foreach (Language lang in Languages)
-            if (lang.MpvNetName == name)
+            if (lang.HHZPlayerName == name)
                 return new CultureInfo(lang.CultureInfoName);
 
-        return new CultureInfo("en");
+        return new CultureInfo("zh");
     }
 
     class Language
     {
-        public string MpvNetName { get; }
+        public string HHZPlayerName { get; }
         public string CultureInfoName { get; }
         public string TwoLetterName { get; }
 
-        public Language(string mpvNetName, string cultureInfoName, string twoLetterName)
+        public Language(string hhzplayerName, string cultureInfoName, string twoLetterName)
         {
-            MpvNetName = mpvNetName;
+            HHZPlayerName = hhzplayerName;
             CultureInfoName = cultureInfoName;
             TwoLetterName = twoLetterName;
         }

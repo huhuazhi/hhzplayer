@@ -11,7 +11,7 @@ public class AppClass
 {
     public List<string> TempFiles { get; } = new ();
 
-    public string ConfPath { get => Player.ConfigFolder + "mpvnet.conf"; }
+    public string ConfPath { get => Player.ConfigFolder + "hhzplayer.conf"; }
     public string ProcessInstance { get; set; } = "single";
     public string DarkMode { get; set; } = "always";
     public string DarkTheme { get; set; } = "dark";
@@ -64,7 +64,7 @@ public class AppClass
 
         if (DebugMode)
         {
-            string filePath = Player.ConfigFolder + "MpvNet-debug.log";
+            string filePath = Player.ConfigFolder + "HHZPlayer-debug.log";
 
             if (File.Exists(filePath))
                 File.Delete(filePath);
@@ -77,7 +77,7 @@ public class AppClass
         Player.Initialized += Player_Initialized;
     }
 
-    public static string About => "Copyright (C) 2000-2024 mpv.net/mpv/mplayer\n" +
+    public static string About => "Copyright (C) 2000-2024 huhuazhi.club/hhzplayer/hhzplayer\n" +
         $"{AppInfo.Product} v{AppInfo.Version}" + GetLastWriteTime(Environment.ProcessPath!) + "\n" +
         $"{Player.GetPropertyString("mpv-version")}" + GetLastWriteTime(Folder.Startup + "hhzlib.dll") + "\n" +
         $"ffmpeg {Player.GetPropertyString("ffmpeg-version")}\n" +
@@ -154,7 +154,7 @@ public class AppClass
 
             default:
                 if (writeError)
-                    Terminal.WriteError($"unknown MpvNet.conf property: {name}");
+                    Terminal.WriteError($"unknown hhzplayer.conf property: {name}");
 
                 return false;
         }

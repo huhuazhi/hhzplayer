@@ -6,7 +6,7 @@ using static HHZPlayer.Native.LibMpv;
 
 namespace HHZPlayer;
 
-public class MpvClient
+public class HhzplayerClient
 {
     public event Action<string[]>? ClientMessage;            // client-message      MPV_EVENT_CLIENT_MESSAGE
     public event Action<mpv_log_level, string>? LogMessage;  // log-message         MPV_EVENT_LOG_MESSAGE

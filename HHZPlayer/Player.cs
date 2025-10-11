@@ -15,9 +15,9 @@ using static HHZPlayer.Native.LibMpv;
 
 namespace HHZPlayer;
 
-public class MainPlayer : MpvClient
+public class MainPlayer : HhzplayerClient
 {
-    public string ConfPath { get => ConfigFolder + "mpv.conf"; }
+    public string ConfPath { get => ConfigFolder + "hhzplayer.conf"; }
     public string GPUAPI { get; set; } = "auto";
     public string Path { get; set; } = "";
     public string VO { get; set; } = "gpu";
@@ -56,7 +56,7 @@ public class MainPlayer : MpvClient
     public object MediaTracksLock { get; } = new object();
     public Size VideoSize { get; set; }
     public TimeSpan Duration;
-    public List<MpvClient> Clients { get; } = new List<MpvClient>();
+    public List<HhzplayerClient> Clients { get; } = new List<HhzplayerClient>();
 
     List<StringPair>? _audioDevices;
 
@@ -181,19 +181,6 @@ public class MainPlayer : MpvClient
         if (processCommandLine)
             CommandLine.ProcessCommandLineArgsPreInit();
 
-        //if (CommandLine.Contains("config-dir"))
-        //{
-        //    string configDir = CommandLine.GetValue("config-dir");
-        //    string fullPath = System.IO.Path.GetFullPath(configDir);
-        //    App.InputConf.Path = fullPath.AddSep() + "input.conf";
-        //    string content = App.InputConf.GetContent();
-
-        //    if (!string.IsNullOrEmpty(content))
-        //        SetPropertyString("input-conf", @"memory://" + content);
-        //}
-
-        //Environment.SetEnvironmentVariable("MPVNET_VERSION", AppInfo.Version.ToString());  // deprecated
-
         mpv_set_option_string(MainHandle, Encoding.UTF8.GetBytes("process-instance"), Encoding.UTF8.GetBytes("multi"));
         mpv_error err = mpv_initialize(MainHandle);
 
@@ -307,15 +294,15 @@ public class MainPlayer : MpvClient
         get {
             if (_configFolder == null)
             {
-                string? mpvnet_home = Environment.GetEnvironmentVariable("MPVNET_HOME");
+                string? hhzplayer_home = Environment.GetEnvironmentVariable("HHZPLAYER_HOME");
 
-                if (Directory.Exists(mpvnet_home))
-                    return _configFolder = mpvnet_home.AddSep();
+                if (Directory.Exists(hhzplayer_home))
+                    return _configFolder = hhzplayer_home.AddSep();
 
                 _configFolder = Folder.Startup + "portable_config";
 
                 if (!Directory.Exists(_configFolder))
-                    _configFolder = Folder.AppData + "mpv.net";
+                    _configFolder = Folder.AppData + "hhzplayer";
 
                 if (!Directory.Exists(_configFolder))
                     Directory.CreateDirectory(_configFolder);
@@ -1156,9 +1143,9 @@ public class MainPlayer : MpvClient
 
     public string GetDemuxers() => string.Join(BR, GetPropertyString("demuxer-lavf-list").Split(',').OrderBy(i => i));
 
-    public MpvClient CreateNewPlayer(string name)
+    public HhzplayerClient CreateNewPlayer(string name)
     {
-        var client = new MpvClient { Handle = mpv_create_client(MainHandle, name) };
+        var client = new HhzplayerClient { Handle = mpv_create_client(MainHandle, name) };
 
         if (client.Handle == IntPtr.Zero)
             throw new Exception("Error CreateNewPlayer");

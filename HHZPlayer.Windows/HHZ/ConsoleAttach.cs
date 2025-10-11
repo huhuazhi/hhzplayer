@@ -39,7 +39,7 @@ namespace HHZPlayer.Windows // 用你工程的命名空间
 
         public static int RunMpvPassthrough(string[] args)
         {
-            // 在程序目录找 mpvnet.exe / mpv.exe
+            // 在程序目录找 hhzplayer.exe
             string baseDir = AppContext.BaseDirectory;
             string[] candidates =
             {

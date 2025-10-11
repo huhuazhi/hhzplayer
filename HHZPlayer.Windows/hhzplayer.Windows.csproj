@@ -29,7 +29,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\MpvNet\hhzplayer.csproj" />
+		<ProjectReference Include="..\HHZPlayer\hhzplayer.csproj" />
 		<ProjectReference Include="..\NGettext.Wpf\NGettext.Wpf.csproj" />
 	</ItemGroup>
 

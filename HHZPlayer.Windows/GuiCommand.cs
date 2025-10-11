@@ -164,7 +164,7 @@ public class GuiCommand
         }
 
         string header = BR +
-            "https://mpv.io/manual/master/#list-of-input-commands" + BR;
+            "https://www.huhuazhi.club/manual/master/#list-of-input-commands" + BR;
 
         ShowTextWithEditor("Input Commands", header + sb.ToString());
     }
@@ -286,7 +286,7 @@ public class GuiCommand
                                      "Would you like to install the command palette now?");
 
             if (r == MessageBoxResult.OK)
-                Player.Command("script-message-to mpvnet install-command-palette");
+                Player.Command("script-message-to hhzplayer install-command-palette");
         }
     }
 

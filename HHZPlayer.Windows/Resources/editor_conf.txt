@@ -1,42 +1,42 @@
 
 name = process-instance
-file = mpvnet
+file = hhzplayer
 directory = General
-help = Defines if more then one mpv.net process is allowed.\nMulti can alternatively be enabled by pressing the SHIFT key. (mpv.net option)
+help = Defines if more then one hhzplayer.net process is allowed.\nMulti can alternatively be enabled by pressing the SHIFT key. (hhzplayer.net option)
 default = single
-option = multi   Create a new process everytime the shell starts mpv.net
-option = single  Force a single process everytime the shell starts mpv.net
+option = multi   Create a new process everytime the shell starts hhzplayer.net
+option = single  Force a single process everytime the shell starts hhzplayer.net
 option = queue   Force a single process and add files to playlist
 
 name = recent-count
-file = mpvnet
+file = hhzplayer
 directory = General
-help = <int> Amount of recent files to be remembered. Default: 15 (mpv.net option)
+help = <int> Amount of recent files to be remembered. Default: 15 (hhzplayer.net option)
 
 name = media-info
-file = mpvnet
+file = hhzplayer
 directory = General
-help = Usage of the media info library instead of mpv to retrieve media information. (mpv.net option)
+help = Usage of the media info library instead of hhzplayer to retrieve media information. (hhzplayer.net option)
 default = yes
 option = yes
 option = no
 
 name = image-exts
-file = mpv
+file = hhzplayer
 directory = General
 width = 500
-help = Image file extentions to try to match when using --cover-art-auto, --autocreate-playlist or --directory-filter-types. By mpv.net used to create file associations and used by the auto-load-folder feature. Default: avif,bmp,gif,j2k,jp2,jpeg,jpg,jxl,png,svg,tga,tif,tiff,webp
+help = Image file extentions to try to match when using --cover-art-auto, --autocreate-playlist or --directory-filter-types. By hhzplayer.net used to create file associations and used by the auto-load-folder feature. Default: avif,bmp,gif,j2k,jp2,jpeg,jpg,jxl,png,svg,tga,tif,tiff,webp
 
 name = menu-syntax
-file = mpvnet
+file = hhzplayer
 directory = General
-help = Used menu syntax for defining the context menu in input.conf.\nmpv.net by default uses '#menu:', uosc uses '#!' by default.
+help = Used menu syntax for defining the context menu in input.conf.\nhhzplayer.net by default uses '#menu:', uosc uses '#!' by default.
 
 name = video-sync
-file = mpv
+file = hhzplayer
 directory = General
 help = How the player synchronizes audio and video.\n\nFor more information visit:
-url = https://mpv.io/manual/master/#options-video-sync
+url = https://hhzplayer.io/manual/master/#options-video-sync
 default = audio
 option = audio
 option = display-resample
@@ -48,28 +48,28 @@ option = display-desync
 option = desync
 
 name = debug-mode
-file = mpvnet
+file = hhzplayer
 directory = General
-help = Enable this only when a developer asks for it. (mpv.net option)
+help = Enable this only when a developer asks for it. (hhzplayer.net option)
 default = no
 option = yes
 option = no
 
 name = vo
-file = mpv
+file = hhzplayer
 directory = Video
 help = Video output drivers to be used.\n\nFor more information visit:
-url = https://mpv.io/manual/master/#video-output-drivers-vo
+url = https://hhzplayer.io/manual/master/#video-output-drivers-vo
 default = gpu
 option = gpu       General purpose, customizable, GPU-accelerated video output driver. It supports extended scaling methods, dithering, color management, custom shaders, HDR, and more.
 option = gpu-next  Experimental video renderer based on libplacebo. This supports almost the same set of features as --vo=gpu.
 option = direct3d  Video output driver that uses the Direct3D interface.
 
 name = hwdec
-file = mpv
+file = hhzplayer
 directory = Video
-url = https://mpv.io/manual/master/#options-hwdec
-help = Specify the hardware video decoding API that should be used if possible. Whether hardware decoding is actually done depends on the video codec. If hardware decoding is not possible, mpv will fall back on software decoding. Hardware decoding is disabled by default to maintain reliability. However, modern hardware should support hardware video decoding, reducing CPU usage and power consumption.\n\nFor more information visit:
+url = https://hhzplayer.io/manual/master/#options-hwdec
+help = Specify the hardware video decoding API that should be used if possible. Whether hardware decoding is actually done depends on the video codec. If hardware decoding is not possible, hhzplayer will fall back on software decoding. Hardware decoding is disabled by default to maintain reliability. However, modern hardware should support hardware video decoding, reducing CPU usage and power consumption.\n\nFor more information visit:
 default = no
 option = no            always use software decoding
 option = auto          enable best hw decoder
@@ -86,7 +86,7 @@ option = nvdec         requires vo=gpu (Any platform CUDA is available)
 option = nvdec-copy    copies video back to system RAM
 
 name = gpu-api
-file = mpv
+file = hhzplayer
 directory = Video/Render Options
 help = Controls which type of graphics APIs will be accepted. On Windows this defaults to d3d11 and should not be changed without a good reason.
 default = auto
@@ -96,7 +96,7 @@ option = opengl  Allow only OpenGL (requires OpenGL 2.1+ or GLES 2.0+)
 option = vulkan  Allow only Vulkan
 
 name = gpu-context
-file = mpv
+file = hhzplayer
 directory = Video/Render Options
 default = auto
 option = auto       auto-select
@@ -107,10 +107,10 @@ option = dxinterop  (experimental) Win32, using WGL for rendering and Direct3D 9
 option = winvk      VK_KHR_win32_surface
 
 name = scale
-file = mpv
+file = hhzplayer
 directory = Video/Render Options/Scaling
-help = The GPU renderer filter function to use when upscaling video. There are some more filters, but most are not as useful. For a complete list, pass help as value, e.g.: mpv --scale=help
-url = https://mpv.io/manual/master/#options-scale
+help = The GPU renderer filter function to use when upscaling video. There are some more filters, but most are not as useful. For a complete list, pass help as value, e.g.: hhzplayer --scale=help
+url = https://hhzplayer.io/manual/master/#options-scale
 default = lanczos
 option = bilinear
 option = spline36
@@ -121,10 +121,10 @@ option = mitchell
 option = oversample
 
 name = cscale
-file = mpv
+file = hhzplayer
 directory = Video/Render Options/Scaling
 help = As scale, but for interpolating chroma information. If the image is not subsampled, this option is ignored entirely.
-url = https://mpv.io/manual/master/#options-cscale
+url = https://hhzplayer.io/manual/master/#options-cscale
 default = bilinear
 option = bilinear
 option = spline36
@@ -135,10 +135,10 @@ option = mitchell
 option = oversample
 
 name = dscale
-file = mpv
+file = hhzplayer
 directory = Video/Render Options/Scaling
 help = Like scale, but apply these filters on downscaling instead. \nIf no option is selected, it will keep the same with the upscaler.
-url = https://mpv.io/manual/master/#options-dscale
+url = https://hhzplayer.io/manual/master/#options-dscale
 default = lanczos
 option = bilinear
 option = spline36
@@ -149,7 +149,7 @@ option = mitchell
 option = oversample
 
 name = correct-downscaling
-file = mpv
+file = hhzplayer
 directory = Video/Render Options/Scaling
 help = When using convolution based filters, extend the filter size when downscaling. Increases quality, but reduces performance while downscaling.\n\nThis will perform slightly sub-optimally for anamorphic video (but still better than without it) since it will extend the size to match only the milder of the scale factors between the axes.
 default = no
@@ -157,7 +157,7 @@ option = yes
 option = no
 
 name = sigmoid-upscaling
-file = mpv
+file = hhzplayer
 directory = Video/Render Options/Scaling
 help = When upscaling, use a sigmoidal color transform to avoid emphasizing ringing artifacts. This also implies linear-scaling.
 default = no
@@ -165,17 +165,17 @@ option = yes
 option = no
 
 name = dither-depth
-file = mpv
+file = hhzplayer
 directory = Video/Render Options
 help = Set dither target depth to N. Note that the depth of the connected video display device cannot be detected. Often, LCD panels will do dithering on their own, which conflicts with this option and leads to ugly output.
 default = no
-option = no    Disable any dithering done by mpv.
+option = no    Disable any dithering done by hhzplayer.
 option = auto  Automatic selection. If output bit depth cannot be detected, 8 bits per component are assumed.
 option = 8     Dither to 8 bit output.
 option = 10    Dither to 10 bit output.
 
 name = deband
-file = mpv
+file = hhzplayer
 directory = Video/Render Options
 help = Enable the debanding algorithm. This greatly reduces the amount of visible banding, blocking and other quantization artifacts, at the expense of very slightly blurring some of the finest details. In practice, it's virtually always an improvement - the only reason to disable it would be for performance.
 default = no
@@ -183,37 +183,37 @@ option = yes
 option = no
 
 name = hdr-compute-peak
-file = mpv
+file = hhzplayer
 directory = Video/Render Options
-url = https://mpv.io/manual/master/#options-hdr-compute-peak
+url = https://hhzplayer.io/manual/master/#options-hdr-compute-peak
 default = auto
 option = auto
 option = yes
 option = no
 
 name = allow-delayed-peak-detect
-file = mpv
+file = hhzplayer
 directory = Video/Render Options
-url = https://mpv.io/manual/master/#options-allow-delayed-peak-detect
+url = https://hhzplayer.io/manual/master/#options-allow-delayed-peak-detect
 default = yes
 option = yes
 option = no
 
 name = d3d11va-zero-copy
-file = mpv
+file = hhzplayer
 directory = Video/Render Options
-url = https://mpv.io/manual/master/#options-d3d11va-zero-copy
+url = https://hhzplayer.io/manual/master/#options-d3d11va-zero-copy
 default = no
 option = yes
 option = no
 
 name = background
-file = mpv
+file = hhzplayer
 directory = Video/Render Options
-help = Color used to draw parts of the mpv window not covered by video. See the --sub-color option for how colors are defined.
+help = Color used to draw parts of the hhzplayer window not covered by video. See the --sub-color option for how colors are defined.
 
 name = libplacebo-opts
-file = mpv
+file = hhzplayer
 directory = Video/Render Options
 help = Passes extra raw option to the libplacebo rendering backend (used by --vo=gpu-next). May override the effects of any other options set using the normal options system.
 
@@ -719,14 +719,14 @@ option = yes
 option = no
 
 name = screenshot-directory
-file = mpv
+file = hhzplayer
 width = 500
 type = folder
 directory = Video/Screenshot
 help = Store screenshots in this directory. This path is joined with the filename generated by screenshot-template. If the template filename is already absolute, the directory is ignored.
 
 name = screenshot-format
-file = mpv
+file = hhzplayer
 directory = Video/Screenshot
 help = Set the image file type used for saving screenshots.
 default = jpg
@@ -734,7 +734,7 @@ option = jpg
 option = png
 
 name = screenshot-tag-colorspace
-file = mpv
+file = hhzplayer
 directory = Video/Screenshot
 help = Tag screenshots with the appropriate colorspace. Note that not all formats are supported.
 default = yes
@@ -742,7 +742,7 @@ option = yes
 option = no
 
 name = screenshot-high-bit-depth
-file = mpv
+file = hhzplayer
 directory = Video/Screenshot
 help = If possible, write screenshots with a bit depth similar to the source video. This is interesting in particular for PNG, as this sometimes triggers writing 16 bit PNGs with huge file sizes. This will also include an unused alpha channel in the resulting files if 16 bit is used.
 default = yes
@@ -750,7 +750,7 @@ option = yes
 option = no
 
 name = screenshot-jpeg-source-chroma
-file = mpv
+file = hhzplayer
 directory = Video/Screenshot
 help = Write JPEG files with the same chroma subsampling as the video. If disabled, the libjpeg default is used.
 default = yes
@@ -758,52 +758,52 @@ option = yes
 option = no
 
 name = screenshot-template
-file = mpv
+file = hhzplayer
 directory = Video/Screenshot
-help = Specify the filename template used to save screenshots. The template specifies the filename without file extension, and can contain format specifiers, which will be substituted when taking a screenshot. By default, the template is mpv-shot%n, which results in filenames like  mpv-shot0012.png for example.\n\nFind the full documentation here:
-url = https://mpv.io/manual/master/#options-screenshot-template
+help = Specify the filename template used to save screenshots. The template specifies the filename without file extension, and can contain format specifiers, which will be substituted when taking a screenshot. By default, the template is hhzplayer-shot%n, which results in filenames like  hhzplayer-shot0012.png for example.\n\nFind the full documentation here:
+url = https://hhzplayer.io/manual/master/#options-screenshot-template
 
 name = screenshot-jpeg-quality
-file = mpv
+file = hhzplayer
 directory = Video/Screenshot
 help = <0-100> Set the JPEG quality level. Higher means better quality. The default is 90.
 
 name = screenshot-png-compression
-file = mpv
+file = hhzplayer
 directory = Video/Screenshot
 help = <0-9> Set the PNG compression level. Higher means better compression. This will affect the file size of the written screenshot file and the time it takes to write a screenshot. Too high compression might occupy enough CPU time to interrupt playback. The default is 7.
 
 name = screenshot-png-filter
-file = mpv
+file = hhzplayer
 directory = Video/Screenshot
 help = <0-5> Set the filter applied prior to PNG compression. 0 is none, 1 is 'sub', 2 is 'up', 3 is 'average', 4 is 'Paeth', and 5 is 'mixed'. This affects the level of compression that can be achieved. For most images, 'mixed' achieves the best compression ratio, hence it is the default.
 
 name = video-exts
-file = mpv
+file = hhzplayer
 directory = Video
 width = 500
-help = Video file extentions to try to match when using --autocreate-playlist or --directory-filter-types. By mpv.net used to create file associations and used by the auto-load-folder feature. Default: 3g2,3gp,avi,flv,m2ts,m4v,mj2,mkv,mov,mp4,mpeg,mpg,ogv,rmvb,ts,webm,wmv,y4m
+help = Video file extentions to try to match when using --autocreate-playlist or --directory-filter-types. By hhzplayer.net used to create file associations and used by the auto-load-folder feature. Default: 3g2,3gp,avi,flv,m2ts,m4v,mj2,mkv,mov,mp4,mpeg,mpg,ogv,rmvb,ts,webm,wmv,y4m
 
 name = volume
-file = mpv
+file = hhzplayer
 directory = Audio
-help = Set the startup volume. 0 means silence, 100 means no volume reduction or amplification. Negative values can be passed for compatibility, but are treated as 0. Since mpv 0.18.1, this always controls the internal mixer (aka "softvol"). Default: 100
+help = Set the startup volume. 0 means silence, 100 means no volume reduction or amplification. Negative values can be passed for compatibility, but are treated as 0. Since hhzplayer 0.18.1, this always controls the internal mixer (aka "softvol"). Default: 100
 
 name = remember-volume
-file = mpvnet
+file = hhzplayer
 directory = Audio
-help = Save volume and mute on exit and restore it on start. (mpv.net option)
+help = Save volume and mute on exit and restore it on start. (hhzplayer.net option)
 default = yes
 option = yes
 option = no
 
 name = alang
-file = mpv
+file = hhzplayer
 directory = Audio
 help = Specify a priority list of audio languages to use. Different container formats employ different language codes. DVDs use ISO 639-1 two-letter language codes, Matroska, MPEG-TS and NUT use ISO 639-2 three-letter language codes, while OGM uses a free-form identifier. See also aid.
 
 name = audio-file-auto
-file = mpv
+file = hhzplayer
 directory = Audio
 help = Load additional audio files matching the video filename. The parameter specifies how external audio files are matched.
 default = no
@@ -813,14 +813,14 @@ option = fuzzy  Load all audio files containing media filename.
 option = all    Load all audio files in the current and audio-file-paths directories.
 
 name = audio-device
-file = mpv
+file = hhzplayer
 directory = Audio
 width = 400
-url = https://mpv.io/manual/master/#options-audio-device
-help = <name> Use the given audio device. This consists of the audio output name, e.g. alsa, followed by /, followed by the audio output specific device name. The default value for this option is auto, which tries every audio output in preference order with the default device.\n\nTo list available audio devices in mpv.net, use the context menu:\n\nView > More > Show Audio Devices.\n\nTo change the audio device in mpv.net, also use the context menu:\n\nAudio > Audio Device
+url = https://hhzplayer.io/manual/master/#options-audio-device
+help = <name> Use the given audio device. This consists of the audio output name, e.g. alsa, followed by /, followed by the audio output specific device name. The default value for this option is auto, which tries every audio output in preference order with the default device.\n\nTo list available audio devices in hhzplayer.net, use the context menu:\n\nView > More > Show Audio Devices.\n\nTo change the audio device in hhzplayer.net, also use the context menu:\n\nAudio > Audio Device
 
 name = remember-audio-device
-file = mpvnet
+file = hhzplayer
 directory = Audio
 help = Save and restore the audio device chosen in the context menu. Default: yes
 default = yes
@@ -828,18 +828,18 @@ option = yes
 option = no
 
 name = audio-exts
-file = mpv
+file = hhzplayer
 directory = Audio
 width = 500
-help = Audio file extentions to try to match when using --audio-file-auto, --autocreate-playlist or --directory-filter-types. By mpv.net used to create file associations and used by the auto-load-folder feature. Default: aac,ac3,aiff,ape,au,dts,eac3,flac,m4a,mka,mp3,oga,ogg,ogm,opus,thd,wav,wav,wma,wv
+help = Audio file extentions to try to match when using --audio-file-auto, --autocreate-playlist or --directory-filter-types. By hhzplayer.net used to create file associations and used by the auto-load-folder feature. Default: aac,ac3,aiff,ape,au,dts,eac3,flac,m4a,mka,mp3,oga,ogg,ogm,opus,thd,wav,wav,wma,wv
 
 name = slang
-file = mpv
+file = hhzplayer
 directory = Subtitle
 help = Specify a priority list of subtitle languages to use. Different container formats employ different language codes. DVDs use ISO 639-1 two letter language codes, Matroska uses ISO 639-2 three letter language codes while OGM uses a free-form identifier. See also sid.
 
 name = sub-auto
-file = mpv
+file = hhzplayer
 directory = Subtitle
 help = Load additional subtitle files matching the video filename. The parameter specifies how external subtitle files are matched. exact is enabled by default.
 default = exact
@@ -849,42 +849,42 @@ option = fuzzy  Load all subs containing media filename.
 option = all    Load all subs in the current and sub-file-paths directories.
 
 name = sub-font
-file = mpv
+file = hhzplayer
 directory = Subtitle
 help = Specify font to use for subtitles that do not themselves specify a particular font. The default is  sans-serif.
 
 name = sub-font-size
-file = mpv
+file = hhzplayer
 directory = Subtitle
 help = Specify the sub font size. The unit is the size in scaled pixels at a window height of 720. The actual pixel size is scaled with the window height: if the window height is larger or smaller than 720, the actual size of the text increases or decreases as well. Default: 55
 
 name = sub-color
-file = mpv
+file = hhzplayer
 type = color
 directory = Subtitle
-url = https://mpv.io/manual/master/#options-sub-color
+url = https://hhzplayer.io/manual/master/#options-sub-color
 help = Specify the color used for unstyled text subtitles.\n\nA usage description and examples can be found in the manual at:
 
 name = sub-border-color
-file = mpv
+file = hhzplayer
 type = color
 directory = Subtitle
 help = See sub-color. Color used for the sub font border. Ignored when sub-back-color is specified (or more exactly: when that option is not set to completely transparent).
 
 name = sub-back-color
-file = mpv
+file = hhzplayer
 type = color
 directory = Subtitle
 help = See sub-color. Color used for sub text background. You can use sub-shadow-offset to change its size relative to the text.
 
 name = title
-file = mpv
+file = hhzplayer
 directory = Window
 width = 400
 help = Set the window title. This is used for the video window, and if possible, also sets the audio stream title. Properties are expanded. Warning! There is a danger of this causing significant CPU usage, depending on the properties used.
 
 name = fullscreen
-file = mpv
+file = hhzplayer
 directory = Window
 help = Start the player in fullscreen mode.
 default = no
@@ -892,7 +892,7 @@ option = yes
 option = no
 
 name = border
-file = mpv
+file = hhzplayer
 directory = Window
 help = Show window with decoration (titlebar, border).
 default = yes
@@ -900,7 +900,7 @@ option = yes
 option = no
 
 name = title-bar
-file = mpv
+file = hhzplayer
 directory = Window
 help = Set this to no in order to hide the window title bar.
 default = yes
@@ -908,12 +908,12 @@ option = yes
 option = no
 
 name = screen
-file = mpv
+file = hhzplayer
 directory = Window
-help = <0-32> In multi-monitor configurations (i.e. a single desktop that spans across multiple displays), this option tells mpv which screen to display the video on.
+help = <0-32> In multi-monitor configurations (i.e. a single desktop that spans across multiple displays), this option tells hhzplayer which screen to display the video on.
 
 name = taskbar-progress
-file = mpv
+file = hhzplayer
 directory = Window
 help = Show progress in taskbar.
 default = yes
@@ -921,24 +921,24 @@ option = yes
 option = no
 
 name = osd-playing-msg
-file = mpv
+file = hhzplayer
 width = 300
 directory = Window
 help = Show a message on OSD when playback starts. The string is expanded for properties, e.g. osd-playing-msg='file: ${filename}' will show the message file: followed by a space and the currently played filename. For more information visit:
-url = https://mpv.io/manual/master/#property-expansion
+url = https://hhzplayer.io/manual/master/#property-expansion
 
 name = osd-font-size
-file = mpv
+file = hhzplayer
 directory = Window
 help = Specify the OSD font size. See sub-font-size for details. Default: 55
 
 name = osd-duration
-file = mpv
+file = hhzplayer
 directory = Window
 help = Set the duration of the OSD messages in ms. Default: 1000
 
 name = osd-scale-by-window
-file = mpv
+file = hhzplayer
 directory = Window
 help = Whether to scale the OSD with the window size. If this is disabled, osd-font-size and other OSD options that use scaled pixels are always in actual pixels. The effect is that changing the window size won't change the OSD font size.
 default = yes
@@ -946,39 +946,39 @@ option = yes
 option = no
 
 name = autofit
-file = mpv
+file = hhzplayer
 directory = Window
 help = <int> Initial window height in percent. Default: 60
 
 name = autofit-smaller
-file = mpv
+file = hhzplayer
 directory = Window
 help = <int> Minimum window height in percent. Default: 10
 
 name = autofit-larger
-file = mpv
+file = hhzplayer
 directory = Window
 help = <int> Maximum window height in percent. Default: 80
 
 name = autofit-image
-file = mpvnet
+file = hhzplayer
 directory = Window
 help = <int> Initial window height in percent for image files. Default: 80
 
 name = autofit-audio
-file = mpvnet
+file = hhzplayer
 directory = Window
 help = <int> Initial window height in percent for audio files. Default: 70
 
 name = geometry
-file = mpv
+file = hhzplayer
 directory = Window
 help = <x:y> Initial window location in percent. Default: 50:50 (centered)\n\nRequires Windows 11, on Windows 10 it works slightly incorrect due to invisible borders.\n\nx=0 docks the window to the left side.\nx=100 docks the window to the right side.\n\ny=0 docks the window to the top side.\ny=100 docks the window to the bottom side.
 
 name = start-size
-file = mpvnet
+file = hhzplayer
 directory = Window
-help = Setting to remember the window size. (mpv.net option)
+help = Setting to remember the window size. (hhzplayer.net option)
 default = height-session
 option = width-session   Window width is remembered in the current session
 option = width-always    Window width is always remembered
@@ -989,7 +989,7 @@ option = session         Window size is remembered in the current session
 option = always          Window size is always remembered
 
 name = keepaspect-window
-file = mpv
+file = hhzplayer
 directory = Window
 help = keepaspect-window will lock the window size to the video aspect. Default: yes
 default = yes
@@ -997,25 +997,25 @@ option = yes
 option = no
 
 name = minimum-aspect-ratio
-file = mpvnet
+file = hhzplayer
 directory = Window
-help = <float> Minimum aspect ratio of the window. Useful to force a wider window and therefore a larger OSC. (mpv.net option)
+help = <float> Minimum aspect ratio of the window. Useful to force a wider window and therefore a larger OSC. (hhzplayer.net option)
 
 name = minimum-aspect-ratio-audio
-file = mpvnet
+file = hhzplayer
 directory = Window
 help = Same as minimum-aspect-ratio but used for audio files.
 
 name = remember-window-position
-file = mpvnet
+file = hhzplayer
 directory = Window
-help = Save the window position on exit. (mpv.net option)
+help = Save the window position on exit. (hhzplayer.net option)
 default = no
 option = yes
 option = no
 
 name = snap-window
-file = mpv
+file = hhzplayer
 directory = Window
 help = Snap the player window to screen edges.
 default = no
@@ -1023,7 +1023,7 @@ option = yes
 option = no
 
 name = window-maximized
-file = mpv
+file = hhzplayer
 directory = Window
 help = Start with a maximized window.
 default = no
@@ -1031,7 +1031,7 @@ option = yes
 option = no
 
 name = keep-open
-file = mpv
+file = hhzplayer
 directory = Playback
 default = no
 option = yes     If the current file ends, go to the next file, keep the last file open.
@@ -1039,7 +1039,7 @@ option = no      If the current file ends, go to the next file. If idle is set t
 option = always  Playback will never automatically advance to the next file.
 
 name = keep-open-pause
-file = mpv
+file = hhzplayer
 directory = Playback
 help = If set to no, instead of pausing when keep-open is active, just stop at end of file and continue playing forward when you seek backwards until end where it stops again.
 default = yes
@@ -1047,7 +1047,7 @@ option = yes
 option = no
 
 name = idle
-file = mpv
+file = hhzplayer
 directory = Playback
 help = If set to no and keep-open is also set to no, the player exits after the last file ends.
 default = yes
@@ -1056,12 +1056,12 @@ option = no
 option = once
 
 name = loop-file
-file = mpv
+file = hhzplayer
 directory = Playback
 help = <N|inf|no> Loop a single file N times. inf means forever, no means normal playback.\n\nThe difference to loop-playlist is that this doesn't loop the playlist, just the file itself. If the playlist contains only a single file, the difference between the two option is that this option performs a seek on loop, instead of reloading the file. loop is an alias for this option.
 
 name = save-position-on-quit
-file = mpv
+file = hhzplayer
 directory = Playback
 help = Always save the current playback position on quit. When this file is played again later, the player will seek to the old playback position on start. This does not happen if playback of a file is stopped in any other way than quitting. For example, going to the next file in the playlist will not save the position, and start playback at beginning the next time the file is played.\n\nThis behavior is disabled by default, but is always available when quitting the player with Shift+Q.
 default = no
@@ -1069,13 +1069,13 @@ option = yes
 option = no
 
 name = watch-later-options
-file = mpv
+file = hhzplayer
 directory = Playback
-help = The options that are saved in "watch later" files if they have been changed since when mpv started. These values will be restored the next time the files are played. This is a string list option. For more information visit:
-url = https://mpv.io/manual/master/#options-watch-later-options
+help = The options that are saved in "watch later" files if they have been changed since when hhzplayer started. These values will be restored the next time the files are played. This is a string list option. For more information visit:
+url = https://hhzplayer.io/manual/master/#options-watch-later-options
 
 name = hr-seek
-file = mpv
+file = hhzplayer
 directory = Playback
 help = Select when to use precise seeks that are not limited to keyframes. Such seeks require decoding video from the previous keyframe up to the target position and so can take some time depending on decoding performance. For some video formats, precise seeks are disabled. This option selects the default choice to use for seeks; it is possible to explicitly override that default in the definition of key bindings and in input commands.
 default = absolute
@@ -1085,7 +1085,7 @@ option = absolute  Use precise seeks if the seek is to an absolute position in t
 option = always    Same as yes (for compatibility).
 
 name = track-auto-selection
-file = mpv
+file = hhzplayer
 directory = Playback
 help = Enable the default track auto-selection. Enabling this will make the player select streams according to aid, alang, and others. If it is disabled, no tracks are selected. In addition, the player will not exit if no tracks are selected, and wait instead (this wait mode is similar to pausing, but the pause option is not set).\n\nThis is useful with lavfi-complex: you can start playback in this mode, and then set select tracks at runtime by setting the filter graph. Note that if lavfi-complex is set before playback is started, the referenced tracks are always selected.
 default = yes
@@ -1093,53 +1093,53 @@ option = yes
 option = no
 
 name = loop-playlist
-file = mpv
+file = hhzplayer
 directory = Playback
 help = <N|inf|force|no> Loops playback N times. A value of 1 plays it one time (default), 2 two times, etc. inf means forever. no is the same as 1 and disables looping. If several files are specified on command line, the entire playlist is looped. The force mode is like inf, but does not skip playlist entries which have been marked as failing. This means the player might waste CPU time trying to loop a file that doesn't exist. But it might be useful for playing webradios under very bad network conditions.
 
 name = autocreate-playlist
-file = mpv
+file = hhzplayer
 directory = Playback
-help = When opening a local file, act as if the parent directory is opened and create a playlist automatically.\n\nno: Load a single file (mpv default).\n\nFilter: Create a playlist from the parent directory with files matching --directory-filter-types. (mpv.net default)\n\nsame: Create a playlist from the parent directory with files matching the same category as the currently loaded file. One of the *-exts is selected based on the input file and only files with matching extensions are added to the playlist. If the input file itself is not matched to any extension list, the playlist is not autogenerated.
+help = When opening a local file, act as if the parent directory is opened and create a playlist automatically.\n\nno: Load a single file (hhzplayer default).\n\nFilter: Create a playlist from the parent directory with files matching --directory-filter-types. (hhzplayer.net default)\n\nsame: Create a playlist from the parent directory with files matching the same category as the currently loaded file. One of the *-exts is selected based on the input file and only files with matching extensions are added to the playlist. If the input file itself is not matched to any extension list, the playlist is not autogenerated.
 default = filter
 option = no
 option = filter
 option = same 
 
 name = auto-load-folder
-file = mpvnet
+file = hhzplayer
 directory = Playback
-help = For single files automatically load the entire directory into the playlist. (deprecated mpv.net option, autocreate-playlist can be used instead)
+help = For single files automatically load the entire directory into the playlist. (deprecated hhzplayer.net option, autocreate-playlist can be used instead)
 default = yes
 option = yes
 option = no
 
 name = reset-on-next-file
-file = mpv
+file = hhzplayer
 directory = Program Behavior
-help = Normally, mpv will try to keep all options when playing the next file on the playlist, even if they were changed by the user during playback. This can be changed with this option. It accepts a list of options, and mpv will reset the value of these options on playback start to the initial value.
+help = Normally, hhzplayer will try to keep all options when playing the next file on the playlist, even if they were changed by the user during playback. This can be changed with this option. It accepts a list of options, and hhzplayer will reset the value of these options on playback start to the initial value.
 width = 400
 
 name = input-ar-delay
-file = mpv
+file = hhzplayer
 directory = Input
 help = Delay in milliseconds before we start to autorepeat a key (0 to disable).
 
 name = input-ar-rate
-file = mpv
+file = hhzplayer
 directory = Input
 help = Number of key presses to generate per second on autorepeat.
 
 name = input-ipc-server
-file = mpv
+file = hhzplayer
 directory = Input
 help = Enable the IPC support and create the listening socket at the given path.
-url = https://mpv.io/manual/master/#options-input-ipc-server
+url = https://hhzplayer.io/manual/master/#options-input-ipc-server
 
 name = language
-file = mpvnet
+file = hhzplayer
 directory = Appearance
-help = User interface display language.\nmpv.net must be restarted after a change.
+help = User interface display language.\nhhzplayer.net must be restarted after a change.
 default = system
 option = system
 option = bulgarian
@@ -1154,38 +1154,38 @@ option = russian
 option = turkish
 
 name = dark-mode
-file = mpvnet
+file = hhzplayer
 directory = Appearance
-help = Changes between a light and dark theme.\nmpv.net must be restarted after a change.\nmpv.net specific option.
+help = Changes between a light and dark theme.\nhhzplayer.net must be restarted after a change.\nhhzplayer.net specific option.
 default = always
 option = always
 option = system  Available on Windows 10 or higher
 option = never
 
 name = dark-theme
-file = mpvnet
+file = hhzplayer
 directory = Appearance
-url = https://github.com/mpvnet-player/mpv.net/blob/main/docs/manual.md#color-theme
-help = Color theme used in dark mode.\nmpv.net must be restarted after a change.\nmpv.net specific option. Default: dark
+url = https://github.com/hhzplayer-player/hhzplayer.net/blob/main/docs/manual.md#color-theme
+help = Color theme used in dark mode.\nhhzplayer.net must be restarted after a change.\nhhzplayer.net specific option. Default: dark
 
 name = light-theme
-file = mpvnet
+file = hhzplayer
 directory = Appearance
-url = https://github.com/mpvnet-player/mpv.net/blob/main/docs/manual.md#color-theme
-help = Color theme used in light mode.\nmpv.net must be restarted after a change.\nmpv.net specific option. Default: light
+url = https://github.com/hhzplayer-player/hhzplayer.net/blob/main/docs/manual.md#color-theme
+help = Color theme used in light mode.\nhhzplayer.net must be restarted after a change.\nhhzplayer.net specific option. Default: light
 
 name = cache
-file = mpv
+file = hhzplayer
 directory = Cache
 help = Decide whether to use network cache settings.
-url = https://mpv.io/manual/master/#options-cache
+url = https://hhzplayer.io/manual/master/#options-cache
 default = auto
 option = yes
 option = no
 option = auto
 
 name = demuxer-max-bytes
-file = mpv
+file = hhzplayer
 directory = Demuxer
 help = <bytesize> Controls how much the demuxer is allowed to buffer ahead.\nSuffixes such as KiB and MiB are supported.
-url = https://mpv.io/manual/master/#options-demuxer-max-bytes
+url = https://hhzplayer.io/manual/master/#options-demuxer-max-bytes

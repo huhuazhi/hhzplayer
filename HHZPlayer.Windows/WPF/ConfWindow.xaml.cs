@@ -447,19 +447,19 @@ public partial class ConfWindow : Window, INotifyPropertyChanged
             }
         }
 
-        File.WriteAllText(Player.ConfPath, GetContent("mpv"));
-        File.WriteAllText(App.ConfPath, GetContent("mpvnet"));
+        File.WriteAllText(Player.ConfPath, GetContent("hhzplayer"));
+        File.WriteAllText(App.ConfPath, GetContent("hhzplayerUI"));
 
         foreach (Setting it in _settings)
         {
             if (it.Value != it.StartValue)
             {
-                if (it.File == "mpv")
+                if (it.File == "hhzplayer")
                 {
                     Player.ProcessProperty(it.Name, it.Value);
                     Player.SetPropertyString(it.Name!, it.Value!);
                 }
-                else if (it.File == "mpvnet")
+                else if (it.File == "hhzplayerUI")
                     App.ProcessProperty(it.Name ?? "", it.Value ?? "", true);
             }
         }
@@ -468,7 +468,7 @@ public partial class ConfWindow : Window, INotifyPropertyChanged
         Theme.UpdateWpfColors();
 
         if (_themeConf != GetThemeConf())
-            MessageBox.Show("Changed theme settings require mpv.net being restarted.", "Info");
+            MessageBox.Show("Changed theme settings require hhzplayer.net being restarted.", "Info");
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -538,13 +538,13 @@ public partial class ConfWindow : Window, INotifyPropertyChanged
             UnselectNode(it);
     }
 
-    [RelayCommand] void ShowMpvNetSpecificSettings() => SearchText = "mpv.net";
+    [RelayCommand] void ShowMpvNetSpecificSettings() => SearchText = "hhzplayer.net";
 
-    [RelayCommand] void PreviewMpvConfFile() => Msg.ShowInfo(GetContent("mpv"));
+    [RelayCommand] void PreviewMpvConfFile() => Msg.ShowInfo(GetContent("hhzplayer"));
     
-    [RelayCommand] void PreviewMpvNetConfFile() => Msg.ShowInfo(GetContent("mpvnet"));
+    [RelayCommand] void PreviewMpvNetConfFile() => Msg.ShowInfo(GetContent("hhzplayerUI"));
 
-    [RelayCommand] void ShowMpvManual() => ProcessHelp.ShellExecute("https://mpv.io/manual/master/");
+    [RelayCommand] void ShowMpvManual() => ProcessHelp.ShellExecute("https://huhuazhi/manual/master/");
     
-    [RelayCommand] void ShowMpvNetManual() => ProcessHelp.ShellExecute("https://github.com/mpvnet-player/mpv.net/blob/main/docs/manual.md");
+    [RelayCommand] void ShowMpvNetManual() => ProcessHelp.ShellExecute("https://github.com/huhuazhi/hhzplayer/hhzplayer.net/blob/main/docs/manual.md");
 }
