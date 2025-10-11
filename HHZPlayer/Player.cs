@@ -79,7 +79,7 @@ public class MainPlayer : HhzplayerClient
             mpv_request_event(MainHandle, i, 0);
         }
 
-        mpv_request_log_messages(MainHandle, "no");
+        mpv_request_log_messages(MainHandle, "yes");
 
         if (formHandle != IntPtr.Zero)
             TaskHelp.Run(MainEventLoop);
