@@ -130,15 +130,14 @@ public class MainPlayer : HhzplayerClient
         SetPropertyString("cursor-autohide", "no");
         SetPropertyString("sub-codepage", "gbk");
 
-        SetPropertyDouble("contrast", 5);
-        SetPropertyDouble("brightness", -3);
-        SetPropertyDouble("saturation", 30);
+        //SetPropertyDouble("contrast", 5);
+        //SetPropertyDouble("brightness", -3);
+        //SetPropertyDouble("saturation", 15);
 
         //# 色彩 / HDR / 映射（如果源是 HDR）
         //#tone-mapping=bt.2390
-        //#hdr-compute-peak=yes
         SetPropertyString("tone-mapping", "bt.2390"); //# 
-        SetPropertyString("hdr-compute-peak", "yes"); //# 关闭 HDR 峰值计算，不仅节省 CPU，还避免与Windows系统HDR混合调色
+        SetPropertyString("hdr-compute-peak", "no"); //# 关闭 HDR 峰值计算，不仅节省 CPU，还避免与Windows系统HDR混合调色
 
         //SetPropertyDouble("cache-secs", 30);
         SetPropertyDouble("demuxer-readahead-secs", 60);

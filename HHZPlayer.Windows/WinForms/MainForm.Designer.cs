@@ -81,19 +81,19 @@ partial class MainForm
         label7 = new System.Windows.Forms.Label();
         label8 = new System.Windows.Forms.Label();
         gbRifeLeft = new System.Windows.Forms.GroupBox();
+        chkFromPlayLeft = new System.Windows.Forms.CheckBox();
         lblVSRLeft = new System.Windows.Forms.Label();
         lblRifeLeft = new System.Windows.Forms.Label();
         chkVSRLeft = new System.Windows.Forms.CheckBox();
         cbRifeTimesLeft = new System.Windows.Forms.ComboBox();
         chkRifeLeft = new System.Windows.Forms.CheckBox();
         gbRifeRight = new System.Windows.Forms.GroupBox();
+        chkFromPlayRight = new System.Windows.Forms.CheckBox();
         lblVSRRight = new System.Windows.Forms.Label();
         lblRifeRight = new System.Windows.Forms.Label();
         chkVSRRight = new System.Windows.Forms.CheckBox();
         cbRifeTimesRight = new System.Windows.Forms.ComboBox();
         chkRifeRight = new System.Windows.Forms.CheckBox();
-        chkFromPlayRight = new System.Windows.Forms.CheckBox();
-        chkFromPlayLeft = new System.Windows.Forms.CheckBox();
         ((System.ComponentModel.ISupportInitialize)btnBackLeft).BeginInit();
         ((System.ComponentModel.ISupportInitialize)btnBackRight).BeginInit();
         panelTestLeft.SuspendLayout();
@@ -767,6 +767,17 @@ partial class MainForm
         gbRifeLeft.Text = "AI功能";
         gbRifeLeft.Visible = false;
         // 
+        // chkFromPlayLeft
+        // 
+        chkFromPlayLeft.AutoSize = true;
+        chkFromPlayLeft.Location = new System.Drawing.Point(15, 190);
+        chkFromPlayLeft.Name = "chkFromPlayLeft";
+        chkFromPlayLeft.Size = new System.Drawing.Size(196, 36);
+        chkFromPlayLeft.TabIndex = 45;
+        chkFromPlayLeft.TabStop = false;
+        chkFromPlayLeft.Text = "记住当前位置";
+        chkFromPlayLeft.UseVisualStyleBackColor = false;
+        // 
         // lblVSRLeft
         // 
         lblVSRLeft.BackColor = System.Drawing.Color.Black;
@@ -803,7 +814,7 @@ partial class MainForm
         chkVSRLeft.TabIndex = 40;
         chkVSRLeft.TabStop = false;
         chkVSRLeft.Text = "RTX超分辨率";
-        chkVSRLeft.UseVisualStyleBackColor = true;
+        chkVSRLeft.UseVisualStyleBackColor = false;
         chkVSRLeft.CheckedChanged += chkVSR_CheckedChanged;
         // 
         // cbRifeTimesLeft
@@ -830,7 +841,7 @@ partial class MainForm
         chkRifeLeft.TabIndex = 0;
         chkRifeLeft.TabStop = false;
         chkRifeLeft.Text = "实时补帧";
-        chkRifeLeft.UseVisualStyleBackColor = true;
+        chkRifeLeft.UseVisualStyleBackColor = false;
         chkRifeLeft.CheckedChanged += chkRife_CheckedChanged;
         // 
         // gbRifeRight
@@ -850,6 +861,17 @@ partial class MainForm
         gbRifeRight.TabStop = false;
         gbRifeRight.Text = "AI功能";
         gbRifeRight.Visible = false;
+        // 
+        // chkFromPlayRight
+        // 
+        chkFromPlayRight.AutoSize = true;
+        chkFromPlayRight.Location = new System.Drawing.Point(15, 190);
+        chkFromPlayRight.Name = "chkFromPlayRight";
+        chkFromPlayRight.Size = new System.Drawing.Size(196, 36);
+        chkFromPlayRight.TabIndex = 45;
+        chkFromPlayRight.TabStop = false;
+        chkFromPlayRight.Text = "记住当前位置";
+        chkFromPlayRight.UseVisualStyleBackColor = false;
         // 
         // lblVSRRight
         // 
@@ -887,7 +909,7 @@ partial class MainForm
         chkVSRRight.TabIndex = 39;
         chkVSRRight.TabStop = false;
         chkVSRRight.Text = "RTX超分辨率";
-        chkVSRRight.UseVisualStyleBackColor = true;
+        chkVSRRight.UseVisualStyleBackColor = false;
         chkVSRRight.CheckedChanged += chkVSR_CheckedChanged;
         // 
         // cbRifeTimesRight
@@ -914,30 +936,8 @@ partial class MainForm
         chkRifeRight.TabIndex = 0;
         chkRifeRight.TabStop = false;
         chkRifeRight.Text = "实时补帧";
-        chkRifeRight.UseVisualStyleBackColor = true;
+        chkRifeRight.UseVisualStyleBackColor = false;
         chkRifeRight.CheckedChanged += chkRife_CheckedChanged;
-        // 
-        // chkFromPlayRight
-        // 
-        chkFromPlayRight.AutoSize = true;
-        chkFromPlayRight.Location = new System.Drawing.Point(15, 190);
-        chkFromPlayRight.Name = "chkFromPlayRight";
-        chkFromPlayRight.Size = new System.Drawing.Size(196, 36);
-        chkFromPlayRight.TabIndex = 45;
-        chkFromPlayRight.TabStop = false;
-        chkFromPlayRight.Text = "记住当前位置";
-        chkFromPlayRight.UseVisualStyleBackColor = true;
-        // 
-        // chkFromPlayLeft
-        // 
-        chkFromPlayLeft.AutoSize = true;
-        chkFromPlayLeft.Location = new System.Drawing.Point(15, 190);
-        chkFromPlayLeft.Name = "chkFromPlayLeft";
-        chkFromPlayLeft.Size = new System.Drawing.Size(196, 36);
-        chkFromPlayLeft.TabIndex = 45;
-        chkFromPlayLeft.TabStop = false;
-        chkFromPlayLeft.Text = "记住当前位置";
-        chkFromPlayLeft.UseVisualStyleBackColor = true;
         // 
         // MainForm
         // 

@@ -13,9 +13,8 @@ if clip.width <= 1920 and clip.height <= 1080:
     # RIFE 插帧
     clip = core.rife.RIFE(
         clip,
-        model_path=r"rife\models\rife-v4.6cd ",
-        factor_num=2,
-        gpu_id=0
+        model_path=r"rife\models\rife-v4.6",
+        factor_num=2        
     )
     # 转回 YUV 输出
     clip = core.resize.Bicubic(clip, format=vs.YUV444P10, matrix_s='709')
@@ -31,8 +30,7 @@ else:
     clip = core.rife.RIFE(
         clip,
         model_path=r"rife\models\rife-v4.6",
-        factor_num=2,
-        gpu_id=0
+        factor_num=2
     )
     # 升回原分辨率
     clip = core.resize.Bicubic(clip, width=clip.width, height=clip.height, format=vs.YUV444P10, matrix_s='709')

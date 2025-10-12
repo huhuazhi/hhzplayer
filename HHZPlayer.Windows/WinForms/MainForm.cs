@@ -354,19 +354,22 @@ public partial class MainForm : Form
         {
             case "2D渲染器":                
                 btnRenderLeft.Text = "2D渲染器";
-                Player.SetPropertyString("vo", "gpu");
-                Player.SetPropertyString("hwdec", "auto");
+                Player.SetPropertyString("vo", "gpu-next");
+                Player.SetPropertyString("hwdec", "auto-copy");
                 Player.SetPropertyString("gpu-api", "auto");
 
-                cmbVO.Text = "gpu";
-                cmbhwdec.Text = "auto";
+                //Player.SetPropertyString("vo", "gpu-next");
+                //Player.SetPropertyString("gpu-api", "d3d11");
+
+                cmbVO.Text = "gpu-next";
+                cmbhwdec.Text = "auto-copy";
                 cmbgpuapi.Text = "auto";
                 cmbGpuContext.Text = "auto";
-                setVSR();
+                //setVSR();
                 break;
             case "3D渲染器":
                 btnRenderLeft.Text = "3D渲染器";
-                setVSR();
+                //setVSR();
                 Player.SetPropertyString("vo", "gpu");
                 Player.SetPropertyString("hwdec", "auto");
                 Player.SetPropertyString("gpu-api", "opengl");
@@ -1630,8 +1633,6 @@ public partial class MainForm : Form
             //Player.SetPropertyString("audio-format", "s16");
             //string vfList = Player.GetPropertyString("vf");
             //Debug.WriteLine(vfList);
-            setVSR();
-
             fps = Player.GetPropertyDouble("container-fps");
             if (fps <= 35)
             {
@@ -1692,6 +1693,7 @@ public partial class MainForm : Form
                     Player.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
                 }
             }
+            setVSR();
             sHDR = GetHdrType(Player);
             ShowVideoOSD();
             if (!hhzSettingsManager.Current.FromLastPosPlay)
