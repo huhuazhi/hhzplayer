@@ -4,6 +4,7 @@ namespace HHZPlayer;
 public class CommandLine
 {
     static List<StringPair>? _arguments;
+    private static string[] originalArgs;
 
     static string[] _preInitProperties { get; } = {
         "input-terminal", "terminal", "input-file", "config", "o",
@@ -19,7 +20,7 @@ public class CommandLine
 
             _arguments = [];
 
-            foreach (string i in Environment.GetCommandLineArgs().Skip(1))
+            foreach (string i in originalArgs)
             {
                 string arg = i;
 
@@ -58,8 +59,9 @@ public class CommandLine
         }
     }
 
-    public static void ProcessCommandLineArgsPreInit()
+    public static void ProcessCommandLineArgsPreInit(string[] arg)
     {
+        originalArgs = arg;
         foreach (var pair in Arguments)
         {
             if (pair.Name.EndsWith("-add") ||
@@ -115,7 +117,7 @@ public class CommandLine
     {
         List<string> files = [];
 
-        foreach (string arg in Environment.GetCommandLineArgs().Skip(1))
+        foreach (string arg in originalArgs)
         {
             if (!arg.StartsWith("--") && (arg == "-" || arg.Contains("://") ||
                 arg.Contains(":\\") || arg.StartsWith("\\\\") || arg.StartsWith('.') ||

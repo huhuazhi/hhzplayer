@@ -1,14 +1,13 @@
-﻿
-using CommunityToolkit.Mvvm.Messaging;
+﻿using CommunityToolkit.Mvvm.Messaging;
 using HHZPlayer.MVVM;
+using HHZPlayer.Windows.HHZ;
 using HHZPlayer.Windows.UI;
 using MyApp;
 using System.Drawing;
 using System.Globalization;
+using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
 using System.Text.Json;
-using System.Windows.Controls.Primitives;
 using System.Windows.Forms;
 using static HHZPlayer.AppSettings;
 using static HHZPlayer.Windows.Help.WinApiHelp;
@@ -62,20 +61,25 @@ public partial class MainForm : Form
             HideToast(); // 清除提示
         };
 
-        //Player.SetPropertyString("osc", "no");
-        //InitializeLogoOverlay();
         DoubleBuffered = true;     // 开启双缓冲，避免闪烁
         this.SetStyle(ControlStyles.AllPaintingInWmPaint |
               ControlStyles.UserPaint |
               ControlStyles.OptimizedDoubleBuffer, true);
         this.UpdateStyles();
 
+        cmdlineArg = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        if (cmdlineArg.Length > 0)
+        {
+            if (CommandlineHelper.ProcessCommandline(cmdlineArg))
+            {
+                //未来处理其他命令行参数备用
+            }
+        }
         UpdateDarkMode();
-        InitializehhzOverlay();        
+        InitializehhzOverlay();
         InitPlayer();
 
-        int cmdlineArgLength = Environment.GetCommandLineArgs().Length;
-        if (cmdlineArgLength > 1)
+        if (cmdlineArg.Length > 0)
         {
             // 如果有命令行参数，直接初始化播放器并加载文件
             hhzMainPage.Visible = false;
@@ -83,15 +87,6 @@ public partial class MainForm : Form
             CursorTimer.Enabled = true;
             List<string> files = [];
 
-            foreach (string arg in Environment.GetCommandLineArgs().Skip(1))
-            {
-                if (!arg.StartsWith("--") && (arg == "-" || arg.Contains("://") ||
-                    arg.Contains(":\\") || arg.StartsWith("\\\\") || arg.StartsWith('.') ||
-                    File.Exists(arg)))
-                {
-                    files.Add(arg);
-                }
-            }
             if (App.Settings.Enable3DMode)
             {
                 btn3DLeft.Visible = false;
@@ -102,8 +97,7 @@ public partial class MainForm : Form
                 btn3DLeft.Visible = false;
                 btnFullScreenLeft.Visible = false;
             }
-            HhzMainPage_FileOpened(null, [.. files]);
-            //Player.LoadFiles([.. files], true, false);
+            HhzMainPage_FileOpened(null, [.. CommandlineHelper.files]);
         }
     }
 
@@ -121,12 +115,13 @@ public partial class MainForm : Form
     double timepos;
     private void InitPlayer()
     {
-        Player.Init(@overlayPanel.Handle, true);
+        Player.Init(@overlayPanel.Handle, false, CommandlineHelper.originalArgs.ToArray());
         //Player.SetPropertyString("log-file", "hhzplayer-vs.log");
         //Player.SetPropertyString("msg-level", "all=v");
         Player.Command("set pause yes");
 
         Player.FileLoaded += Player_FileLoaded;
+
         // 订阅播放进度
         Player.ObservePropertyDouble("time-pos", (double value) =>
         {
@@ -314,7 +309,7 @@ public partial class MainForm : Form
             {
                 case "2D渲染器":
                     chkVSRLeft.Enabled = true;
-                    chkVSRLeft.Enabled = true;
+                    chkVSRRight.Enabled = true;
                     lblVSRLeft.Visible = false;
                     lblVSRRight.Visible = false;
                     if (hhzSettingsManager.Current.VSR)
@@ -328,16 +323,16 @@ public partial class MainForm : Form
                     break;
                 case "3D渲染器":
                     chkVSRLeft.Enabled = false; //3D模式下超分无效
-                    chkVSRLeft.Enabled = false;
+                    chkVSRRight.Enabled = false;
                     lblVSRLeft.Text = "3D渲染下无效";
                     lblVSRRight.Text = "3D渲染下无效";
                     lblVSRLeft.Visible = true;
                     lblVSRRight.Visible = true;
                     if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12");
                     break;
-            }            
+            }
             chkVSRLeft.Checked = hhzSettingsManager.Current.VSR;
-            chkVSRLeft.Checked = hhzSettingsManager.Current.VSR;
+            chkVSRRight.Checked = hhzSettingsManager.Current.VSR;
         }
         else
         {
@@ -404,6 +399,7 @@ public partial class MainForm : Form
 
     private void BtnFullScreen_Click(object? sender, EventArgs e)
     {
+        Logger.Info($"全屏-{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}");
         if (!App.Settings.Enable3DMode)
         {
             if (this.FormBorderStyle == FormBorderStyle.None)
@@ -578,6 +574,13 @@ public partial class MainForm : Form
             hhzMainPage.Visible = false;
             overlayPanel.Visible = true;
             CursorTimer.Enabled = true;
+
+            Player?.SetPropertyDouble("time-pos", 0);
+            Player?.Command("stop");
+            Player?.Command("set pause yes");
+
+            if (bRifeOn()) Player?.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
+            if (bRTXOn()) Player?.Command($"no-osd vf remove d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12");
 
             string newPath = $"{paths[0]}.hhz";
             hhzSettingsManager.Load(newPath);
@@ -881,13 +884,14 @@ public partial class MainForm : Form
         if (strstate != "")
         {
             var state = DemuxerCacheParser.Parse(Player.GetPropertyString("demuxer-cache-state"));
+
             if (Player.Paused)
             {
-                StreamingContextStates = $"{(bHDR ? "HDR" : "")} 暂停中...";
+                StreamingContextStates = $"{sHDR} 暂停中...";
             }
             else
             {
-                StreamingContextStates = $"{(bHDR ? "HDR" : "")} 播放中...  帧率:{GetActualFps():F2}帧/秒 ";
+                StreamingContextStates = $"{sHDR} 播放中...  帧率:{GetActualFps():F2}帧/秒 ";
             }
             if (state.Underrun)
             {
@@ -905,7 +909,10 @@ public partial class MainForm : Form
             _lastCursorPosition = MousePosition;
             _lastCursorChanged = Environment.TickCount;
         }
-        else if (Environment.TickCount - _lastCursorChanged > _cursorAutohide && lblStatusLeft.Text.Substring(0, 2) != "正在" && (!Player.GetPropertyBool("pause") || Player.Duration.TotalSeconds == 0) && hhzMainPage.Visible == false)
+        else if (Environment.TickCount - _lastCursorChanged > _cursorAutohide
+            && !(lblStatusLeft.Text?.StartsWith("正在") ?? false)
+            && (!Player.GetPropertyBool("pause") || Player.Duration.TotalSeconds == 0)
+            && hhzMainPage.Visible == false)
         {
             if ((_videoMenuLeft != null && _audioMenuLeft != null && _subMenuLeft != null) && (_videoMenuLeft.Visible || _audioMenuLeft.Visible || _subMenuLeft.Visible))
                 return;
@@ -1610,9 +1617,6 @@ public partial class MainForm : Form
                 }
             }
             //bFileloaded = true;
-            vw = Player.GetPropertyInt("width");
-            vh = Player.GetPropertyInt("height");
-            fps = Player.GetPropertyDouble("container-fps");
             //Player.SetPropertyString("hwdec", "nvdec-copy");
 
             //Player.SetPropertyString("vo", "gpu-next");
@@ -1627,6 +1631,8 @@ public partial class MainForm : Form
             //string vfList = Player.GetPropertyString("vf");
             //Debug.WriteLine(vfList);
             setVSR();
+
+            fps = Player.GetPropertyDouble("container-fps");
             if (fps <= 35)
             {
                 lblRifeLeft.Visible = false;
@@ -1686,7 +1692,7 @@ public partial class MainForm : Form
                     Player.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
                 }
             }
-            bHDR = IsVideoHDR(Player);
+            sHDR = GetHdrType(Player);
             ShowVideoOSD();
             if (!hhzSettingsManager.Current.FromLastPosPlay)
             {
@@ -1744,7 +1750,7 @@ public partial class MainForm : Form
         //SetDefaultSubId();
     }
 
-    private bool bHDR;
+    private string sHDR;
     int vw;
     int vh;
     double fps;
@@ -2216,6 +2222,7 @@ public partial class MainForm : Form
     private string AutoVideoid;
     private string AutoSubtitleid;
     private bool bProgSet;
+    private string[] cmdlineArg;
 
     //private bool bvapoursynth;
 
@@ -2803,40 +2810,84 @@ public partial class MainForm : Form
     {
         Player.Command($"no-osd vf set vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
     }
-    public static bool IsVideoHDR(MainPlayer player)
+    //public static string GetHdrType(MainPlayer player)
+    //{ 
+    //    string hdr = player.GetPropertyString("video-params/hdr-format") ?? "";
+    //    string tr = player.GetPropertyString("video-params/transfer") ?? "";
+    //    string pr = player.GetPropertyString("video-params/primaries") ?? "";
+
+    //    if (hdr.Equals("HLG", StringComparison.OrdinalIgnoreCase) || tr == "arib-std-b67")
+    //        return "HLG";
+    //    if (hdr.Equals("PQ", StringComparison.OrdinalIgnoreCase) || tr == "smpte2084")
+    //        return "PQ HDR10+)";
+
+    //    // 补个保守判断：bt.2020 + 10bit 但没读到传输函数时，仍可能是 HDR
+    //    string pix = player.GetPropertyString("video-params/pixelformat") ?? "";
+    //    if (pr.Contains("2020") /*|| pix.Contains("10")*/)
+    //        return "HDR10";
+
+    //    return "SDR";
+    //}
+    //static string Prim(string k) => Player.GetPropertyString(k) ?? "";
+    //static double Dbl(string k) { try { return Player.GetPropertyDouble(k); } catch { return double.NaN; } }
+
+    //public enum HdrKind { SDR, PQ10, HDR10, HDR10Plus, HLG, PQ_Unknown /*DV/Vivid等*/ }
+
+    //public static HdrKind DetectHdrKind()
+    //{
+    //    var gamma = Prim("video-params/gamma").ToLowerInvariant();   // mpv手册推荐字段
+    //    if (string.IsNullOrEmpty(gamma))
+    //        gamma = Prim("video-params/transfer").ToLowerInvariant(); // 旧脚手架兜底（你以前用过）
+
+    //    if (gamma == "hlg") return HdrKind.HLG;
+
+    //    if (gamma == "pq" || gamma == "smpte2084")
+    //    {
+    //        bool hasStatic = !double.IsNaN(Dbl("video-params/max-cll")) ||
+    //                         !double.IsNaN(Dbl("video-params/max-luma")) ||
+    //                         !double.IsNaN(Dbl("video-params/max-fall"));
+
+    //        bool hasDyn = !double.IsNaN(Dbl("video-params/scene-max-r")) ||
+    //                      !double.IsNaN(Dbl("video-params/scene-max-g")) ||
+    //                      !double.IsNaN(Dbl("video-params/scene-max-b"));
+
+    //        if (hasDyn) return HdrKind.HDR10Plus;
+    //        if (hasStatic) return HdrKind.HDR10;
+
+    //        // 仍是PQ，但没看到静态/动态元数据：可能是 PQ10、也可能是 DV/HDR Vivid 的落地轨
+    //        return HdrKind.PQ_Unknown;
+    //    }
+    //    return HdrKind.SDR;
+    //}
+
+    public static string GetHdrType(MainPlayer player)
     {
-        try
+        string Prim(string k) => player.GetPropertyString(k) ?? "";
+        double Dbl(string k) { try { return player.GetPropertyDouble(k); } catch { return double.NaN; } }
+        var gamma = Prim("video-params/gamma").ToLowerInvariant();   // mpv手册推荐字段
+        if (string.IsNullOrEmpty(gamma))
+            gamma = Prim("video-params/transfer").ToLowerInvariant(); // 旧脚手架兜底（你以前用过）
+
+        if (gamma == "hlg") return "HDR HLG";
+
+        if (gamma == "pq" || gamma == "smpte2084")
         {
-            string transfer = player.GetPropertyString("video-params/transfer") ?? "";
-            string primaries = player.GetPropertyString("video-params/primaries") ?? "";
-            string color = player.GetPropertyString("video-params/color-space") ?? "";
-            string light = player.GetPropertyString("video-params/light") ?? "";
-            string hdrFormat = player.GetPropertyString("video-params/hdr-format") ?? "";
+            bool hasStatic = !double.IsNaN(Dbl("video-params/max-cll")) ||
+                             !double.IsNaN(Dbl("video-params/max-luma")) ||
+                             !double.IsNaN(Dbl("video-params/max-fall"));
 
-            // 新版字段优先
-            if (hdrFormat.Equals("PQ", StringComparison.OrdinalIgnoreCase) ||
-                hdrFormat.Equals("HLG", StringComparison.OrdinalIgnoreCase))
-                return true;
+            bool hasDyn = !double.IsNaN(Dbl("video-params/scene-max-r")) ||
+                          !double.IsNaN(Dbl("video-params/scene-max-g")) ||
+                          !double.IsNaN(Dbl("video-params/scene-max-b"));
 
-            // light 字段在新版本可直接判断
-            if (light.Contains("HDR", StringComparison.OrdinalIgnoreCase))
-                return true;
+            if (hasDyn) return "HDR10+";
+            if (hasStatic) return "HDR10";
 
-            // 旧版判断方式
-            if (transfer == "smpte2084" || transfer == "arib-std-b67")
-                return true;
-
-            if (primaries == "bt.2020" || color.Contains("bt.2020"))
-                return true;
-
-            return false;
+            // 仍是PQ，但没看到静态/动态元数据：可能是 PQ10、也可能是 DV/HDR Vivid 的落地轨
+            return "HDR Vivid";
         }
-        catch
-        {
-            return false;
-        }
+        return "SDR";
     }
-
     private void chkVSR_CheckedChanged(object sender, EventArgs e)
     {
         if (WasShown && !bSetRender)
@@ -2863,6 +2914,41 @@ public partial class MainForm : Form
         else
         {            
             return false;
+        }
+    }
+    public void OpenFromIpc(string[] args)
+    {
+        if (args == null || args.Length == 0) return;
+
+        if (CommandlineHelper.ProcessCommandline(args))
+        {
+
+        }
+        if (CommandlineHelper.files.Count > 0)
+        {        
+            //有命令行参数，直接初始化播放器并加载文件
+            //Player?.Command("stop");
+            //Player?.Command("set pause yes");
+            //if (bRifeOn()) Player?.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
+            //if (bRTXOn()) Player?.Command($"no-osd vf remove d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12");
+            //hhzMainPage.Visible = false;
+            //overlayPanel.Visible = true;
+            //CursorTimer.Enabled = true;
+
+            //if (App.Settings.Enable3DMode)
+            //{
+            //    btn3DLeft.Visible = false;
+            //    btn3DRight.Visible = false;
+            //}
+            //else
+            //{
+            //    btn3DLeft.Visible = false;
+            //    btnFullScreenLeft.Visible = false;
+            //}
+
+            HhzMainPage_FileOpened(null, [.. CommandlineHelper.files]);
+            //if (CommandlineHelper.OnlyConsole) QuitEvent.WaitOne();
+            //Player.LoadFiles([.. files], true, false);
         }
     }
 }

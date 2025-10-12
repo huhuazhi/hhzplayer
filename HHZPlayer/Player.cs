@@ -65,7 +65,7 @@ public class MainPlayer : HhzplayerClient
     public event Action<int>? PlaylistPosChanged;
     public event Action<Size>? VideoSizeChanged;
 
-    public void Init(IntPtr formHandle, bool processCommandLine)
+    public void Init(IntPtr formHandle, bool processCommandLine, string[] args = null)
     {
         //App.ApplyShowMenuFix();
 
@@ -79,18 +79,18 @@ public class MainPlayer : HhzplayerClient
             mpv_request_event(MainHandle, i, 0);
         }
 
-        mpv_request_log_messages(MainHandle, "yes");
+        mpv_request_log_messages(MainHandle, "no");
 
-        if (formHandle != IntPtr.Zero)
-            TaskHelp.Run(MainEventLoop);
+        //if (formHandle != IntPtr.Zero)
+        //    TaskHelp.Run(MainEventLoop);
 
-        if (MainHandle == IntPtr.Zero)
-            throw new Exception("error mpv_create");
+        //if (MainHandle == IntPtr.Zero)
+        //    throw new Exception("error mpv_create");
 
         //if (App.IsTerminalAttached)
         //{
-            //SetPropertyString("terminal", "yes");
-            //SetPropertyString("input-terminal", "yes");
+        //SetPropertyString("terminal", "yes");
+        //SetPropertyString("input-terminal", "yes");
         //}
 
         if (formHandle != IntPtr.Zero)
@@ -104,19 +104,19 @@ public class MainPlayer : HhzplayerClient
         //SetPropertyBool("input-builtin-bindings", false);
         //SetPropertyBool("input-media-keys", true);
         SetPropertyString("hwdec", "auto"); //# 尝试用硬件解码，减少 CPU 负担
-        //SetPropertyString("hwdec-interop", "all"); //# 这个选项可以在创建 GL 上下文时尽量预加载 interop 支持
+        SetPropertyString("hwdec-interop", "all"); //# 这个选项可以在创建 GL 上下文时尽量预加载 interop 支持
         SetPropertyInt("hwdec-extra-frames", 4); //# 多预分配几帧缓冲，减少申请开销
         //SetPropertyInt("video-sync", 60); //强制按显示刷新同步（可能锁帧，但稳定性好）
         SetPropertyString("interpolation", "no"); //# 关闭帧间插值（插值对超高分辨率代价太大）
-        
+
         SetPropertyInt("swapchain-depth", 2); //# 双缓冲（如果 OpenGL 后端支持的话）# 限制最大的帧排队数 / 缓冲深度
         SetPropertyString("profile", "gpu-hq"); //# 在测试时用高质量 profile 对比性能,打开TestMode测试一个最好的值
         SetPropertyString("sub-font", "Microsoft YaHei");
 
-        SetPropertyDouble("volume", App.Settings.Volume);        
+        SetPropertyDouble("volume", App.Settings.Volume);
         //SetPropertyString("media-controls", "yes");
         SetPropertyString("idle", "yes");
-        SetPropertyString("screenshot-directory", "~~desktop/");
+        SetPropertyString("screenshot-directory", "~/desktop/");
         //SetPropertyString("osd-playing-msg", "${media-title}");
         SetPropertyString("osd-playing-msg", "");
 
@@ -134,6 +134,13 @@ public class MainPlayer : HhzplayerClient
         SetPropertyDouble("contrast", 5);
         SetPropertyDouble("brightness", -3);
         SetPropertyDouble("saturation", 30);
+
+        //# 色彩 / HDR / 映射（如果源是 HDR）
+        //#tone-mapping=bt.2390
+        //#hdr-compute-peak=yes
+        SetPropertyString("tone-mapping", "bt.2390"); //# 
+        SetPropertyString("hdr-compute-peak", "yes"); //# 关闭 HDR 峰值计算，不仅节省 CPU，还避免与Windows系统HDR混合调色
+
         //SetPropertyDouble("cache-secs", 30);
         SetPropertyDouble("demuxer-readahead-secs", 60);
 
@@ -148,15 +155,11 @@ public class MainPlayer : HhzplayerClient
         SetPropertyString("alang", "cmn,mandarin,chs,zh,cht,中文,普通话,chi,zho,zh-Hant,zh-Hans,台湾,香港,粤语,cantonese,yue,en,eng");
         SetPropertyString("slang", "cmn,mandarin,chs,zh,cht,中文,普通话,chi,zho,zh-Hant,zh-Hans,台湾,香港,粤语,cantonese,yue,en,eng");
 
-        
+
 
         //# 跳帧控制：如果来不及就跳帧避免卡顿
         //#hr-seek-framedrop=no
         //#framedrop=vo                 # 在必要时由渲染器丢帧
-
-        //# 色彩 / HDR / 映射（如果你的源是 HDR）
-        //#tone-mapping=bt.2390
-        //#hdr-compute-peak=yes
 
         //# 滤镜 / 后处理：关闭高开销特性，尽可能简化
         //#dscale=mitchell        # 用比较快的缩放算法，不用那些极端高质量算法
@@ -179,7 +182,7 @@ public class MainPlayer : HhzplayerClient
         //    SetPropertyString("input-conf", @"memory://" + UsedInputConfContent);
 
         if (processCommandLine)
-            CommandLine.ProcessCommandLineArgsPreInit();
+            CommandLine.ProcessCommandLineArgsPreInit(args);
 
         mpv_set_option_string(MainHandle, Encoding.UTF8.GetBytes("process-instance"), Encoding.UTF8.GetBytes("multi"));
         mpv_error err = mpv_initialize(MainHandle);
@@ -290,8 +293,10 @@ public class MainPlayer : HhzplayerClient
 
     string? _configFolder;
 
-    public string ConfigFolder {
-        get {
+    public string ConfigFolder
+    {
+        get
+        {
             if (_configFolder == null)
             {
                 string? hhzplayer_home = Environment.GetEnvironmentVariable("HHZPLAYER_HOME");
@@ -318,7 +323,8 @@ public class MainPlayer : HhzplayerClient
 
     Dictionary<string, string>? _Conf;
 
-    public Dictionary<string, string> Conf {
+    public Dictionary<string, string> Conf
+    {
         get
         {
             if (_Conf != null)
@@ -501,7 +507,7 @@ public class MainPlayer : HhzplayerClient
 
             if (ext == "iso")
                 LoadISO(file);
-            else if(FileTypes.Subtitle.Contains(ext))
+            else if (FileTypes.Subtitle.Contains(ext))
                 CommandV("sub-add", file);
             else
             {
@@ -530,7 +536,7 @@ public class MainPlayer : HhzplayerClient
     public void LoadISO(string path)
     {
         using var mi = new MediaInfo(path);
-        
+
         if (mi.GetGeneral("Format") == "ISO 9660 / DVD Video")
         {
             Command("stop");
@@ -683,8 +689,10 @@ public class MainPlayer : HhzplayerClient
         }
     }
 
-    public List<StringPair> AudioDevices {
-        get {
+    public List<StringPair> AudioDevices
+    {
+        get
+        {
             if (_audioDevices != null)
                 return _audioDevices;
 
@@ -703,7 +711,8 @@ public class MainPlayer : HhzplayerClient
         }
     }
 
-    public List<Chapter> GetChapters() {
+    public List<Chapter> GetChapters()
+    {
         List<Chapter> chapters = new List<Chapter>();
         int count = GetPropertyInt("chapter-list/count");
 
@@ -724,7 +733,7 @@ public class MainPlayer : HhzplayerClient
     }
 
     public void UpdateExternalTracks()
-    { 
+    {
         int trackListTrackCount = GetPropertyInt("track-list/count");
         int editionCount = GetPropertyInt("edition-list/count");
         int count = MediaTracks.Where(i => i.Type != "g").Count();

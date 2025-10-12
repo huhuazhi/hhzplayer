@@ -1,185 +1,241 @@
-﻿
-using System.Windows.Forms;
-using System.Threading;
-
-using HHZPlayer.Windows.Native;
-using HHZPlayer.Help;
+﻿using HHZPlayer.SingleInstance; // ★ 新增：单实例/管道
+using HHZPlayer.Windows.HHZ;
 using HHZPlayer.Windows.UI;
-using HHZPlayer.Windows.Help;
-using HHZPlayer.Windows.WPF;
+using HHZPlayer.Windows.WinForms;
+using System;
+using System.IO;
+using System.Text;
+using System.Threading;
+using System.Timers;
+using System.Windows.Forms;
 
-namespace HHZPlayer.Windows;
-
-static class Program
+namespace Console_Form
 {
-    [STAThread]
-    static void Main()
-    {        
-        try
+    internal class Program
+    {
+        private static Thread? _uiThread;
+
+        // ★ 新增：退出事件与控制台标记
+        private static readonly ManualResetEventSlim QuitEvent = new(false);
+        private static bool _consoleOn = false;
+
+        [STAThread]
+        static int Main(string[] args)
         {
-            string[] args = Environment.GetCommandLineArgs().Skip(1).ToArray();
+            // 只有“有参数”时才附着控制台；无参启动不显示 Console
+            bool hasArgs = args != null && args.Length > 0;
+            _consoleOn = ConsoleHelper.EnsureConsole(needConsole: hasArgs, createNewIfNoParent: false);
 
-            RegistryHelp.ProductName = AppInfo.Product;
-            Translator.Current = new WpfTranslator();
+            if (hasArgs) CommandlineHelper.ProcessCommandline(args);
 
+            if (_consoleOn)
+            {
+                Console.OutputEncoding = Encoding.UTF8;
+                Console.InputEncoding = UTF8Encoding.UTF8;
+                
+                // === 关键：OnlyConsole 直接走“无界面路径”，完全不创建 MainForm ===
+                if (CommandlineHelper.OnlyConsole)
+                    return RunHeadlessConsoleFlow(_consoleOn);
+
+                Console.WriteLine("MyConsoleTimer 已启动。按 Ctrl+C 退出。");
+                Console.CancelKeyPress += (s, e) =>
+                {
+                    e.Cancel = true;
+                    if (_consoleOn) Console.WriteLine("\n收到退出信号，正在请求关闭 UI…");
+                    try { Application.Exit(); } catch { }
+                };
+            }
+            else if(CommandlineHelper.OnlyConsole)
+            {
+                return 0;
+            }
+
+            // ★ 新增：单实例判断。不是主实例 → 把参数转发给已运行实例并退出
+            if (!SingleInstanceIpc.TryBecomePrimary("v1", args))
+                return 0;
+
+            // 固定工作目录/环境变量（保留你的逻辑）
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             Directory.SetCurrentDirectory(baseDir);// 强制设置工作目录
 
             Environment.SetEnvironmentVariable("PYTHONHOME", baseDir, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable("PYTHONPATH", Path.Combine(baseDir, "Lib") + ";" +
-                                                           Path.Combine(baseDir, "Lib", "site-packages"),
-                                               EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable("PATH", baseDir + ";" + Environment.GetEnvironmentVariable("PATH"),
-                                               EnvironmentVariableTarget.Process);
-
-            AppDomain.CurrentDomain.UnhandledException += (sender, e) => Terminal.WriteError(e.ExceptionObject);
-            Application.ThreadException += (sender, e) => Terminal.WriteError(e.Exception);
-
-            if (App.IsTerminalAttached)
-                WinApi.AttachConsole(-1 /*ATTACH_PARENT_PROCESS*/);
-
-            //string[] args = Environment.GetCommandLineArgs().Skip(1).ToArray();
-
-            if (args.Length > 0 && args[0] == "--register-file-associations")
-            {
-                FileAssociation.Register(args[1], args.Skip(1).ToArray());
-                return;
-            }
+            Environment.SetEnvironmentVariable("PYTHONPATH",
+                Path.Combine(baseDir, "Lib") + ";" + Path.Combine(baseDir, "Lib", "site-packages"),
+                EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable("PATH",
+                baseDir + ";" + Environment.GetEnvironmentVariable("PATH"),
+                EnvironmentVariableTarget.Process);
 
             App.Init();
             Theme.Init();
-            Mutex mutex = new Mutex(true, StringHelp.GetMD5Hash(App.ConfPath), out bool isFirst);
 
-            if (Control.ModifierKeys == Keys.Shift ||
-                App.CommandLine.Contains("--process-instance=multi") ||
-                App.CommandLine.Contains("--o="))
+            // 启动 WinForms UI 在线程中（单进程内）
+            _uiThread = new Thread(() =>
             {
-                App.ProcessInstance = "multi";
-            }
-
-            if ((App.ProcessInstance == "single" || App.ProcessInstance == "queue") && !isFirst)
-            {
-                List<string> args2 = new List<string> { App.ProcessInstance };
-
-                foreach (string arg in args)
+                try
                 {
-                    if (!arg.StartsWith("--") && (arg == "-" || arg.Contains("://") ||
-                        arg.Contains(":\\") || arg.StartsWith("\\\\")))
+                    Application.EnableVisualStyles();
+                    Application.SetCompatibleTextRenderingDefault(false);
 
-                        args2.Add(arg);
-                    else if (arg == "--queue")
-                        args2[0] = "queue";
-                    else if (arg.StartsWith("--command="))
+                    var mainForm = new MainForm();
+
+                    // ★ 管道监听：别的实例启动时把新文件推过来
+                    SingleInstanceIpc.StartServer(files =>
                     {
-                        args2[0] = "command";
-                        args2.Add(arg[10..]);
-                    }
-                }
-
-                Process[] procs = Process.GetProcessesByName("hhzplayer");
-
-                for (int i = 0; i < 20; i++)
-                {
-                    foreach (Process proc in procs)
-                    {
-                        if (proc.MainWindowHandle != IntPtr.Zero)
+                        try
                         {
-                            //WinApi.AllowSetForegroundWindow(proc.Id);
-                            //var data = new WinApi.CopyDataStruct();
-                            //data.lpData = string.Join("\n", args2.ToArray());
-                            //data.cbData = data.lpData.Length * 2 + 1;
-                            //WinApi.SendMessage(proc.MainWindowHandle, 0x004A /*WM_COPYDATA*/, IntPtr.Zero, ref data);
-                            //mutex.Dispose();
-
-                            //if (App.IsTerminalAttached)
-                            //    WinApi.FreeConsole();
-                            //Application.Exit();
-                            Application.Run(new WinForms.MainForm());                            
-                            return;
+                            mainForm.BeginInvoke(new Action(() =>
+                            {
+                                WindowActivator.BringToFront(mainForm);
+                                mainForm.OpenFromIpc(files); // ← 在 MainForm 里实现
+                            }));
                         }
-                    }
+                        catch { /* ignore */ }
+                    });
 
-                    Thread.Sleep(50);
+                    // ★ 首次启动也处理一次自身的启动参数
+                    SingleInstanceIpc.DeliverInitialArgs(files =>
+                    {
+                        try
+                        {
+                            mainForm.BeginInvoke(new Action(() =>
+                            {
+                                WindowActivator.BringToFront(mainForm);
+                                mainForm.OpenFromIpc(files);
+                            }));
+                        }
+                        catch { /* ignore */ }
+                    });
+
+                    // 窗口关闭 → 退出
+                    mainForm.FormClosed += (s, e) =>
+                    {
+                        try { Application.ExitThread(); } catch { }
+                        QuitEvent.Set();
+                    };
+
+                    Application.Run(mainForm);
                 }
+                catch (Exception ex)
+                {
+                    if (_consoleOn) Console.Error.WriteLine($"[UIThread] {ex}");
+                    QuitEvent.Set();
+                }
+                finally
+                {
+                    QuitEvent.Set();
+                }
+            });
+            _uiThread.SetApartmentState(ApartmentState.STA);
+            _uiThread.IsBackground = true;
+            _uiThread.Start();
 
-                mutex.Dispose();
-                return;
-            }
+            // 阻塞等待 UI 线程退出
+            if (_uiThread != null) _uiThread.Join();
+            QuitEvent.Wait();
 
-            if (ProcessCommandLineArguments())
-                Environment.GetCommandLineArgs();
-            else if (App.CommandLine.Contains("--o="))
-            {                
-                App.AutoLoadFolder = false;
-                Player.Init(IntPtr.Zero, true);
-                CommandLine.ProcessCommandLineArgsPostInit();
-                CommandLine.ProcessCommandLineFiles();
-                Player.SetPropertyString("idle", "no");
-                Player.EventLoop();
-                Player.Destroy();
-            }
-            else
-                Application.Run(new WinForms.MainForm());
+            // ★ 清理单实例资源
+            SingleInstanceIpc.Shutdown();
 
-            if (App.IsTerminalAttached)
-                WinApi.FreeConsole();
-
-            mutex.Dispose();
+            if (_consoleOn) Console.WriteLine("已退出。");
+            return 0;
         }
-        catch (Exception ex)
+
+        // 你原来的定时器回调（如需可继续用）
+        private static void OnTimerElapsed(object? sender, ElapsedEventArgs e)
         {
-            Terminal.WriteError(ex);
+            try
+            {
+                if (_consoleOn)
+                    Console.WriteLine($"TimerCallback: {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}");
+            }
+            catch (Exception ex)
+            {
+                if (_consoleOn) Console.Error.WriteLine($"[TimerError] {ex.Message}");
+            }
         }
-    }
-
-    static bool ProcessCommandLineArguments()
-    {
-        foreach (string arg in Environment.GetCommandLineArgs().Skip(1))
+        private static int RunHeadlessConsoleFlow(bool consoleOn)
         {
-            if (arg == "--profile=help")
+            App.Init();
+            Theme.Init();
+
+            // 2) 创建“消息专用窗口”句柄，避免 UI 控件
+            using var msgWin = new MessageOnlyWindow();   // 见下方类
+
+            // 3) 初始化 Player（只取信息不渲染时可设 vo=null/ao=null）
+            Player.Init(msgWin.Handle, false, CommandlineHelper.originalArgs.ToArray());
+            Player.Command("set pause yes");
+            try { Player.SetPropertyString("vo", "null"); } catch { }   // 可选：仅信息，不渲染
+            try { Player.SetPropertyString("ao", "null"); } catch { }   // 可选：不初始化音频
+
+            // 4) 订阅 FileLoaded：输出 → 退出消息循环
+            var ctx = new ApplicationContext();
+            Player.FileLoaded += () =>
             {
-                Player.Init(IntPtr.Zero, false);
-                Debug.WriteLine(Player.GetProfiles());
-                Player.Destroy();
-                return true;
-            }
-            else if (arg == "--vd=help" || arg == "--ad=help")
-            {
-                Player.Init(IntPtr.Zero, false);
-                Debug.WriteLine(Player.GetDecoders());
-                Player.Destroy();
-                return true;
-            }
-            else if (arg == "--audio-device=help")
-            {
-                Player.Init(IntPtr.Zero, false);
-                Debug.WriteLine(Player.GetPropertyOsdString("audio-device-list"));
-                Player.Destroy();
-                return true;
-            }
-            else if (arg == "--input-keylist")
-            {
-                Player.Init(IntPtr.Zero, false);
-                Debug.WriteLine(Player.GetPropertyString("input-key-list").Replace(",", BR));
-                Player.Destroy();
-                return true;
-            }
-            else if (arg == "--version")
-            {
-                Player.Init(IntPtr.Zero, false);
-                Debug.WriteLine(AppClass.About);
-                Player.Destroy();
-                return true;
-            }
-            //else if (arg == "--msg-level=all=warn")
-            //{
-            //    Player.Init(IntPtr.Zero, false);
-            //    Console.WriteLine(AppClass.About);
-            //    Player.Destroy();
-            //    return true;
-            //}
+                try
+                {
+                    int vw = Player.GetPropertyInt("width");
+                    int vh = Player.GetPropertyInt("height");
+                    double fps = Player.GetPropertyDouble("container-fps");
+                    string tracks = Player.GetPropertyString("track-list");
+                    string path = Player.Path;
+
+                    if (consoleOn)
+                    {
+                        Console.WriteLine(
+                            $"文件路径:{path}\r\n" +
+                            $"分辨率:{vw}x{vh}-{fps} fps {MainForm.GetHdrType(Player)}\r\n" +
+                            $"时长:{Player.Duration}\r\n" +
+                            $"{tracks}"
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (consoleOn) Console.Error.WriteLine($"[Headless] {ex}");
+                }
+                finally
+                {
+                    // 退出消息循环 → 进程结束
+                    ctx.ExitThread();
+                }
+            };
+
+            // 5) 开始加载文件（不触发任何 UI）
+            var files = CommandlineHelper.files;
+            if (files is { Count: > 0 })
+                Player.LoadFiles([.. files], /*addToPlaylist*/ true, /*append*/ false);
+
+            // 6) 跑一个“无窗”的消息循环，让 mpv/Player 正常派发事件
+            Application.Run(ctx);
+            return 0;
         }
 
-        return false;
+        sealed class MessageOnlyWindow : NativeWindow, IDisposable
+        {
+            // HWND_MESSAGE = (IntPtr)(-3) → 消息专用窗口，永远不可见
+            private static readonly IntPtr HWND_MESSAGE = new IntPtr(-3);
+
+            public MessageOnlyWindow()
+            {
+                var cp = new CreateParams
+                {
+                    Caption = string.Empty,
+                    ClassName = null,
+                    X = 0,
+                    Y = 0,
+                    Height = 0,
+                    Width = 0,
+                    Parent = HWND_MESSAGE
+                };
+                CreateHandle(cp);
+            }
+
+            public void Dispose()
+            {
+                if (Handle != IntPtr.Zero)
+                    DestroyHandle();
+            }
+        }
     }
 }

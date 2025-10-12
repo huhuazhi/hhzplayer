@@ -1,4 +1,6 @@
 ﻿
+using System.Threading;
+
 namespace HHZPlayer;
 
 public static class Global
@@ -11,4 +13,6 @@ public static class Global
 
     public static string _(string value) => Translator.Current!.Gettext(value);
     public static string _p(string context, string value) => Translator.Current!.GetParticularString(context, value);
+
+    public static readonly AutoResetEvent QuitEvent = new(initialState: false);
 }

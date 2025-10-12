@@ -1,8 +1,7 @@
 {
   "profiles": {
     "HHZPlayer.Windows": {
-      "commandName": "Project",
-      "commandLineArgs": "--msg-level=all=warn"
+      "commandName": "Project"
     }
   }
 }
