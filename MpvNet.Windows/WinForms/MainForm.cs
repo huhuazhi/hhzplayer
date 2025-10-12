@@ -308,7 +308,7 @@ public partial class MainForm : Form
             case "2D渲染器":
                 btnRenderLeft.Text = "2D渲染器";
                 Player.SetPropertyString("vo", "gpu");
-                Player.SetPropertyString("hwdec", "no");
+                Player.SetPropertyString("hwdec", "auto");
                 //Player.SetPropertyString("hwdec", "auto");
                 //Player.SetPropertyString("hwdec", "nvdec-copy");
                 //Player.SetPropertyString("vo", "gpu-next");
