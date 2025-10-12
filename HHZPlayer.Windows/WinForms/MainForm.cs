@@ -575,7 +575,7 @@ public partial class MainForm : Form
             overlayPanel.Visible = true;
             CursorTimer.Enabled = true;
 
-            Player?.SetPropertyDouble("time-pos", 0);
+            //Player?.SetPropertyDouble("time-pos", 0);
             Player?.Command("stop");
             Player?.Command("set pause yes");
 

@@ -103,8 +103,7 @@ public class MainPlayer : HhzplayerClient
         //SetPropertyBool("input-default-bindings", true);
         //SetPropertyBool("input-builtin-bindings", false);
         //SetPropertyBool("input-media-keys", true);
-        SetPropertyString("hwdec", "auto"); //# 尝试用硬件解码，减少 CPU 负担
-        SetPropertyString("hwdec-interop", "all"); //# 这个选项可以在创建 GL 上下文时尽量预加载 interop 支持
+        SetPropertyString("hwdec", "auto"); //# 尝试用硬件解码，减少 CPU 负担        
         SetPropertyInt("hwdec-extra-frames", 4); //# 多预分配几帧缓冲，减少申请开销
         //SetPropertyInt("video-sync", 60); //强制按显示刷新同步（可能锁帧，但稳定性好）
         SetPropertyString("interpolation", "no"); //# 关闭帧间插值（插值对超高分辨率代价太大）
