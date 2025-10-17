@@ -81,15 +81,12 @@ namespace MyApp
             set { _RIFE = value; hhzSettingsManager.MarkDirty(); }
         }
 
-        private bool fromLastPosPlay = false;
-        [DefaultValue(false)]
-        public bool FromLastPosPlay
-        {
-            get => fromLastPosPlay;
-            set { fromLastPosPlay = value; hhzSettingsManager.MarkDirty(); }
+        private double _lastTimePos = 0.0;
+        [DefaultValue(0)]
+        public double LastTimePos {
+            get => _lastTimePos;
+            set { _lastTimePos = value; hhzSettingsManager.MarkDirty(); }
         }
-
-        public double LastTimePos { get; set; }
 
         [XmlIgnore]
         public bool IsAllDefault =>
@@ -101,7 +98,8 @@ namespace MyApp
             VideoAspestW == "0" &&
             VideoAspestH == "0" &&
             bVSR == true &&
-            _RIFE == true;
+            _RIFE == true &&
+            LastTimePos == 0;
 
         [XmlIgnore]
         public bool IsModify => !IsAllDefault;
@@ -181,7 +179,7 @@ namespace MyApp
             {
                 try
                 {
-                    Thread.Sleep(200); // 每500ms轮询一次
+                    Thread.Sleep(200); // 每200ms轮询一次
 
                     if (!IsDirty) continue;
                     if ((DateTime.Now - lastSaveTime).TotalMilliseconds < 800) continue;

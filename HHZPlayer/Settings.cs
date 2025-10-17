@@ -24,6 +24,7 @@ public class AppSettings
     public string StartupFolder = "";
     public bool Enable3DMode;
     public string LastOpenedFolder = "";
+    public bool FromLastPosPlay = false;
 
     //public System.Windows.Forms.FormWindowState WindowStatus { get; set; }
     public enum enumWindowsStatus

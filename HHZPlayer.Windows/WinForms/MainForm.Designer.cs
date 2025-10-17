@@ -777,6 +777,7 @@ partial class MainForm
         chkFromPlayLeft.TabStop = false;
         chkFromPlayLeft.Text = "记住当前位置";
         chkFromPlayLeft.UseVisualStyleBackColor = false;
+        chkFromPlayLeft.CheckedChanged += chkFromPlay_CheckedChanged;
         // 
         // lblVSRLeft
         // 
@@ -872,6 +873,7 @@ partial class MainForm
         chkFromPlayRight.TabStop = false;
         chkFromPlayRight.Text = "记住当前位置";
         chkFromPlayRight.UseVisualStyleBackColor = false;
+        chkFromPlayRight.CheckedChanged += chkFromPlay_CheckedChanged;
         // 
         // lblVSRRight
         // 

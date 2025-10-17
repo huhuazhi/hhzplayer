@@ -325,7 +325,7 @@ public partial class MainForm : Form
         bSetRender = true;
         switch (RenderText)
         {
-            case "2D渲染器":                
+            case "2D渲染器":
                 btnRenderLeft.Text = "2D渲染器";
                 Player.SetPropertyString("vo", "gpu-next");
                 Player.SetPropertyString("hwdec", "auto-copy");
@@ -444,10 +444,11 @@ public partial class MainForm : Form
 
         if (hhzMainPage.Visible != true)
         {
-            fps = 0;            
-            Player.Command("stop");
+            fps = 0;
             Player.Command("set pause yes");
-            if (bRifeOn()) Player.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");            
+            if (App.Settings.FromLastPosPlay) hhzSettingsManager.Current.LastTimePos = Player.GetPropertyDouble("time-pos");
+            Player.Command("stop");            
+            if (bRifeOn()) Player.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
             if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12");
             hhzMainPage.Visible = true;
             overlayPanel.Visible = false;
@@ -463,9 +464,8 @@ public partial class MainForm : Form
             bProgSet = true;
             chkRifeLeft.Checked = true;
             chkRifeRight.Checked = true;
-            bProgSet = false;
-            if (hhzSettingsManager.Current.FromLastPosPlay) hhzSettingsManager.Current.LastTimePos = Player.GetPropertyDouble("time-pos");
-        }        
+            bProgSet = false;            
+        }
     }
 
     private void OverlayPanel_MouseClick(object? sender, MouseEventArgs e)
@@ -639,8 +639,8 @@ public partial class MainForm : Form
                 else
                 {
                     if (vw > 0 && vh > 0)
-                    //Two Screen
-                    Player.SetPropertyString("video-aspect-override", $"{Width}:{Width / vw * vh}");
+                        //Two Screen
+                        Player.SetPropertyString("video-aspect-override", $"{Width}:{Width / vw * vh}");
                     //Player.SetPropertyString("video-aspect-override", $"{Width}:{vh}");
                 }
             }
@@ -1131,9 +1131,9 @@ public partial class MainForm : Form
 
         _audioMenuLeft.Items.Add(new ToolStripSeparator());
         _audioMenuRight.Items.Add(new ToolStripSeparator());
-        
+
         var defAidl = new ToolStripMenuItem("恢复默认")
-        {            
+        {
             Text = $"恢复自动(目前:{getcurrentAudioTrack()})",
             Checked = false,
             CheckOnClick = false
@@ -1263,7 +1263,7 @@ public partial class MainForm : Form
         if (hhzSettingsManager.Current.LastAudioTrackId == -1)
         {
             return "自动";
-        } 
+        }
         else
         {
             foreach (var track in _audioMenuLeft.Items)
@@ -1672,7 +1672,7 @@ public partial class MainForm : Form
             setVSR();
             sHDR = GetHdrType(Player);
             ShowVideoOSD();
-            if (!hhzSettingsManager.Current.FromLastPosPlay)
+            if (!App.Settings.FromLastPosPlay)
             {
                 Player.SetPropertyDouble("time-pos", 0);
             }
@@ -1794,13 +1794,13 @@ public partial class MainForm : Form
         if (WindowState == FormWindowState.Maximized)
             //Player.SetPropertyBool("window-maximized", true);
 
-        //WpfApplication.Init();
-        //Theme.UpdateWpfColors();
-        //MessageBoxEx.MessageForeground = Theme.Current?.GetBrush("heading");
-        //MessageBoxEx.MessageBackground = Theme.Current?.GetBrush("background");
-        //MessageBoxEx.ButtonBackground = Theme.Current?.GetBrush("highlight");
-        //InitAndBuildContextMenu();
-        Cursor.Position = new Point(Cursor.Position.X + 1, Cursor.Position.Y);
+            //WpfApplication.Init();
+            //Theme.UpdateWpfColors();
+            //MessageBoxEx.MessageForeground = Theme.Current?.GetBrush("heading");
+            //MessageBoxEx.MessageBackground = Theme.Current?.GetBrush("background");
+            //MessageBoxEx.ButtonBackground = Theme.Current?.GetBrush("highlight");
+            //InitAndBuildContextMenu();
+            Cursor.Position = new Point(Cursor.Position.X + 1, Cursor.Position.Y);
         GlobalHotkey.RegisterGlobalHotkeys(Handle);
         StrongReferenceMessenger.Default.Send(new MainWindowIsLoadedMessage());
         WasShown = true;
@@ -2161,6 +2161,8 @@ public partial class MainForm : Form
     {
         //SaveWindowProperties();
         //Player.Command("write-watch-later-config");
+        Player.Command("set pause yes");
+        if (App.Settings.FromLastPosPlay) hhzSettingsManager.Current.LastTimePos = Player.GetPropertyDouble("time-pos");
         App.Settings.Save();
         //if (SettingsManager.Current.IsModify)
         //SettingsManager.Save();
@@ -2338,7 +2340,7 @@ public partial class MainForm : Form
                     //}
                     //else
                     //{
-                        btnBack_Click(null, null);
+                    btnBack_Click(null, null);
                     //}
                 }
                 else
@@ -2909,8 +2911,8 @@ public partial class MainForm : Form
         if (WasShown && !bSetRender)
         {
             if (((CheckBox)sender).Checked)
-            {                
-                hhzSettingsManager.Current.VSR = true;                
+            {
+                hhzSettingsManager.Current.VSR = true;
             }
             else
             {
@@ -2928,7 +2930,7 @@ public partial class MainForm : Form
             return true;
         }
         else
-        {            
+        {
             return false;
         }
     }
@@ -2941,7 +2943,7 @@ public partial class MainForm : Form
 
         }
         if (CommandlineHelper.files.Count > 0)
-        {        
+        {
             //有命令行参数，直接初始化播放器并加载文件
             //Player?.Command("stop");
             //Player?.Command("set pause yes");
@@ -2966,5 +2968,10 @@ public partial class MainForm : Form
             //if (CommandlineHelper.OnlyConsole) QuitEvent.WaitOne();
             //Player.LoadFiles([.. files], true, false);
         }
+    }
+
+    private void chkFromPlay_CheckedChanged(object sender, EventArgs e)
+    {
+        App.Settings.FromLastPosPlay = ((CheckBox)sender).Checked;
     }
 }
