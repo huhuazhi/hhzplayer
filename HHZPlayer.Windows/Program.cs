@@ -69,7 +69,7 @@ namespace Console_Form
             App.Init();
             Theme.Init();
 
-            // 启动 WinForms UI 在线程中（单进程内）
+            //启动 WinForms UI 在线程中（单进程内）
             _uiThread = new Thread(() =>
             {
                 try
@@ -132,7 +132,8 @@ namespace Console_Form
 
             // 阻塞等待 UI 线程退出
             if (_uiThread != null) _uiThread.Join();
-            QuitEvent.Wait();
+
+            //QuitEvent.Wait();
 
             // ★ 清理单实例资源
             SingleInstanceIpc.Shutdown();

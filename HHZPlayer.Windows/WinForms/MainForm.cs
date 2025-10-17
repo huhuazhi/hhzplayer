@@ -81,22 +81,22 @@ public partial class MainForm : Form
 
         if (cmdlineArg.Length > 0)
         {
-            // 如果有命令行参数，直接初始化播放器并加载文件
-            hhzMainPage.Visible = false;
-            overlayPanel.Visible = true;
-            CursorTimer.Enabled = true;
-            List<string> files = [];
+            //// 如果有命令行参数，直接初始化播放器并加载文件
+            //hhzMainPage.Visible = false;
+            //overlayPanel.Visible = true;
+            //CursorTimer.Enabled = true;
+            //List<string> files = [];
 
-            if (App.Settings.Enable3DMode)
-            {
-                btn3DLeft.Visible = false;
-                btn3DRight.Visible = false;
-            }
-            else
-            {
-                btn3DLeft.Visible = false;
-                btnFullScreenLeft.Visible = false;
-            }
+            //if (App.Settings.Enable3DMode)
+            //{
+            //    btn3DLeft.Visible = false;
+            //    btn3DRight.Visible = false;
+            //}
+            //else
+            //{
+            //    btn3DLeft.Visible = false;
+            //    btnFullScreenLeft.Visible = false;
+            //}
             HhzMainPage_FileOpened(null, [.. CommandlineHelper.files]);
         }
     }
@@ -590,7 +590,7 @@ public partial class MainForm : Form
             Set3DSubtitleMode(hhzSettingsManager.Current.SubtitleMode);
             setRender(hhzSettingsManager.Current.RenderText);
             bSetRender = false;
-            Player.LoadFiles(paths, true, false);
+            Player?.LoadFiles(paths, true, false);
 
             if (FileTypes.IsAudio(Path.GetExtension(paths[0]).Replace(".", ""))/*Player.Path.Ext())*/) //音频格式
             {
@@ -2216,7 +2216,7 @@ public partial class MainForm : Form
     private ToolStripMenuItem Videoaspectl;
     private ToolStripMenuItem Videoaspectr;
     private bool bNvidia;
-    private int ibufferframe = 8;
+    private int ibufferframe = 32;
     private int iconcurrentframe = 2;
     private bool bSetRender;
     private int iVsrScale = 2;
@@ -2795,6 +2795,7 @@ public partial class MainForm : Form
                 cbRifeTimesLeft.Enabled = true;
                 cbRifeTimesRight.Enabled = true;
                 if (!bRifeOn()) Player.Command($"no-osd vf add vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
+                //Player.Command($"vf toggle vapoursynth=file=D:/HHZTEST/mpv-lazy/portable_config/vs/MEMC_MVT_LQ.vpy");
                 hhzSettingsManager.Current.Rife = true;
             }
             else
@@ -2803,6 +2804,7 @@ public partial class MainForm : Form
                 cbRifeTimesRight.Enabled = false;
                 //if (bRifeOn()) Player.Command("no-osd vf set vapoursynth=file=NULL");
                 if (bRifeOn()) Player.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
+                //Player.Command($"vf remove vapoursynth=file=D:/HHZTEST/mpv-lazy/portable_config/vs/MEMC_MVT_LQ.vpy");
                 hhzSettingsManager.Current.Rife = false;
             }
         }

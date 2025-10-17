@@ -12,10 +12,10 @@ namespace HHZPlayer.SingleInstance
 
         public static void BringToFront(Form f)
         {
-            if (f.WindowState == FormWindowState.Minimized)
-                f.WindowState = FormWindowState.Normal;
-            ShowWindow(f.Handle, SW_RESTORE);
-            f.Activate();
+            //if (f.WindowState == FormWindowState.Minimized)
+            //    f.WindowState = FormWindowState.Normal;
+            //ShowWindow(f.Handle, SW_RESTORE);
+            //f.Activate();
             SetForegroundWindow(f.Handle);
             // nudge
             f.TopMost = true; f.TopMost = false;
