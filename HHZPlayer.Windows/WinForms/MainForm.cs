@@ -79,26 +79,8 @@ public partial class MainForm : Form
         InitializehhzOverlay();
         InitPlayer();
 
-        if (CommandlineHelper.files.Count > 0)
-        {
-            //// 如果有命令行参数，直接初始化播放器并加载文件
-            hhzMainPage.Visible = false;
-            overlayPanel.Visible = true;
-            CursorTimer.Enabled = true;
-            //List<string> files = [];
-
-            if (App.Settings.Enable3DMode)
-            {
-                btn3DLeft.Visible = false;
-                btn3DRight.Visible = false;
-            }
-            else
-            {
-                btn3DLeft.Visible = false;
-                btnFullScreenLeft.Visible = false;
-            }
-            HhzMainPage_FileOpened(null, [.. CommandlineHelper.files]);
-        }
+        // NOTE: do not load commandline files here. Initial args are delivered via SingleInstanceIpc.DeliverInitialArgs
+        // which will invoke OpenFromIpc(...) after the main form has been created and the Player fully initialized.
     }
 
     // 定时器 Tick
@@ -2122,6 +2104,7 @@ public partial class MainForm : Form
             btnSubtitleTrackRight.Visible = false;
             btnRenderRight.Visible = false;
             btnPlayRight.Visible = false;
+            btnFullScreenLeft.Visible = false;
             lblDurationRight.Visible = false;
             lblStatusRight.Visible = false;
             lblVolumeRight.Visible = false;
