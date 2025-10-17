@@ -1671,7 +1671,6 @@ public partial class MainForm : Form
             }
             setVSR();
             sHDR = GetHdrType(Player);
-            ShowVideoOSD();
             if (!App.Settings.FromLastPosPlay)
             {
                 Player.SetPropertyDouble("time-pos", 0);
@@ -1693,6 +1692,7 @@ public partial class MainForm : Form
             {
                 Player.Command("set pause no");
             }
+            ShowVideoOSD();
         }));
 
         string path = Player.GetPropertyString("path");
@@ -1968,6 +1968,8 @@ public partial class MainForm : Form
     void ShowVideoOSD()
     {
         //Debug.Print($"{DateTime.Now.ToString()}-progressBarRight.visible={progressBarRight.Visible}");
+        chkFromPlayLeft.Checked = App.Settings.FromLastPosPlay;
+        chkFromPlayRight.Checked = App.Settings.FromLastPosPlay;
         btnBackLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
         btn3DSubtitleModeLeft.Visible = (!isAudio && hhzMainPage.Visible == false) ? true : false;
         btn3DLeft.Visible = true;
