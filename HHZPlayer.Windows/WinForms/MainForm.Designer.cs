@@ -81,6 +81,7 @@ partial class MainForm
         label7 = new System.Windows.Forms.Label();
         label8 = new System.Windows.Forms.Label();
         gbRifeLeft = new System.Windows.Forms.GroupBox();
+        chkSingleProcessLeft = new System.Windows.Forms.CheckBox();
         chkFromPlayLeft = new System.Windows.Forms.CheckBox();
         lblVSRLeft = new System.Windows.Forms.Label();
         lblRifeLeft = new System.Windows.Forms.Label();
@@ -88,6 +89,8 @@ partial class MainForm
         cbRifeTimesLeft = new System.Windows.Forms.ComboBox();
         chkRifeLeft = new System.Windows.Forms.CheckBox();
         gbRifeRight = new System.Windows.Forms.GroupBox();
+        chkSingleProcessRight = new System.Windows.Forms.CheckBox();
+        checkBox2 = new System.Windows.Forms.CheckBox();
         chkFromPlayRight = new System.Windows.Forms.CheckBox();
         lblVSRRight = new System.Windows.Forms.Label();
         lblRifeRight = new System.Windows.Forms.Label();
@@ -752,6 +755,7 @@ partial class MainForm
         // gbRifeLeft
         // 
         gbRifeLeft.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        gbRifeLeft.Controls.Add(chkSingleProcessLeft);
         gbRifeLeft.Controls.Add(chkFromPlayLeft);
         gbRifeLeft.Controls.Add(lblVSRLeft);
         gbRifeLeft.Controls.Add(lblRifeLeft);
@@ -759,13 +763,25 @@ partial class MainForm
         gbRifeLeft.Controls.Add(cbRifeTimesLeft);
         gbRifeLeft.Controls.Add(chkRifeLeft);
         gbRifeLeft.ForeColor = System.Drawing.Color.White;
-        gbRifeLeft.Location = new System.Drawing.Point(1656, 599);
+        gbRifeLeft.Location = new System.Drawing.Point(1656, 542);
         gbRifeLeft.Name = "gbRifeLeft";
-        gbRifeLeft.Size = new System.Drawing.Size(214, 249);
+        gbRifeLeft.Size = new System.Drawing.Size(214, 306);
         gbRifeLeft.TabIndex = 43;
         gbRifeLeft.TabStop = false;
         gbRifeLeft.Text = "AI功能";
         gbRifeLeft.Visible = false;
+        // 
+        // chkSingleProcessLeft
+        // 
+        chkSingleProcessLeft.AutoSize = true;
+        chkSingleProcessLeft.Location = new System.Drawing.Point(22, 249);
+        chkSingleProcessLeft.Name = "chkSingleProcessLeft";
+        chkSingleProcessLeft.Size = new System.Drawing.Size(146, 36);
+        chkSingleProcessLeft.TabIndex = 47;
+        chkSingleProcessLeft.TabStop = false;
+        chkSingleProcessLeft.Text = "窗口单开";
+        chkSingleProcessLeft.UseVisualStyleBackColor = false;
+        chkSingleProcessLeft.CheckedChanged += chkSingleProcess_CheckedChanged;
         // 
         // chkFromPlayLeft
         // 
@@ -848,6 +864,8 @@ partial class MainForm
         // gbRifeRight
         // 
         gbRifeRight.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+        gbRifeRight.Controls.Add(chkSingleProcessRight);
+        gbRifeRight.Controls.Add(checkBox2);
         gbRifeRight.Controls.Add(chkFromPlayRight);
         gbRifeRight.Controls.Add(lblVSRRight);
         gbRifeRight.Controls.Add(lblRifeRight);
@@ -855,13 +873,36 @@ partial class MainForm
         gbRifeRight.Controls.Add(cbRifeTimesRight);
         gbRifeRight.Controls.Add(chkRifeRight);
         gbRifeRight.ForeColor = System.Drawing.Color.White;
-        gbRifeRight.Location = new System.Drawing.Point(1436, 599);
+        gbRifeRight.Location = new System.Drawing.Point(1436, 542);
         gbRifeRight.Name = "gbRifeRight";
-        gbRifeRight.Size = new System.Drawing.Size(214, 249);
+        gbRifeRight.Size = new System.Drawing.Size(214, 306);
         gbRifeRight.TabIndex = 44;
         gbRifeRight.TabStop = false;
         gbRifeRight.Text = "AI功能";
         gbRifeRight.Visible = false;
+        // 
+        // chkSingleProcessRight
+        // 
+        chkSingleProcessRight.AutoSize = true;
+        chkSingleProcessRight.Location = new System.Drawing.Point(22, 249);
+        chkSingleProcessRight.Name = "chkSingleProcessRight";
+        chkSingleProcessRight.Size = new System.Drawing.Size(146, 36);
+        chkSingleProcessRight.TabIndex = 46;
+        chkSingleProcessRight.TabStop = false;
+        chkSingleProcessRight.Text = "窗口单开";
+        chkSingleProcessRight.UseVisualStyleBackColor = false;
+        chkSingleProcessRight.CheckedChanged += chkSingleProcess_CheckedChanged;
+        // 
+        // checkBox2
+        // 
+        checkBox2.AutoSize = true;
+        checkBox2.Location = new System.Drawing.Point(12, 235);
+        checkBox2.Name = "checkBox2";
+        checkBox2.Size = new System.Drawing.Size(196, 36);
+        checkBox2.TabIndex = 47;
+        checkBox2.TabStop = false;
+        checkBox2.Text = "记住当前位置";
+        checkBox2.UseVisualStyleBackColor = false;
         // 
         // chkFromPlayRight
         // 
@@ -1065,4 +1106,7 @@ partial class MainForm
     private System.Windows.Forms.Label lblVSRRight;
     private System.Windows.Forms.CheckBox chkFromPlayLeft;
     private System.Windows.Forms.CheckBox chkFromPlayRight;
+    private System.Windows.Forms.CheckBox chkSingleProcessLeft;
+    private System.Windows.Forms.CheckBox chkSingleProcessRight;
+    private System.Windows.Forms.CheckBox checkBox2;
 }

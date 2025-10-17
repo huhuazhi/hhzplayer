@@ -45,6 +45,7 @@ public partial class MainForm : Form
 
     public MainForm()
     {
+        //App.Settings.IsSingleProcess = true; // 主窗体强制多进程模式，用于测试
         InitializeComponent();
 
         //鼠标单击和双击区分用的Timer
@@ -448,7 +449,7 @@ public partial class MainForm : Form
             fps = 0;
             Player.Command("set pause yes");
             if (App.Settings.FromLastPosPlay) hhzSettingsManager.Current.LastTimePos = Player.GetPropertyDouble("time-pos");
-            Player.Command("stop");            
+            Player.Command("stop");
             if (bRifeOn()) Player.Command($"no-osd vf remove vapoursynth=file={Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rife_2x.vpy").Replace("\\", "/")}:buffered-frames={ibufferframe}:concurrent-frames={iconcurrentframe}");
             if (bRTXOn()) Player.Command($"no-osd vf remove d3d11vpp=scale={iVsrScale}:scaling-mode=nvidia:format=nv12");
             hhzMainPage.Visible = true;
@@ -465,7 +466,7 @@ public partial class MainForm : Form
             bProgSet = true;
             chkRifeLeft.Checked = true;
             chkRifeRight.Checked = true;
-            bProgSet = false;            
+            bProgSet = false;
         }
     }
 
@@ -1971,6 +1972,9 @@ public partial class MainForm : Form
         //Debug.Print($"{DateTime.Now.ToString()}-progressBarRight.visible={progressBarRight.Visible}");
         chkFromPlayLeft.Checked = App.Settings.FromLastPosPlay;
         chkFromPlayRight.Checked = App.Settings.FromLastPosPlay;
+        chkSingleProcessLeft.Checked = App.Settings.IsSingleProcess;
+        chkSingleProcessRight.Checked = App.Settings.IsSingleProcess;
+
         btnBackLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
         btn3DSubtitleModeLeft.Visible = (!isAudio && hhzMainPage.Visible == false) ? true : false;
         btn3DLeft.Visible = true;
@@ -2998,5 +3002,11 @@ public partial class MainForm : Form
     private void chkFromPlay_CheckedChanged(object sender, EventArgs e)
     {
         App.Settings.FromLastPosPlay = ((CheckBox)sender).Checked;
+    }
+
+    private void chkSingleProcess_CheckedChanged(object sender, EventArgs e)
+    {
+        App.Settings.IsSingleProcess = ((CheckBox)sender).Checked;
+        ShowToast(App.Settings.IsSingleProcess ? "窗口单开，关闭窗口后生效" : "窗口多开，关闭窗口后生效", 2000);
     }
 }

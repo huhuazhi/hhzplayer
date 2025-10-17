@@ -1,5 +1,4 @@
-﻿
-using System.Text;
+﻿using System.Text;
 using System.Xml.Serialization;
 using System.Xml;
 using System.Drawing;
@@ -25,6 +24,11 @@ public class AppSettings
     public bool Enable3DMode;
     public string LastOpenedFolder = "";
     public bool FromLastPosPlay = false;
+
+    // 控制是否以单进程模式运行：
+    // true = 单进程（新启动的实例会把文件通过 IPC 发送到已有实例并退出）
+    // false = 多进程（每个实例独立打开文件）
+    public bool IsSingleProcess { get; set; } = false;
 
     //public System.Windows.Forms.FormWindowState WindowStatus { get; set; }
     public enum enumWindowsStatus

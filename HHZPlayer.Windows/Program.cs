@@ -50,10 +50,6 @@ namespace Console_Form
                 return 0;
             }
 
-            // ★ 新增：单实例判断。不是主实例 → 把参数转发给已运行实例并退出
-            if (!SingleInstanceIpc.TryBecomePrimary("v1", args))
-                return 0;
-
             // 固定工作目录/环境变量（保留你的逻辑）
             string baseDir = AppDomain.CurrentDomain.BaseDirectory; 
             Directory.SetCurrentDirectory(baseDir);// 强制设置工作目录
@@ -66,10 +62,21 @@ namespace Console_Form
                 baseDir + ";" + Environment.GetEnvironmentVariable("PATH"),
                 EnvironmentVariableTarget.Process);
 
+            // 初始化 App/Theme（用于读取 App.Settings.IsSingleProcess）
             App.Init();
             Theme.Init();
 
-            //启动 WinForms UI 在线程中（单进程内）
+            bool singleProcessMode = true;
+            try { singleProcessMode = App.Settings.IsSingleProcess; } catch { singleProcessMode = true; }
+
+            // 单进程模式：非主实例把参数转发给已运行实例并退出
+            if (singleProcessMode)
+            {
+                if (!SingleInstanceIpc.TryBecomePrimary("v1", args))
+                    return 0;
+            }
+
+            //启动 WinForms UI 在线程中（单进程内或多进程独立）
             _uiThread = new Thread(() =>
             {
                 try
@@ -79,33 +86,54 @@ namespace Console_Form
 
                     MainForm mainForm = new MainForm();
 
-                    // ★ 管道监听：别的实例启动时把新文件推过来
-                    SingleInstanceIpc.StartServer(files =>
+                    // 如果启用单进程模式，则启动管道监听并处理初始参数；否则直接用自身参数加载
+                    if (singleProcessMode)
                     {
-                        try
+                        // ★ 管道监听：别的实例启动时把新文件推过来
+                        SingleInstanceIpc.StartServer(files =>
                         {
-                            mainForm.BeginInvoke(new Action(() =>
+                            try
                             {
-                                WindowActivator.BringToFront(mainForm);
-                                mainForm.OpenFromIpc(files); // ← 在 MainForm 里实现
-                            }));
-                        }
-                        catch { /* ignore */ }
-                    });
+                                mainForm.BeginInvoke(new Action(() =>
+                                {
+                                    WindowActivator.BringToFront(mainForm);
+                                    mainForm.OpenFromIpc(files); // ← 在 MainForm 里实现
+                                }));
+                            }
+                            catch { /* ignore */ }
+                        });
 
-                    // ★ 首次启动也处理一次自身的启动参数
-                    SingleInstanceIpc.DeliverInitialArgs(files =>
+                        // ★ 首次启动也处理一次自身的启动参数
+                        SingleInstanceIpc.DeliverInitialArgs(files =>
+                        {
+                            try
+                            {
+                                mainForm.BeginInvoke(new Action(() =>
+                                {
+                                    WindowActivator.BringToFront(mainForm);
+                                    mainForm.OpenFromIpc(files);
+                                }));
+                            }
+                            catch { /* ignore */ }
+                        });
+                    }
+                    else
                     {
+                        // 多进程模式：直接把命令行参数交给 MainForm 处理
                         try
                         {
-                            mainForm.BeginInvoke(new Action(() =>
+                            var initialFiles = CommandlineHelper.files;
+                            if (initialFiles is { Count: > 0 })
                             {
-                                WindowActivator.BringToFront(mainForm);
-                                mainForm.OpenFromIpc(files);
-                            }));
+                                mainForm.BeginInvoke(new Action(() =>
+                                {
+                                    WindowActivator.BringToFront(mainForm);
+                                    mainForm.OpenFromIpc([.. initialFiles]);
+                                }));
+                            }
                         }
                         catch { /* ignore */ }
-                    });
+                    }
 
                     // 窗口关闭 → 退出
                     mainForm.FormClosed += (s, e) =>
