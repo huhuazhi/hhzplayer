@@ -3,6 +3,7 @@ using HHZPlayer.MVVM;
 using HHZPlayer.Windows.HHZ;
 using HHZPlayer.Windows.UI;
 using MyApp;
+using System.Configuration;
 using System.Drawing;
 using System.Globalization;
 using System.Numerics;
@@ -1979,6 +1980,7 @@ public partial class MainForm : Form
         btnSubtitleTrackLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
         btnRenderLeft.Visible = (!isAudio && hhzMainPage.Visible == false) ? true : false;
         btnPlayLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
+        btnFullScreenLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
         lblDurationLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
         lblStatusLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
         lblVolumeLeft.Visible = (hhzMainPage.Visible == false) ? true : false;
@@ -2164,17 +2166,38 @@ public partial class MainForm : Form
         //SaveWindowProperties();
         //Player.Command("write-watch-later-config");
         Player.Command("set pause yes");
-        if (App.Settings.FromLastPosPlay) hhzSettingsManager.Current.LastTimePos = Player.GetPropertyDouble("time-pos");
+
+        if (!hhzMainPage.Visible && App.Settings.FromLastPosPlay) hhzSettingsManager.Current.LastTimePos = Player.GetPropertyDouble("time-pos");
+
         App.Settings.Save();
         //if (SettingsManager.Current.IsModify)
         //SettingsManager.Save();
 
         //if (Player.IsQuitNeeded)
-        Player.CommandV("quit");
-        //if (!Player.ShutdownAutoResetEvent.WaitOne(10000))
-        //    Msg.ShowError(_("Shutdown thread failed to complete within 10 seconds."));
+        //    Player.CommandV("quit");
 
-        //Player.Destroy();
+        // 清理：停止定时器、销毁播放器、关闭 IPC。窗口关闭后主线程应退出。
+        try { ToastTimer?.Stop(); } catch { }
+        try { ProgressTimer?.Stop(); } catch { }
+        try { CursorTimer?.Stop(); } catch { }
+
+        try
+        {
+            // 尝试彻底销毁播放器（如果存在该方法）以释放后台线程/句柄
+            // 你的代码里之前有 Player.Destroy() 的注释，保留调用以确保资源释放
+            Player.Destroy();
+        }
+        catch { /* 忽略销毁时的异常 */ }
+
+        try
+        {
+            // 关闭单实例 IPC（若主程序尚未在 Program.Main 调用）
+            // 此方法存在于 SingleInstanceIpc 类；调用它可以让监听线程/句柄关闭
+            HHZPlayer.SingleInstance.SingleInstanceIpc.Shutdown();
+        }
+        catch { }
+
+        // NOTE: 不要在 FormClosing 内再次调用 Close() — 由触发者负责关闭。
     }
 
 
