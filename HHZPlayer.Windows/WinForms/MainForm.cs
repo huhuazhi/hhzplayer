@@ -67,36 +67,36 @@ public partial class MainForm : Form
               ControlStyles.OptimizedDoubleBuffer, true);
         this.UpdateStyles();
 
-        cmdlineArg = Environment.GetCommandLineArgs().Skip(1).ToArray();
-        if (cmdlineArg.Length > 0)
-        {
-            if (CommandlineHelper.ProcessCommandline(cmdlineArg))
-            {
-                //未来处理其他命令行参数备用
-            }
-        }
+        //cmdlineArg = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        //if (cmdlineArg.Length > 0)
+        //{
+        //    if (CommandlineHelper.ProcessCommandline(cmdlineArg))
+        //    {
+        //        //未来处理其他命令行参数备用
+        //    }
+        //}
         UpdateDarkMode();
         InitializehhzOverlay();
         InitPlayer();
 
-        if (cmdlineArg.Length > 0)
+        if (CommandlineHelper.files.Count > 0)
         {
             //// 如果有命令行参数，直接初始化播放器并加载文件
-            //hhzMainPage.Visible = false;
-            //overlayPanel.Visible = true;
-            //CursorTimer.Enabled = true;
+            hhzMainPage.Visible = false;
+            overlayPanel.Visible = true;
+            CursorTimer.Enabled = true;
             //List<string> files = [];
 
-            //if (App.Settings.Enable3DMode)
-            //{
-            //    btn3DLeft.Visible = false;
-            //    btn3DRight.Visible = false;
-            //}
-            //else
-            //{
-            //    btn3DLeft.Visible = false;
-            //    btnFullScreenLeft.Visible = false;
-            //}
+            if (App.Settings.Enable3DMode)
+            {
+                btn3DLeft.Visible = false;
+                btn3DRight.Visible = false;
+            }
+            else
+            {
+                btn3DLeft.Visible = false;
+                btnFullScreenLeft.Visible = false;
+            }
             HhzMainPage_FileOpened(null, [.. CommandlineHelper.files]);
         }
     }
@@ -175,12 +175,6 @@ public partial class MainForm : Form
     {
         frmMediaProperty = new FormMediaProperty(this);
         hhzMainPage.BringToFront();
-        // 如果上次目录存在就恢复
-        if (!string.IsNullOrEmpty(App.Settings.LastOpenedFolder) &&
-            Directory.Exists(App.Settings.LastOpenedFolder))
-        {
-            hhzMainPage.LoadFolder(App.Settings.LastOpenedFolder);
-        }
 
         Controls.Add(hhzMainPage);
         overlayPanel = new Panel
@@ -1798,6 +1792,13 @@ public partial class MainForm : Form
 
     protected override void OnShown(EventArgs e)
     {
+        // 如果上次目录存在就恢复
+        if (!string.IsNullOrEmpty(App.Settings.LastOpenedFolder) &&
+            Directory.Exists(App.Settings.LastOpenedFolder))
+        {
+            hhzMainPage.LoadFolder(App.Settings.LastOpenedFolder);
+        }
+
         base.OnShown(e);
         if (WindowState == FormWindowState.Maximized)
             //Player.SetPropertyBool("window-maximized", true);

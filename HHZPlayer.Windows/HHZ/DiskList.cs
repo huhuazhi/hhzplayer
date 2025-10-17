@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
+using System.Threading.Tasks;
 
 namespace HHZPlayer.Windows.HHZ
 {
@@ -163,6 +164,28 @@ namespace HHZPlayer.Windows.HHZ
         private int _dragStartY = 0;
         private int _dragStartScrollY = 0;
 
+        // Loading animation
+        private Timer? _animTimer;
+        private float _spinAngle = 0f;
+        private bool _isLoading = false;
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set
+            {
+                if (_isLoading == value) return;
+                _isLoading = value;
+                if (_animTimer == null)
+                {
+                    _animTimer = new Timer();
+                    _animTimer.Interval = 80;
+                    _animTimer.Tick += (s, e) => { _spinAngle += 20f; if (_spinAngle >= 360f) _spinAngle -= 360f; Invalidate(); };
+                }
+                if (_isLoading) _animTimer.Start(); else _animTimer.Stop();
+                Invalidate();
+            }
+        }
+
         public DiskList()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
@@ -252,6 +275,18 @@ namespace HHZPlayer.Windows.HHZ
                                              headerRect.Height - HeaderPadding.Vertical);
                 var sf = new StringFormat { LineAlignment = StringAlignment.Center };
                 g.DrawString(HeaderText, fTitle, brTitle, textRect, sf);
+
+                // 绘制 loading spinner（在 header 右侧）
+                if (IsLoading)
+                {
+                    int size = Math.Min(24, HeaderHeight - 10);
+                    var cx = headerRect.Right - HeaderPadding.Right - size / 2 - 4;
+                    var cy = headerRect.Top + headerRect.Height / 2;
+                    var rect = new Rectangle(cx - size / 2, cy - size / 2, size, size);
+                    using var pen = new Pen(Color.White, 2f);
+                    // 画部分弧以表现旋转
+                    g.DrawArc(pen, rect, _spinAngle, 270f);
+                }
             }
 
             // —— 列表内容（裁剪到 inner 的标题栏以下）——
@@ -467,6 +502,72 @@ namespace HHZPlayer.Windows.HHZ
             Update();
         }
 
+        // 异步版：在后台枚举驱动并在 UI 线程更新，避免阻塞主线程（用于网络盘等可能耗时的情况）
+        public async Task ReloadAsync()
+        {
+            var list = await Task.Run(() =>
+            {
+                var tmp = new List<Item>();
+                try
+                {
+                    foreach (var di in DriveInfo.GetDrives())
+                    {
+                        if (di.DriveType == DriveType.CDRom) continue;
+                        if (!ShowNotReady && !SafeIsReady(di)) continue;
+
+                        var it = new Item { Root = di.RootDirectory.FullName };
+                        try
+                        {
+                            if (di.IsReady)
+                            {
+                                string vol = di.VolumeLabel; if (string.IsNullOrWhiteSpace(vol)) vol = "本地磁盘";
+                                long total = 0, free = 0, used = 0;
+                                try { total = di.TotalSize; free = di.TotalFreeSpace; used = total - free; } catch { }
+                                it.Line1 = $"{vol} ({it.Root.TrimEnd('\\')})".Trim();
+                                it.Usage01 = total > 0 ? (float)used / total : 0f;
+                                it.Line2 = total > 0 ? $"{Fmt(free)} 可用, 共 {Fmt(total)}" : "不可用";
+                            }
+                            else
+                            {
+                                it.Line1 = $"({it.Root.TrimEnd('\\')})";
+                                it.Usage01 = 0f;
+                                it.Line2 = "不可用";
+                            }
+                        }
+                        catch { it.Line1 = it.Root; it.Line2 = "不可用"; it.Usage01 = 0f; }
+
+                        tmp.Add(it);
+                    }
+                }
+                catch { }
+                return tmp;
+            }).ConfigureAwait(false);
+
+            try
+            {
+                if (this.IsHandleCreated && this.InvokeRequired)
+                {
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        _items.Clear();
+                        _items.AddRange(list);
+                        RecalcContent();
+                        Invalidate();
+                        Update();
+                    }));
+                }
+                else
+                {
+                    _items.Clear();
+                    _items.AddRange(list);
+                    RecalcContent();
+                    Invalidate();
+                    Update();
+                }
+            }
+            catch { }
+        }
+
         private void RecalcContent()
         {
             _contentHeight = _items.Count == 0 ? 0 : _items.Count * (RowHeight + RowSpacing) - RowSpacing;
@@ -661,6 +762,7 @@ namespace HHZPlayer.Windows.HHZ
             {
                 foreach (var kv in _iconCache) kv.Value?.Dispose();
                 _iconCache.Clear();
+                if (_animTimer != null) { _animTimer.Stop(); _animTimer.Dispose(); _animTimer = null; }
             }
             base.Dispose(disposing);
         }

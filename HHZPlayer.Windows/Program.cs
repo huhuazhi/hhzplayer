@@ -55,7 +55,7 @@ namespace Console_Form
                 return 0;
 
             // 固定工作目录/环境变量（保留你的逻辑）
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory; 
             Directory.SetCurrentDirectory(baseDir);// 强制设置工作目录
 
             Environment.SetEnvironmentVariable("PYTHONHOME", baseDir, EnvironmentVariableTarget.Process);
@@ -77,7 +77,7 @@ namespace Console_Form
                     Application.EnableVisualStyles();
                     Application.SetCompatibleTextRenderingDefault(false);
 
-                    var mainForm = new MainForm();
+                    MainForm mainForm = new MainForm();
 
                     // ★ 管道监听：别的实例启动时把新文件推过来
                     SingleInstanceIpc.StartServer(files =>
@@ -127,7 +127,7 @@ namespace Console_Form
                 }
             });
             _uiThread.SetApartmentState(ApartmentState.STA);
-            _uiThread.IsBackground = true;
+            //_uiThread.IsBackground = true;
             _uiThread.Start();
 
             // 阻塞等待 UI 线程退出

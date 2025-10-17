@@ -2,6 +2,7 @@
 using System.Windows.Forms;
 using FFmpeg.AutoGen;
 using HHZPlayer.Windows.HHZ;
+using System.Threading.Tasks;
 
 namespace HHZPlayer.Windows
 {
@@ -220,8 +221,8 @@ namespace HHZPlayer.Windows
             UpdateLogoPosition();
             UpdateBoundsLayout();
 
-            _diskListLeft.Reload();
-            _diskListRight.Reload();
+            // Use asynchronous reload so UI appears quickly even if some drives are slow (network)
+            ReloadDisksAsync();
 
             // 拖入
             this.AllowDrop = true;
@@ -445,6 +446,21 @@ namespace HHZPlayer.Windows
 
             ffmpeg.avformat_close_input(&pFormatContext);
             return (0, 0);
+        }
+
+        private async Task ReloadDisksAsync()
+        {
+            try
+            {
+                _diskListLeft.IsLoading = true;
+                _diskListRight.IsLoading = true;
+                await Task.WhenAll(_diskListLeft.ReloadAsync(), _diskListRight.ReloadAsync());
+            }
+            catch { }
+            finally
+            {
+                try { _diskListLeft.IsLoading = false; _diskListRight.IsLoading = false; } catch { }
+            }
         }
     }
 }
