@@ -107,27 +107,24 @@ public partial class MainForm : Form
         // 订阅播放进度
         Player.ObservePropertyDouble("time-pos", (double value) =>
         {
-            if (!double.IsNaN(value))
+            if (double.IsNaN(value)) return;
+            timepos = value;
+            SafeInvoke(() =>
             {
-                timepos = value;
-                // 在 UI 线程里更新控件
-                this.Invoke((MethodInvoker)(() =>
+                lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
+                lblDurationRight.Text = lblDurationLeft.Text;
+                //Debug.Print($"进度: {value:F1} 秒");
+                SetProgressBarMax(Player.Duration.TotalSeconds);
+                if (value <= progressBarLeft.Maximum)
                 {
-                    lblDurationLeft.Text = $"{TimeSpan.FromSeconds(timepos).ToString(@"hh\:mm\:ss")} / {TimeSpan.FromSeconds(Player.Duration.TotalSeconds).ToString(@"hh\:mm\:ss")}";
-                    lblDurationRight.Text = lblDurationLeft.Text;
-                    //Debug.Print($"进度: {value:F1} 秒");
-                    SetProgressBarMax(Player.Duration.TotalSeconds);
-                    if (value <= progressBarLeft.Maximum)
-                    {
-                        SetProgressBarValue(value);
-                    }
-                }));
-            }
+                    SetProgressBarValue(value);
+                }
+            });
         });
 
         Player.ObservePropertyBool("pause", (bool value) =>
         {
-            this.Invoke((MethodInvoker)(() =>
+            SafeInvoke(() =>
             {
                 if (value)
                 {
@@ -148,7 +145,7 @@ public partial class MainForm : Form
                     ShowCursor();
                     ShowVideoOSD();
                 }
-            }));
+            });
         });
     }
 
@@ -1283,7 +1280,15 @@ public partial class MainForm : Form
     FormMediaProperty frmMediaProperty;
     private void Videoaspectl_Click(object? sender, EventArgs e)
     {
-        if (frmMediaProperty.Visible != true) frmMediaProperty.Show();
+        try
+        {
+            if (frmMediaProperty == null || frmMediaProperty.IsDisposed)
+                frmMediaProperty = new FormMediaProperty(this);
+
+            if (!frmMediaProperty.Visible)
+                frmMediaProperty.Show();
+        }
+        catch { /* 忽略在非常规窗口状态下的错误 */ }
         //Player.SetPropertyString("video-aspect-override", "4:3");
     }
     // ======== 帮助函数 ========
@@ -1589,11 +1594,6 @@ public partial class MainForm : Form
                 //    progressBarRight.Visible = true;
                 //}
                 //UpdateProgressBar();
-                if (bPressPageDownUp)
-                {
-                    if (!Player.GetPropertyBool("pause")) Player.Command("cycle pause");
-                    bPressPageDownUp = false;
-                }
             }
             //bFileloaded = true;
             //Player.SetPropertyString("hwdec", "nvdec-copy");
@@ -1683,7 +1683,16 @@ public partial class MainForm : Form
                     Player.SetPropertyDouble("time-pos", hhzSettingsManager.Current.LastTimePos);
                 }
             }
-            Player.Command("set pause no");
+            if (bPressPageDownUp)
+            {
+                //if (!Player.GetPropertyBool("pause")) Player.Command("cycle pause");
+                Player.Command("set pause yes");
+                bPressPageDownUp = false;
+            }
+            else
+            {
+                Player.Command("set pause no");
+            }
         }));
 
         string path = Player.GetPropertyString("path");
@@ -1927,6 +1936,25 @@ public partial class MainForm : Form
         lblStatusRight.BringToFront();
         lblVolumeRight.BringToFront();
         _lastCursorChanged = Environment.TickCount;
+    }
+
+    // 安全地在 UI 线程执行，如果窗体已释放则静默返回，避免 ObjectDisposedException
+    private void SafeInvoke(Action action)
+    {
+        try
+        {
+            if (IsDisposed || Disposing) return;
+            if (InvokeRequired)
+            {
+                if (!IsHandleCreated) return;
+                BeginInvoke(action);
+            }
+            else
+            {
+                action();
+            }
+        }
+        catch { /* 忽略任何在关闭时的异常 */ }
     }
 
     void ShowCursor()
@@ -2200,7 +2228,7 @@ public partial class MainForm : Form
     private ToolStripMenuItem Videoaspectl;
     private ToolStripMenuItem Videoaspectr;
     private bool bNvidia;
-    private int ibufferframe = 32;
+    private int ibufferframe = 16;
     private int iconcurrentframe = 2;
     private bool bSetRender;
     private int iVsrScale = 2;
