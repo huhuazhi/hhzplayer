@@ -33,6 +33,21 @@ namespace HHZPlayer.Windows.HHZ
         private bool _dragging = false;
         private int _lastMouseY;
 
+        // —— 惯性甩动（Fling）参数与状态 ——
+        private const double FlingStart = 0.15;      // |v0| > 0.15 px/ms 才开始
+        private const double FlingMaxVel = 4.0;      // 初速度上限 4 px/ms
+        private const double FlingDecel = 0.0022;    // 衰减 0.0022 px/ms^2
+        private const double FlingStopVel = 0.04;    // 停止阈值 0.04 px/ms
+        private const int VelocityWindowMs = 120;    // 速度取最近约120ms
+
+        private bool _isFlinging = false;
+        private double _flingVel = 0.0;              // px/ms，正值表示向下拖（内容随手指向下，ScrollOffset -= dy）
+        private long _flingLastTick = 0;             // ms
+        private Timer _flingTimer;                   // 逐帧计时器
+
+        // 记录最近移动轨迹（时间戳ms + y），用于估算松手速度
+        private readonly LinkedList<(long t, int y)> _moveHistory = new();
+
         private readonly Font _headerFont = new("Segoe UI", 10, FontStyle.Bold);
         private readonly Font _itemFont = new("Segoe UI", 10, FontStyle.Regular);
         private readonly Font _pathFont = new("Segoe UI", 10, FontStyle.Regular);
@@ -228,6 +243,10 @@ namespace HHZPlayer.Windows.HHZ
                     _tipVisible = true;
                 }
             };
+
+            // —— 惯性甩动计时器 ——
+            _flingTimer = new Timer { Interval = 15 };
+            _flingTimer.Tick += FlingTimer_Tick;
         }
 
         public int RowHeight
@@ -292,6 +311,8 @@ namespace HHZPlayer.Windows.HHZ
         {
             path = NormalizeRootPath(path);
             if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return;
+
+            CancelFling();
 
             PrewarmIconsForDirectory(path);
 
@@ -707,6 +728,7 @@ namespace HHZPlayer.Windows.HHZ
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             base.OnMouseWheel(e);
+            CancelFling(); // 新交互取消甩动
             ScrollOffset += -e.Delta;
         }
 
@@ -716,12 +738,14 @@ namespace HHZPlayer.Windows.HHZ
 
             int headerTop = _pathBarHeight + _headerHeight;
 
-            // —— 正在拖拽：滚动 + 任何提示隐藏 —— 
+            // —— 正在拖拽：滚动 + 记录轨迹 + 任何提示隐藏 —— 
             if (_dragging)
             {
                 int dy = e.Y - _lastMouseY;
                 _lastMouseY = e.Y;
                 ScrollOffset -= dy;
+
+                TrackMove(e.Y);
 
                 if (_tipVisible) { _toolTip.Hide(this); _tipVisible = false; }
                 _tipTimer.Stop();
@@ -858,10 +882,16 @@ namespace HHZPlayer.Windows.HHZ
                     return;
                 }
 
+                CancelFling(); // 新交互取消甩动
+
                 _dragging = true;
                 _lastMouseY = e.Y;
                 _mouseDownPos = e.Location;
                 _mouseDownIndex = HitTestIndex(e.Y);
+
+                // 初始化轨迹
+                _moveHistory.Clear();
+                TrackMove(e.Y);
                 // 不强行改光标，保持 hover 的语义
             }
         }
@@ -884,6 +914,11 @@ namespace HHZPlayer.Windows.HHZ
                 if (isClick && HitFileContent(upIndex, e.Location))
                 {
                     OpenItem(upIndex);
+                }
+                else
+                {
+                    // —— 尝试启动甩动 ——
+                    StartFlingFromHistory(e.Y);
                 }
             }
 
@@ -1049,8 +1084,111 @@ namespace HHZPlayer.Windows.HHZ
             if (disposing)
             {
                 DisposeAllTextBitmaps();
+                CancelFling();
+                _flingTimer?.Dispose();
+                _flingTimer = null;
             }
             base.Dispose(disposing);
+        }
+
+        // —— 甩动实现 ——
+        private void TrackMove(int y)
+        {
+            long now = Environment.TickCount64;
+            _moveHistory.AddLast((now, y));
+            // 保留最近 ~200ms 的轨迹
+            while (_moveHistory.First != null && (now - _moveHistory.First.Value.t) > 200)
+                _moveHistory.RemoveFirst();
+        }
+
+        private void StartFlingFromHistory(int currentY)
+        {
+            // 使用最近 120ms 的位移估算速度
+            long now = Environment.TickCount64;
+            if (_moveHistory.Count == 0)
+            {
+                _isFlinging = false; return;
+            }
+
+            var last = _moveHistory.Last.Value;
+            long windowStart = now - VelocityWindowMs;
+
+            // 找到窗口内最早的样本
+            var node = _moveHistory.Last;
+            var candidate = node.Value;
+            while (node != null && node.Value.t >= windowStart)
+            {
+                candidate = node.Value;
+                node = node.Previous;
+            }
+
+            long dt = Math.Max(0, last.t - candidate.t);
+            int dy = last.y - candidate.y;
+            double vel = dt > 0 ? (double)dy / dt : 0.0; // px/ms
+
+            // 阈值判断与裁剪
+            if (Math.Abs(vel) <= FlingStart)
+            {
+                _isFlinging = false;
+                return;
+            }
+
+            if (vel > 0) vel = Math.Min(vel, FlingMaxVel);
+            else vel = Math.Max(vel, -FlingMaxVel);
+
+            _flingVel = vel;
+            _flingLastTick = now;
+            _isFlinging = true;
+            _flingTimer.Start();
+        }
+
+        private void FlingTimer_Tick(object sender, EventArgs e)
+        {
+            if (!_isFlinging)
+            {
+                _flingTimer.Stop();
+                return;
+            }
+
+            long now = Environment.TickCount64;
+            long dt = now - _flingLastTick;
+            if (dt <= 0) return;
+            _flingLastTick = now;
+
+            double v = _flingVel; // px/ms
+
+            // 位移，遵循拖拽时 ScrollOffset -= dy 方向
+            double dy = v * dt;
+            int old = _scrollOffsetY;
+            int delta = (int)Math.Round(dy);
+            if (delta != 0)
+            {
+                ScrollOffset = _scrollOffsetY - delta;
+            }
+
+            // 衰减速度（恒定减速度，朝0收敛）
+            double dec = FlingDecel * dt;
+            if (v > 0) v = Math.Max(0.0, v - dec);
+            else if (v < 0) v = Math.Min(0.0, v + dec);
+
+            _flingVel = v;
+
+            // 边界与阈值停止
+            bool hitBoundary = (_scrollOffsetY == 0 && _flingVel > 0) || (_scrollOffsetY == _maxScroll && _flingVel < 0);
+            if (Math.Abs(_flingVel) < FlingStopVel || hitBoundary || (_scrollOffsetY == old && delta != 0))
+            {
+                _isFlinging = false;
+                _flingTimer.Stop();
+            }
+        }
+
+        private void CancelFling()
+        {
+            if (_isFlinging)
+            {
+                _isFlinging = false;
+                _flingTimer.Stop();
+            }
         }
     }
 

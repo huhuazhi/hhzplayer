@@ -1,0 +1,4 @@
+﻿# models_needed_report generated: 10/18/2025 17:58:42
+
+the_database_AnimeJaNaiV2L1_x2_fp16_op17.onnx -> MISSING referenced by: C:\Users\hhz\source\repos\hhzPlayerConsole\src\HHZPlayer.Windows\MVTools\scripts\MIX_UAI_DML.vpy, C:\Users\hhz\source\repos\hhzPlayerConsole\src\HHZPlayer.Windows\MVTools\scripts\MIX_UAI_NV_TRT.vpy
+the_database_AnimeJaNaiV2L1_x2_fp32_op17.onnx -> MISSING referenced by: C:\Users\hhz\source\repos\hhzPlayerConsole\src\HHZPlayer.Windows\MVTools\scripts\MIX_UAI_MIGX.vpy

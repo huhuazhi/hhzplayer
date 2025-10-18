@@ -1,0 +1,33 @@
+﻿{
+    "generated":  "2025-10-18 08:31:08Z",
+    "scripts":  [
+                    "ETC_DEINT_EX.vpy",
+                    "ETC_IVTC_STD.vpy",
+                    "input_list.conf",
+                    "k7sfunc.py",
+                    "MEMC_MVT_LQ.vpy",
+                    "MEMC_RIFE_DML.vpy",
+                    "MEMC_RIFE_NV.vpy",
+                    "MEMC_RIFE_STD.vpy",
+                    "MEMC_SVP_LQ.vpy",
+                    "MEMC_SVP_PRO.vpy",
+                    "MIX_UAI_DML.vpy",
+                    "MIX_UAI_MIGX.vpy",
+                    "MIX_UAI_NV_TRT.vpy",
+                    "MIX_UVR_MAD.vpy",
+                    "NR_BM3D_NV.vpy",
+                    "NR_CCD_STD.vpy",
+                    "SR_ACNET_STD.vpy",
+                    "SR_ARTCNN_NV.vpy"
+                ],
+    "plugins":  [
+
+                ],
+    "models":  [
+
+               ],
+    "models_needed":  [
+                          "the_database_AnimeJaNaiV2L1_x2_fp16_op17.onnx",
+                          "the_database_AnimeJaNaiV2L1_x2_fp32_op17.onnx"
+                      ]
+}
